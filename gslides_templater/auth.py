@@ -6,6 +6,7 @@ Provides credential management for Google API access.
 import json
 import logging
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Optional, List, Union
@@ -15,6 +16,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials as OAuth2Credentials
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +24,41 @@ DEFAULT_SCOPES = [
     "https://www.googleapis.com/auth/presentations",
     "https://www.googleapis.com/auth/drive",
 ]
+
+
+class AuthConfig(BaseModel):
+    """Configuration for authentication"""
+    service_account_file: Optional[str] = None
+    credentials_path: Optional[str] = None
+    token_path: Optional[str] = None
+    scopes: List[str] = Field(default_factory=lambda: DEFAULT_SCOPES.copy())
+    use_application_default: bool = True
+    oauth_timeout: int = Field(default=300, ge=30, le=3600)
+
+
+class SlidesAPIError(Exception):
+    """Base exception for Slides API"""
+    pass
+
+
+class AuthenticationError(SlidesAPIError):
+    """Authentication failed"""
+    pass
+
+
+class TokenRefreshError(SlidesAPIError):
+    """Token refresh failed"""
+    pass
+
+
+def _is_safe_path(filepath: str, base_dir: str = ".") -> bool:
+    """Check if filepath is safe (no path traversal)"""
+    try:
+        base_path = Path(base_dir).resolve()
+        target_path = Path(filepath).resolve()
+        return target_path.is_relative_to(base_path)
+    except (ValueError, OSError):
+        return False
 
 
 class CredentialManager:
@@ -37,7 +74,7 @@ class CredentialManager:
         Args:
             scopes: OAuth scopes for API access
         """
-        self.scopes = scopes or DEFAULT_SCOPES
+        self.scopes = scopes or DEFAULT_SCOPES.copy()
 
     def from_service_account_file(self, service_account_file: str) -> 'Credentials':
         """
@@ -50,11 +87,13 @@ class CredentialManager:
             Credentials object
 
         Raises:
-            FileNotFoundError: If file not found
-            ValueError: If file is invalid
+            AuthenticationError: If authentication failed
         """
+        if not _is_safe_path(service_account_file):
+            raise AuthenticationError("Unsafe file path")
+
         if not os.path.exists(service_account_file):
-            raise FileNotFoundError(f"Service account file not found: {service_account_file}")
+            raise AuthenticationError(f"Service account file not found: {service_account_file}")
 
         try:
             service_credentials = ServiceAccountCredentials.from_service_account_file(
@@ -66,7 +105,7 @@ class CredentialManager:
 
         except Exception as e:
             logger.error(f"Error loading service account credentials: {e}")
-            raise ValueError(f"Invalid service account file: {e}")
+            raise AuthenticationError(f"Invalid service account file: {e}")
 
     def from_saved_token(self, token_file: str) -> Optional['Credentials']:
         """
@@ -78,6 +117,10 @@ class CredentialManager:
         Returns:
             Credentials object or None if loading failed
         """
+        if not _is_safe_path(token_file):
+            logger.warning(f"Unsafe token file path: {token_file}")
+            return None
+
         if not os.path.exists(token_file):
             logger.debug(f"Token file not found: {token_file}")
             return None
@@ -123,7 +166,8 @@ class CredentialManager:
 
     def from_oauth_flow(self, client_secrets_file: str,
                         token_save_path: Optional[str] = None,
-                        use_local_server: bool = True) -> 'Credentials':
+                        use_local_server: bool = True,
+                        timeout: int = 300) -> 'Credentials':
         """
         Create credentials through OAuth flow.
 
@@ -131,16 +175,19 @@ class CredentialManager:
             client_secrets_file: Path to OAuth credentials JSON file
             token_save_path: Path to save token
             use_local_server: Use local server for OAuth
+            timeout: Timeout for OAuth flow
 
         Returns:
             Credentials object
 
         Raises:
-            FileNotFoundError: If credentials file not found
-            ValueError: If OAuth flow failed
+            AuthenticationError: If OAuth flow failed
         """
+        if not _is_safe_path(client_secrets_file):
+            raise AuthenticationError("Unsafe credentials file path")
+
         if not os.path.exists(client_secrets_file):
-            raise FileNotFoundError(f"OAuth credentials file not found: {client_secrets_file}")
+            raise AuthenticationError(f"OAuth credentials file not found: {client_secrets_file}")
 
         try:
             flow = InstalledAppFlow.from_client_secrets_file(
@@ -157,6 +204,9 @@ class CredentialManager:
                 print(f"\n{auth_url}\n")
 
                 auth_code = input("Enter the authorization code: ").strip()
+                if not auth_code:
+                    raise AuthenticationError("No authorization code provided")
+
                 flow.fetch_token(code=auth_code)
                 creds = flow.credentials
 
@@ -169,7 +219,7 @@ class CredentialManager:
 
         except Exception as e:
             logger.error(f"OAuth authentication failed: {e}")
-            raise ValueError(f"OAuth flow failed: {e}")
+            raise AuthenticationError(f"OAuth flow failed: {e}")
 
     def from_application_default(self) -> Optional['Credentials']:
         """
@@ -189,6 +239,9 @@ class CredentialManager:
 
     def _save_token(self, credentials: OAuth2Credentials, token_file: str):
         """Save token to file."""
+        if not _is_safe_path(token_file):
+            raise AuthenticationError("Unsafe token file path")
+
         try:
             token_path = Path(token_file)
             token_path.parent.mkdir(parents=True, exist_ok=True)
@@ -210,6 +263,7 @@ class CredentialManager:
 
         except Exception as e:
             logger.error(f"Failed to save token to {token_file}: {e}")
+            raise AuthenticationError(f"Failed to save token: {e}")
 
 
 class Credentials:
@@ -229,6 +283,7 @@ class Credentials:
         self.credentials = credentials
         self.auth_method = auth_method
         self._last_refresh_time = time.time()
+        self._refresh_lock = threading.Lock()
 
     @property
     def valid(self) -> bool:
@@ -246,7 +301,7 @@ class Credentials:
 
     def refresh_if_needed(self) -> bool:
         """
-        Refresh credentials if needed.
+        Refresh credentials if needed (thread-safe).
 
         Returns:
             True if credentials were refreshed
@@ -254,27 +309,32 @@ class Credentials:
         if not self.expired:
             return False
 
-        if not hasattr(self.credentials, 'refresh_token') or not self.credentials.refresh_token:
-            logger.warning("Cannot refresh credentials: no refresh token")
-            return False
+        with self._refresh_lock:
+            # Double-check after acquiring lock
+            if not self.expired:
+                return False
 
-        try:
-            logger.info("Refreshing expired credentials...")
-            self.credentials.refresh(Request())
-            self._last_refresh_time = time.time()
-            logger.info("Credentials refreshed successfully")
-            return True
+            if not hasattr(self.credentials, 'refresh_token') or not self.credentials.refresh_token:
+                logger.warning("Cannot refresh credentials: no refresh token")
+                return False
 
-        except Exception as e:
-            logger.error(f"Failed to refresh credentials: {e}")
-            return False
+            try:
+                logger.info("Refreshing expired credentials...")
+                self.credentials.refresh(Request())
+                self._last_refresh_time = time.time()
+                logger.info("Credentials refreshed successfully")
+                return True
+
+            except Exception as e:
+                logger.error(f"Failed to refresh credentials: {e}")
+                raise TokenRefreshError(f"Failed to refresh credentials: {e}")
 
     def ensure_valid(self):
         """
         Ensure credentials are valid, refresh if needed.
 
         Raises:
-            ValueError: If credentials are invalid and cannot be refreshed
+            AuthenticationError: If credentials are invalid and cannot be refreshed
         """
         if self.valid:
             return
@@ -282,7 +342,7 @@ class Credentials:
         if self.refresh_if_needed():
             return
 
-        raise ValueError(f"Invalid credentials (method: {self.auth_method})")
+        raise AuthenticationError(f"Invalid credentials (method: {self.auth_method})")
 
     def get_info(self) -> dict:
         """
@@ -307,47 +367,38 @@ class Credentials:
         return info
 
 
-def authenticate(service_account_file: Optional[str] = None,
-                 credentials_path: Optional[str] = None,
-                 token_path: Optional[str] = None,
-                 scopes: Optional[List[str]] = None,
-                 use_application_default: bool = True) -> Credentials:
+def authenticate(config: Optional[AuthConfig] = None, **kwargs) -> Credentials:
     """
     Universal authentication function.
 
-    Priority order:
-    1. Service Account (if service_account_file provided)
-    2. Saved token (if token_path provided)
-    3. OAuth flow (if credentials_path provided)
-    4. Application Default Credentials (if use_application_default=True)
-
     Args:
-        service_account_file: Path to service account JSON file
-        credentials_path: Path to OAuth credentials JSON file
-        token_path: Path to saved token file
-        scopes: OAuth scopes
-        use_application_default: Use ADC as fallback
+        config: Authentication configuration
+        **kwargs: Legacy parameters for backward compatibility
 
     Returns:
         Credentials object
 
     Raises:
-        ValueError: If no authentication method succeeded
+        AuthenticationError: If no authentication method succeeded
     """
-    manager = CredentialManager(scopes)
+    # Handle legacy parameters
+    if config is None:
+        config = AuthConfig(**kwargs)
+
+    manager = CredentialManager(config.scopes)
 
     # Method 1: Service Account
-    if service_account_file:
+    if config.service_account_file:
         try:
             logger.info("Trying service account authentication...")
-            return manager.from_service_account_file(service_account_file)
+            return manager.from_service_account_file(config.service_account_file)
         except Exception as e:
             logger.warning(f"Service account authentication failed: {e}")
 
     # Method 2: Saved token
-    if token_path:
-        logger.info(f"Trying saved token from {token_path}...")
-        credentials = manager.from_saved_token(token_path)
+    if config.token_path:
+        logger.info(f"Trying saved token from {config.token_path}...")
+        credentials = manager.from_saved_token(config.token_path)
         if credentials:
             logger.info("Using saved token")
             return credentials
@@ -355,21 +406,25 @@ def authenticate(service_account_file: Optional[str] = None,
             logger.info("Saved token not valid, will try OAuth flow")
 
     # Method 3: OAuth flow
-    if credentials_path:
+    if config.credentials_path:
         try:
             logger.info("Starting OAuth flow...")
-            return manager.from_oauth_flow(credentials_path, token_path)
+            return manager.from_oauth_flow(
+                config.credentials_path,
+                config.token_path,
+                timeout=config.oauth_timeout
+            )
         except Exception as e:
             logger.warning(f"OAuth authentication failed: {e}")
 
     # Method 4: Application Default Credentials
-    if use_application_default:
+    if config.use_application_default:
         logger.info("Trying Application Default Credentials...")
         credentials = manager.from_application_default()
         if credentials:
             return credentials
 
-    raise ValueError(
+    raise AuthenticationError(
         "Authentication failed. Please provide valid credentials:\n"
         "- service_account_file: path to service account JSON\n"
         "- credentials_path: path to OAuth client secrets JSON\n"
@@ -434,6 +489,9 @@ def create_service_account_template(output_file: str = "service_account_template
     Args:
         output_file: Output file name
     """
+    if not _is_safe_path(output_file):
+        raise ValueError("Unsafe output file path")
+
     template = {
         "type": "service_account",
         "project_id": "your-project-id",
@@ -461,6 +519,9 @@ def create_oauth_template(output_file: str = "oauth_credentials_template.json"):
     Args:
         output_file: Output file name
     """
+    if not _is_safe_path(output_file):
+        raise ValueError("Unsafe output file path")
+
     template = {
         "installed": {
             "client_id": "your-client-id.apps.googleusercontent.com",
@@ -490,6 +551,9 @@ def check_credentials_file(file_path: str) -> dict:
     Returns:
         Dictionary with file information
     """
+    if not _is_safe_path(file_path):
+        return {"exists": False, "error": "Unsafe file path"}
+
     if not os.path.exists(file_path):
         return {"exists": False, "error": "File not found"}
 

@@ -14,7 +14,7 @@ import os
 # Add path to our package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from gslides_templater import create_templater
+from gslides_templater import create_templater, AuthConfig, SlidesAPIError, AuthenticationError
 
 
 def main():
@@ -38,10 +38,13 @@ def main():
             print("   and save as credentials.json")
             return
 
-        templater = create_templater(
-            oauth_credentials_path=credentials_file,
-            token_path="token.json"  # Token will be saved here
+        # Create auth config using new structure
+        auth_config = AuthConfig(
+            credentials_path=credentials_file,
+            token_path="token.json"
         )
+
+        templater = create_templater(auth_config=auth_config)
         print("   ✓ Authentication successful")
 
         user_input = input("Presentation ID: ").strip()
@@ -52,7 +55,14 @@ def main():
         print(f"   ID: {source_presentation_id}")
 
         # Get presentation information
-        presentation_data = templater.get_presentation(source_presentation_id)
+        try:
+            presentation_data = templater.get_presentation(source_presentation_id)
+        except Exception as e:
+            if "404" in str(e):
+                print(f"❌ Presentation not found!")
+                print(f"   Check that the ID is correct and you have access")
+                return
+            raise
 
         print(f"   ✓ Title: {presentation_data.get('title', 'Untitled')}")
         print(f"   ✓ Slides: {len(presentation_data.get('slides', []))}")
@@ -60,13 +70,24 @@ def main():
         print(f"\n🔍 Creating template configuration with Markdown...")
 
         # Analyze presentation and create template
-        template_config = templater.create_template(
-            presentation_id=source_presentation_id,
-            template_name="presentation_template"
-        )
+        try:
+            template_config = templater.create_template(
+                presentation_id=source_presentation_id,
+                template_name="presentation_template",
+                debug=False  # Disable debug for cleaner output
+            )
+        except Exception as e:
+            print(f"❌ Error creating template: {e}")
+            print(f"   The presentation may not contain replaceable elements")
+            return
 
         print(f"   ✓ Found replaceable elements: {len(template_config.get('placeholders', {}))}")
         print(f"   ✓ Processed slides: {len(template_config.get('slides', []))}")
+
+        # Show slide size and layout info
+        slide_size = template_config.get('slide_size', {})
+        if slide_size:
+            print(f"   ✓ Slide size: {slide_size.get('width', 720)}x{slide_size.get('height', 540)} points")
 
         # Show found placeholders
         placeholders = template_config.get('placeholders', {})
@@ -76,6 +97,14 @@ def main():
                 print(f"   • {name}")
                 print(f"     Type: {info['type']}")
                 print(f"     Description: {info['description']}")
+                print(f"     Slide: {info.get('slide_index', 0) + 1}")
+
+                # Show position info if available
+                position = info.get('position', {})
+                if position:
+                    print(f"     Position: x={position.get('x', 0):.0f}, y={position.get('y', 0):.0f}")
+                    print(f"     Size: {position.get('width', 0):.0f}x{position.get('height', 0):.0f}")
+                    print(f"     Layer: {info.get('layer', 0)}")
 
                 # Show Markdown example
                 markdown_example = info.get('example', '')
@@ -92,14 +121,18 @@ def main():
         else:
             print(f"\n⚠️  No placeholders found")
             print(f"   Presentation may not contain replaceable elements")
+            print(f"   Try a presentation with text boxes or images")
 
         print(f"💾 Saving template to file...")
 
         # Save configuration to file
         template_filename = "presentation_template.json"
-        templater.save_template(template_config, template_filename)
-
-        print(f"   ✓ File created: {template_filename}")
+        try:
+            templater.save_template(template_config, template_filename)
+            print(f"   ✓ File created: {template_filename}")
+        except Exception as e:
+            print(f"❌ Error saving template: {e}")
+            return
 
         # Show file structure
         print(f"\n📊 Created template structure:")
@@ -109,14 +142,25 @@ def main():
         print(f"   Slides with replaceable elements: {len(template_config.get('slides', []))}")
         print(f"   Total placeholders: {len(template_config.get('placeholders', {}))}")
 
+        # Show layout configuration
+        layout_config = template_config.get('layout_config', {})
+        if layout_config:
+            print(f"   Layout margins: {layout_config.get('margin_x', 50)}x{layout_config.get('margin_y', 50)}")
+            print(
+                f"   Default element size: {layout_config.get('default_width', 620)}x{layout_config.get('default_height', 200)}")
+
         # Show usage example
         print(f"\n📖 Example data for filling template:")
         print(f"   {{")
-        for name, info in list(placeholders.items())[:3]:  # Show only first 3
+        example_count = 0
+        for name, info in placeholders.items():
+            if example_count >= 3:
+                break
             if info['type'] == 'text':
                 print(f'       "{name}": "# New Header\\n\\nNew **text** with formatting",')
             elif info['type'] == 'image':
                 print(f'       "{name}": "https://example.com/new-image.jpg",')
+            example_count += 1
         if len(placeholders) > 3:
             print(f"       # ... {len(placeholders) - 3} more placeholders")
         print(f"   }}")
@@ -124,20 +168,35 @@ def main():
         print(f"\n✅ Template created successfully!")
         print(f"📁 File: {template_filename}")
         print(f"🔄 You can now use this file to create new presentations")
+        print(f"📊 Template includes position and layer information for precise layout")
 
         # Source presentation URL
         presentation_url = templater.get_presentation_url(source_presentation_id)
         print(f"🌐 Source presentation: {presentation_url}")
 
+        # Show validation info
+        print(f"\n🔍 Template validation:")
+        template_info = templater.get_template_info(template_config)
+        element_types = template_info.get('element_types', {})
+        for elem_type, count in element_types.items():
+            print(f"   {elem_type}: {count} elements")
+
     except FileNotFoundError as e:
         print(f"❌ File not found: {e}")
         print(f"   Make sure credentials.json file exists")
 
-    except Exception as e:
-        error_msg = str(e)
-        print(f"❌ Error: {error_msg}")
+    except AuthenticationError as e:
+        print(f"❌ Authentication error: {e}")
+        print(f"\n🔧 Authentication issues:")
+        print(f"   1. Check credentials.json file")
+        print(f"   2. Make sure OAuth Client ID is created in Google Cloud Console")
+        print(f"   3. Add required scopes for Google Slides API")
+        print(f"   4. Delete token.json and try again")
 
-        # Specific errors
+    except SlidesAPIError as e:
+        error_msg = str(e)
+        print(f"❌ API Error: {error_msg}")
+
         if "404" in error_msg or "not found" in error_msg.lower():
             print(f"\n🔧 Presentation not found:")
             print(f"   1. Check presentation ID is correct")
@@ -151,7 +210,16 @@ def main():
             print(f"   2. Check presentation access permissions")
             print(f"   3. Make sure OAuth credentials are configured correctly")
 
-        elif "credentials" in error_msg.lower() or "auth" in error_msg.lower():
+        elif "Unsafe file path" in error_msg:
+            print(f"\n🔧 File path security error:")
+            print(f"   1. Use simple file names without '..' or special characters")
+            print(f"   2. Save in current directory")
+
+    except Exception as e:
+        error_msg = str(e)
+        print(f"❌ Error: {error_msg}")
+
+        if "credentials" in error_msg.lower() or "auth" in error_msg.lower():
             print(f"\n🔧 Authentication issues:")
             print(f"   1. Check credentials.json file")
             print(f"   2. Make sure OAuth Client ID is created in Google Cloud Console")
