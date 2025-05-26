@@ -28,7 +28,6 @@ from .auth import (
     check_credentials_file
 )
 
-# Конфигурационные классы из core
 from .core import (
     SlidesConfig,
     LayoutConfig,
@@ -40,13 +39,11 @@ from .core import (
 )
 
 __all__ = [
-    # Основные классы
     'SlidesTemplater',
     'MarkdownProcessor',
     'CredentialManager',
     'Credentials',
 
-    # Конфигурации
     'SlidesConfig',
     'LayoutConfig',
     'MarkdownConfig',
@@ -54,7 +51,6 @@ __all__ = [
     'ElementPosition',
     'SlideElement',
 
-    # Функции
     'create_templater',
     'authenticate',
     'setup_oauth_flow',
