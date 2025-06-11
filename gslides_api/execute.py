@@ -10,7 +10,7 @@ from gslides_api.credentials import creds
 # The functions in this file are the only interaction with the raw gslides API in this library
 
 
-def slides_batch_update(requests: list, presentation_id: str) -> Dict[str, Any]:
+def batch_update(requests: list, presentation_id: str) -> Dict[str, Any]:
     return (
         creds.slide_service.presentations()
         .batchUpdate(presentationId=presentation_id, body={"requests": requests})

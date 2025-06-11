@@ -488,6 +488,17 @@ class VideoSourceType(Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class ImageReplaceMethod(Enum):
+    """Enumeration of possible image replace methods.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#ImageReplaceMethod
+    """
+
+    IMAGE_REPLACE_METHOD_UNSPECIFIED = "IMAGE_REPLACE_METHOD_UNSPECIFIED"
+    CENTER_INSIDE = "CENTER_INSIDE"
+    CENTER_CROP = "CENTER_CROP"
+
+
 class VideoProperties(GSlidesBaseModel):
     """Represents properties of a video.
 

@@ -15,7 +15,7 @@ from gslides_api.domain import (
 
 # Import PageElement and ElementKind directly to avoid circular imports
 from gslides_api.element import PageElement, ElementKind
-from gslides_api.execute import slides_batch_update, get_slide_json
+from gslides_api.execute import batch_update, get_slide_json
 from gslides_api.utils import duplicate_object, delete_object, dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ class Page(GSlidesBaseModel):
         if slide_layout_reference is not None:
             base["slideLayoutReference"] = slide_layout_reference.to_api_format()
 
-        out = slides_batch_update([{"createSlide": base}], presentation_id)
+        out = batch_update([{"createSlide": base}], presentation_id)
         new_slide_id = out["replies"][0]["createSlide"]["objectId"]
 
         return cls.from_ids(presentation_id, new_slide_id)
@@ -145,7 +145,7 @@ class Page(GSlidesBaseModel):
                     }
                 }
             ]
-            slides_batch_update(request, presentation_id)
+            batch_update(request, presentation_id)
         except Exception as e:
             logger.error(f"Error writing page properties: {e}")
 
@@ -164,7 +164,7 @@ class Page(GSlidesBaseModel):
                 }
             }
         ]
-        slides_batch_update(request, presentation_id)
+        batch_update(request, presentation_id)
 
         if self.pageElements is not None:
             # Some elements came from layout, some were created manually
@@ -231,7 +231,7 @@ class Page(GSlidesBaseModel):
                 }
             }
         ]
-        slides_batch_update(request, self.presentation_id)
+        batch_update(request, self.presentation_id)
 
 
 SlidePageProperties.model_rebuild()

@@ -16,9 +16,13 @@ from gslides_api.domain import (
     SheetsChart,
     SpeakerSpotlight,
     Group,
+    ImageReplaceMethod,
 )
-from gslides_api.execute import slides_batch_update
-from gslides_api.utils import dict_to_dot_separated_field_list
+from gslides_api.execute import batch_update
+from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
+from gslides_templater import MarkdownProcessor
+
+markdown_processor = MarkdownProcessor()
 
 
 class ElementKind(Enum):
@@ -41,44 +45,44 @@ class ElementKind(Enum):
 def element_discriminator(v: Any) -> str:
     """Discriminator function to determine which PageElement subclass to use based on which field is present."""
     if isinstance(v, dict):
-        if v.get('shape') is not None:
-            return 'shape'
-        elif v.get('table') is not None:
-            return 'table'
-        elif v.get('image') is not None:
-            return 'image'
-        elif v.get('video') is not None:
-            return 'video'
-        elif v.get('line') is not None:
-            return 'line'
-        elif v.get('wordArt') is not None:
-            return 'wordArt'
-        elif v.get('sheetsChart') is not None:
-            return 'sheetsChart'
-        elif v.get('speakerSpotlight') is not None:
-            return 'speakerSpotlight'
-        elif v.get('elementGroup') is not None:
-            return 'group'
+        if v.get("shape") is not None:
+            return "shape"
+        elif v.get("table") is not None:
+            return "table"
+        elif v.get("image") is not None:
+            return "image"
+        elif v.get("video") is not None:
+            return "video"
+        elif v.get("line") is not None:
+            return "line"
+        elif v.get("wordArt") is not None:
+            return "wordArt"
+        elif v.get("sheetsChart") is not None:
+            return "sheetsChart"
+        elif v.get("speakerSpotlight") is not None:
+            return "speakerSpotlight"
+        elif v.get("elementGroup") is not None:
+            return "group"
     else:
         # Handle model instances
-        if hasattr(v, 'shape') and v.shape is not None:
-            return 'shape'
-        elif hasattr(v, 'table') and v.table is not None:
-            return 'table'
-        elif hasattr(v, 'image') and v.image is not None:
-            return 'image'
-        elif hasattr(v, 'video') and v.video is not None:
-            return 'video'
-        elif hasattr(v, 'line') and v.line is not None:
-            return 'line'
-        elif hasattr(v, 'wordArt') and v.wordArt is not None:
-            return 'wordArt'
-        elif hasattr(v, 'sheetsChart') and v.sheetsChart is not None:
-            return 'sheetsChart'
-        elif hasattr(v, 'speakerSpotlight') and v.speakerSpotlight is not None:
-            return 'speakerSpotlight'
-        elif hasattr(v, 'elementGroup') and v.elementGroup is not None:
-            return 'group'
+        if hasattr(v, "shape") and v.shape is not None:
+            return "shape"
+        elif hasattr(v, "table") and v.table is not None:
+            return "table"
+        elif hasattr(v, "image") and v.image is not None:
+            return "image"
+        elif hasattr(v, "video") and v.video is not None:
+            return "video"
+        elif hasattr(v, "line") and v.line is not None:
+            return "line"
+        elif hasattr(v, "wordArt") and v.wordArt is not None:
+            return "wordArt"
+        elif hasattr(v, "sheetsChart") and v.sheetsChart is not None:
+            return "sheetsChart"
+        elif hasattr(v, "speakerSpotlight") and v.speakerSpotlight is not None:
+            return "speakerSpotlight"
+        elif hasattr(v, "elementGroup") and v.elementGroup is not None:
+            return "group"
 
     # Return None if no discriminator found - this will raise an error
     return None
@@ -95,7 +99,7 @@ class PageElementBase(GSlidesBaseModel):
 
     def create_copy(self, parent_id: str, presentation_id: str):
         request = self.create_request(parent_id)
-        out = slides_batch_update(request, presentation_id)
+        out = batch_update(request, presentation_id)
         try:
             request_type = list(out["replies"][0].keys())[0]
             new_element_id = out["replies"][0][request_type]["objectId"]
@@ -132,7 +136,7 @@ class PageElementBase(GSlidesBaseModel):
             element_id = self.objectId
         requests = self.element_to_update_request(element_id)
         if len(requests):
-            out = slides_batch_update(requests, presentation_id)
+            out = batch_update(requests, presentation_id)
             return out
         else:
             return {}
@@ -175,15 +179,16 @@ class PageElementBase(GSlidesBaseModel):
     def element_to_update_request(self, element_id: str) -> List[Dict[str, Any]]:
         """Convert a PageElement to an update request for the Google Slides API.
 
-        This method should be overridden by subclasses to add element-specific update logic.
-        The base implementation only handles title and description updates.
-
-        :param element_id: The id of the element to update, if not the same as objectId
-        :type element_id: str
-        :return: The update request
-        :rtype: list
+        This method should be overridden by subclasses.
         """
-        return self.get_base_update_requests(element_id)
+        raise NotImplementedError("Subclasses must implement element_to_update_request method")
+
+    def to_markdown(self) -> str | None:
+        """Convert a PageElement to markdown.
+
+        This method should be overridden by subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement to_markdown method")
 
 
 class ShapeElement(PageElementBase):
@@ -260,6 +265,25 @@ class ShapeElement(PageElementBase):
 
         return requests + shape_requests
 
+    def to_markdown(self) -> str | None:
+        # TODO: make an implementation that doesn't suck
+        if hasattr(self.shape, "text") and self.shape.text is not None:
+            if self.shape.text.textElements:
+                out = []
+                for te in self.shape.text.textElements:
+                    if te.textRun is not None:
+                        out.append(te.textRun.content)
+                return "".join(out)
+            else:
+                return None
+
+    def write_plain_text_requests(self, text: str):
+        raise NotImplementedError("Writing plain text to shape elements is not supported yet")
+
+    def write_markdown_requests(self, markdown: str):
+        requests = markdown_processor.create_slides_requests(self.objectId, markdown)
+        return requests
+
 
 class TableElement(PageElementBase):
     """Represents a table element on a slide."""
@@ -321,6 +345,36 @@ class ImageElement(PageElementBase):
             return requests + image_requests
 
         return requests
+
+    def to_markdown(self) -> str | None:
+        url = self.image.sourceUrl
+        if url is None:
+            return None
+        description = self.title or "Image"
+        return f"![{description}]({url})"
+
+    def replace_image_requests(self, new_url: str, method: ImageReplaceMethod | None = None):
+        """
+        Replace image by URL with validation.
+
+        Args:
+            new_url: New image URL
+            method: Optional image replacement method
+
+        Returns:
+            List of requests to replace the image
+        """
+        if not new_url.startswith(("http://", "https://")):
+            raise ValueError("Image URL must start with http:// or https://")
+
+        # Validate URL before attempting replacement
+        if not image_url_is_valid(new_url):
+            raise ValueError(f"Image URL is not accessible or invalid: {new_url}")
+
+        request = {"replaceImage": {"imageObjectId": self.objectId, "url": new_url}}
+        if method is not None:
+            request["replaceImage"]["imageReplaceMethod"] = method.value
+        return [request]
 
 
 class VideoElement(PageElementBase):
@@ -483,7 +537,9 @@ class SpeakerSpotlightElement(PageElementBase):
         """Convert a SpeakerSpotlightElement to a create request for the Google Slides API."""
         # Note: Speaker spotlight creation is not directly supported in the API
         # This is a placeholder implementation
-        raise NotImplementedError("Speaker spotlight creation is not supported by the Google Slides API")
+        raise NotImplementedError(
+            "Speaker spotlight creation is not supported by the Google Slides API"
+        )
 
     def element_to_update_request(self, element_id: str) -> List[Dict[str, Any]]:
         """Convert a SpeakerSpotlightElement to an update request for the Google Slides API."""
@@ -511,15 +567,15 @@ class GroupElement(PageElementBase):
 # Create the discriminated union type
 PageElement = Annotated[
     Union[
-        Annotated[ShapeElement, Tag('shape')],
-        Annotated[TableElement, Tag('table')],
-        Annotated[ImageElement, Tag('image')],
-        Annotated[VideoElement, Tag('video')],
-        Annotated[LineElement, Tag('line')],
-        Annotated[WordArtElement, Tag('wordArt')],
-        Annotated[SheetsChartElement, Tag('sheetsChart')],
-        Annotated[SpeakerSpotlightElement, Tag('speakerSpotlight')],
-        Annotated[GroupElement, Tag('group')],
+        Annotated[ShapeElement, Tag("shape")],
+        Annotated[TableElement, Tag("table")],
+        Annotated[ImageElement, Tag("image")],
+        Annotated[VideoElement, Tag("video")],
+        Annotated[LineElement, Tag("line")],
+        Annotated[WordArtElement, Tag("wordArt")],
+        Annotated[SheetsChartElement, Tag("sheetsChart")],
+        Annotated[SpeakerSpotlightElement, Tag("speakerSpotlight")],
+        Annotated[GroupElement, Tag("group")],
     ],
     Discriminator(element_discriminator),
 ]
