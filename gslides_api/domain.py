@@ -31,10 +31,10 @@ class Size(GSlidesBaseModel):
 class Transform(GSlidesBaseModel):
     """Represents a transformation applied to an element."""
 
-    translateX: float
-    translateY: float
-    scaleX: float
-    scaleY: float
+    translateX: float = 0.0
+    translateY: float = 0.0
+    scaleX: float = 1.0
+    scaleY: float = 1.0
     unit: Optional[str] = None  # Make optional to preserve original JSON exactly
 
 

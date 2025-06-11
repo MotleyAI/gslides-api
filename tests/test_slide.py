@@ -92,7 +92,7 @@ def test_duplicate_preserves_presentation_id(monkeypatch):
     )
 
     # Mock the duplicate_object function to avoid API calls
-    def mock_duplicate_object(object_id, presentation_id):
+    def mock_duplicate_object(object_id, presentation_id, id_map=None):
         return "new-slide-id"
 
     # Mock the from_ids method to avoid API calls

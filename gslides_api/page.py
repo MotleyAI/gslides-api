@@ -1,4 +1,4 @@
-from typing import Optional, List, Union, ForwardRef
+from typing import Optional, List, Union, ForwardRef, Dict
 
 import logging
 
@@ -109,6 +109,7 @@ class Page(GSlidesBaseModel):
         # To avoid circular imports
         json = get_slide_json(presentation_id, slide_id)
         new_slide = cls.model_validate(json)
+        new_slide.presentation_id = presentation_id
         return new_slide
 
     def write_copy(
@@ -191,7 +192,12 @@ class Page(GSlidesBaseModel):
             return []
         return [e for e in self.pageElements if e.image is not None]
 
-    def duplicate(self) -> "Page":
+    def get_element_by_id(self, element_id: str) -> PageElement:
+        if self.pageElements is None:
+            return None
+        return next((e for e in self.pageElements if e.objectId == element_id), None)
+
+    def duplicate(self, id_map: Dict[str, str] = None) -> "Page":
         """
         Duplicates the slide in the same presentation.
 
@@ -200,7 +206,7 @@ class Page(GSlidesBaseModel):
         assert (
             self.presentation_id is not None
         ), "self.presentation_id must be set when calling duplicate()"
-        new_id = duplicate_object(self.objectId, self.presentation_id)
+        new_id = duplicate_object(self.objectId, self.presentation_id, id_map)
         return self.from_ids(self.presentation_id, new_id)
 
     def delete(self) -> None:

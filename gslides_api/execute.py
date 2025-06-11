@@ -4,7 +4,8 @@ from typing import Dict, Any
 import google.auth
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from gslides import creds
+
+from gslides_api.credentials import creds
 
 # The functions in this file are the only interaction with the raw gslides API in this library
 
