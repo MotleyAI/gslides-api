@@ -279,12 +279,19 @@ class ShapeElement(PageElementBase):
             else:
                 return None
 
-    def write_plain_text_requests(self, text: str):
+    def _write_plain_text_requests(self, text: str):
         raise NotImplementedError("Writing plain text to shape elements is not supported yet")
 
-    def write_markdown_requests(self, markdown: str):
+    def _write_markdown_requests(self, markdown: str):
         requests = markdown_processor.create_slides_requests(self.objectId, markdown)
         return requests
+
+    def write_text(self, text: str, as_markdown: bool = True):
+        if as_markdown:
+            requests = self._write_markdown_requests(text)
+        else:
+            requests = self._write_plain_text_requests(text)
+        return batch_update(requests, self.presentation_id)
 
 
 class TableElement(PageElementBase):
@@ -355,7 +362,7 @@ class ImageElement(PageElementBase):
         description = self.title or "Image"
         return f"![{description}]({url})"
 
-    def replace_image_requests(self, new_url: str, method: ImageReplaceMethod | None = None):
+    def _replace_image_requests(self, new_url: str, method: ImageReplaceMethod | None = None):
         """
         Replace image by URL with validation.
 
@@ -377,6 +384,10 @@ class ImageElement(PageElementBase):
         if method is not None:
             request["replaceImage"]["imageReplaceMethod"] = method.value
         return [request]
+
+    def replace_image(self, new_url: str, method: ImageReplaceMethod | None = None):
+        requests = self._replace_image_requests(new_url, method)
+        return batch_update(requests, self.presentation_id)
 
 
 class VideoElement(PageElementBase):

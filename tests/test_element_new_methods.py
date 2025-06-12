@@ -98,11 +98,11 @@ class TestShapeElementWriteMethods:
     """Test ShapeElement write methods."""
 
     def test_write_plain_text_requests_not_implemented(self, slide_3_shape_element):
-        """Test that write_plain_text_requests raises NotImplementedError."""
+        """Test that _write_plain_text_requests raises NotImplementedError."""
         with pytest.raises(
             NotImplementedError, match="Writing plain text to shape elements is not supported yet"
         ):
-            slide_3_shape_element.write_plain_text_requests("test text")
+            slide_3_shape_element._write_plain_text_requests("test text")
 
     @patch("gslides_api.element.markdown_processor")
     def test_write_markdown_requests(self, mock_processor, slide_3_shape_element):
@@ -163,7 +163,7 @@ class TestImageElementToMarkdown:
 
 
 class TestImageElementReplaceImageRequests:
-    """Test ImageElement.replace_image_requests() method."""
+    """Test ImageElement._replace_image_requests() method."""
 
     @patch("gslides_api.element.image_url_is_valid")
     def test_replace_image_requests_success(self, mock_validate):
@@ -177,7 +177,7 @@ class TestImageElementReplaceImageRequests:
             image=Image(contentUrl="https://example.com/old_image.jpg"),
         )
 
-        result = image_element.replace_image_requests("https://example.com/new_image.jpg")
+        result = image_element._replace_image_requests("https://example.com/new_image.jpg")
 
         mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
         expected_request = [
@@ -191,7 +191,7 @@ class TestImageElementReplaceImageRequests:
         assert result == expected_request
 
     def test_replace_image_requests_invalid_url_protocol(self):
-        """Test replace_image_requests with invalid URL protocol."""
+        """Test _replace_image_requests with invalid URL protocol."""
         image_element = ImageElement(
             objectId="test_image",
             size=Size(width=100, height=100),
@@ -200,11 +200,11 @@ class TestImageElementReplaceImageRequests:
         )
 
         with pytest.raises(ValueError, match="Image URL must start with http:// or https://"):
-            image_element.replace_image_requests("ftp://example.com/image.jpg")
+            image_element._replace_image_requests("ftp://example.com/image.jpg")
 
     @patch("gslides_api.element.image_url_is_valid")
     def test_replace_image_requests_url_not_accessible(self, mock_validate):
-        """Test replace_image_requests with URL that's not accessible."""
+        """Test _replace_image_requests with URL that's not accessible."""
         mock_validate.return_value = False
 
         image_element = ImageElement(
@@ -215,11 +215,11 @@ class TestImageElementReplaceImageRequests:
         )
 
         with pytest.raises(ValueError, match="Image URL is not accessible or invalid"):
-            image_element.replace_image_requests("https://invalid-url.com/image.jpg")
+            image_element._replace_image_requests("https://invalid-url.com/image.jpg")
 
     @patch("gslides_api.element.image_url_is_valid")
     def test_replace_image_requests_with_method(self, mock_validate):
-        """Test replace_image_requests with ImageReplaceMethod."""
+        """Test _replace_image_requests with ImageReplaceMethod."""
         mock_validate.return_value = True
 
         image_element = ImageElement(
@@ -229,7 +229,7 @@ class TestImageElementReplaceImageRequests:
             image=Image(contentUrl="https://example.com/old_image.jpg"),
         )
 
-        result = image_element.replace_image_requests(
+        result = image_element._replace_image_requests(
             "https://example.com/new_image.jpg", ImageReplaceMethod.CENTER_CROP
         )
 
