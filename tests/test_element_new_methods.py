@@ -109,7 +109,7 @@ class TestShapeElementWriteMethods:
         """Test write_markdown_requests method."""
         mock_processor.create_slides_requests.return_value = [{"test": "request"}]
 
-        result = slide_3_shape_element.write_markdown_requests("# Test markdown")
+        result = slide_3_shape_element._write_markdown_requests("# Test markdown")
 
         mock_processor.create_slides_requests.assert_called_once_with(
             slide_3_shape_element.objectId, "# Test markdown"

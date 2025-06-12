@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any, List, Union, Annotated
 from enum import Enum
 
-from pydantic import Field, Discriminator, Tag
+from pydantic import Field, Discriminator, Tag, field_validator
 
 from gslides_api.domain import (
     GSlidesBaseModel,
@@ -96,6 +96,7 @@ class PageElementBase(GSlidesBaseModel):
     transform: Transform
     title: Optional[str] = None
     description: Optional[str] = None
+    type: ElementKind = Field(description="The type of page element", exclude=True)
     # Store the presentation ID for reference but exclude from model_dump
     presentation_id: Optional[str] = Field(default=None, exclude=True)
 
@@ -133,9 +134,15 @@ class PageElementBase(GSlidesBaseModel):
         """
         raise NotImplementedError("Subclasses must implement create_request method")
 
-    def update(self, presentation_id: str, element_id: Optional[str] = None) -> Dict[str, Any]:
+    def update(
+        self, element_id: Optional[str] = None, presentation_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         if element_id is None:
             element_id = self.objectId
+
+        if presentation_id is None:
+            presentation_id = self.presentation_id
+
         requests = self.element_to_update_request(element_id)
         if len(requests):
             out = batch_update(requests, presentation_id)
@@ -197,6 +204,14 @@ class ShapeElement(PageElementBase):
     """Represents a shape element on a slide."""
 
     shape: Shape
+    type: ElementKind = Field(
+        default=ElementKind.SHAPE, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.SHAPE
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a PageElement to a create request for the Google Slides API."""
@@ -267,6 +282,12 @@ class ShapeElement(PageElementBase):
 
         return requests + shape_requests
 
+    def _delete_text_request(self):
+        return [{"deleteText": {"objectId": self.objectId, "textRange": {"type": "ALL"}}}]
+
+    def delete_text(self):
+        return batch_update(self._delete_text_request(), self.presentation_id)
+
     def to_markdown(self) -> str | None:
         # TODO: make an implementation that doesn't suck
         if hasattr(self.shape, "text") and self.shape.text is not None:
@@ -283,14 +304,17 @@ class ShapeElement(PageElementBase):
         raise NotImplementedError("Writing plain text to shape elements is not supported yet")
 
     def _write_markdown_requests(self, markdown: str):
+        # TODO: Parse markdown with a proper parser into logical elements
+        # TODO: have separately applied formatting logic, accepting base_style from current elements
         requests = markdown_processor.create_slides_requests(self.objectId, markdown)
         return requests
 
     def write_text(self, text: str, as_markdown: bool = True):
+        requests = self._delete_text_request()
         if as_markdown:
-            requests = self._write_markdown_requests(text)
+            requests += self._write_markdown_requests(text)
         else:
-            requests = self._write_plain_text_requests(text)
+            requests += self._write_plain_text_requests(text)
         return batch_update(requests, self.presentation_id)
 
 
@@ -298,6 +322,14 @@ class TableElement(PageElementBase):
     """Represents a table element on a slide."""
 
     table: Table
+    type: ElementKind = Field(
+        default=ElementKind.TABLE, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.TABLE
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a TableElement to a create request for the Google Slides API."""
@@ -322,6 +354,14 @@ class ImageElement(PageElementBase):
     """Represents an image element on a slide."""
 
     image: Image
+    type: ElementKind = Field(
+        default=ElementKind.IMAGE, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.IMAGE
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert an ImageElement to a create request for the Google Slides API."""
@@ -394,6 +434,14 @@ class VideoElement(PageElementBase):
     """Represents a video element on a slide."""
 
     video: Video
+    type: ElementKind = Field(
+        default=ElementKind.VIDEO, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.VIDEO
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a VideoElement to a create request for the Google Slides API."""
@@ -436,6 +484,14 @@ class LineElement(PageElementBase):
     """Represents a line element on a slide."""
 
     line: Line
+    type: ElementKind = Field(
+        default=ElementKind.LINE, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.LINE
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a LineElement to a create request for the Google Slides API."""
@@ -473,6 +529,14 @@ class WordArtElement(PageElementBase):
     """Represents a word art element on a slide."""
 
     wordArt: WordArt
+    type: ElementKind = Field(
+        default=ElementKind.WORD_ART, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.WORD_ART
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a WordArtElement to a create request for the Google Slides API."""
@@ -500,6 +564,14 @@ class SheetsChartElement(PageElementBase):
     """Represents a sheets chart element on a slide."""
 
     sheetsChart: SheetsChart
+    type: ElementKind = Field(
+        default=ElementKind.SHEETS_CHART, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.SHEETS_CHART
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a SheetsChartElement to a create request for the Google Slides API."""
@@ -545,6 +617,14 @@ class SpeakerSpotlightElement(PageElementBase):
     """Represents a speaker spotlight element on a slide."""
 
     speakerSpotlight: SpeakerSpotlight
+    type: ElementKind = Field(
+        default=ElementKind.SPEAKER_SPOTLIGHT, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.SPEAKER_SPOTLIGHT
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a SpeakerSpotlightElement to a create request for the Google Slides API."""
@@ -564,6 +644,14 @@ class GroupElement(PageElementBase):
     """Represents a group element on a slide."""
 
     elementGroup: Group
+    type: ElementKind = Field(
+        default=ElementKind.GROUP, description="The type of page element", exclude=True
+    )
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v):
+        return ElementKind.GROUP
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a GroupElement to a create request for the Google Slides API."""

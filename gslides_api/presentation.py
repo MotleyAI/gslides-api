@@ -3,7 +3,13 @@ import logging
 from typing import List, Optional, Dict, Any
 
 from gslides_api import Size, Dimension
-from gslides_api.execute import create_presentation, get_presentation_json
+from gslides_api.execute import (
+    copy_presentation,
+    create_presentation,
+    delete_object,
+    get_presentation_json,
+    batch_update,
+)
 from gslides_api.page import Page
 from gslides_api.domain import GSlidesBaseModel
 
@@ -55,13 +61,18 @@ class Presentation(GSlidesBaseModel):
         presentation_json = get_presentation_json(presentation_id)
         return cls.from_json(presentation_json)
 
-    def clone(self) -> "Presentation":
+    def copy_via_domain_objects(self) -> "Presentation":
         """Clone a presentation in Google Slides."""
         config = self.to_api_format()
         config.pop("presentationId", None)
         config.pop("revisionId", None)
         new_id = create_presentation(config)
         return self.from_id(new_id)
+
+    def copy_via_drive(self, copy_title: Optional[str] = None):
+        copy_title = copy_title or f"Copy of {self.title}"
+        new = copy_presentation(self.presentationId, copy_title)
+        return self.from_id(new["id"])
 
     def sync_from_cloud(self):
         re_p = Presentation.from_id(self.presentationId)
@@ -75,6 +86,9 @@ class Presentation(GSlidesBaseModel):
             )
             return None
         return match[0]
+
+    def delete_slide(self, slide_id: str):
+        delete_object(slide_id, self.presentationId)
 
     @property
     def url(self):

@@ -20,6 +20,7 @@ class Creds:
         self.crdtls: Optional[Credentials] = None
         self.sht_srvc: Optional[Resource] = None
         self.sld_srvc: Optional[Resource] = None
+        self.drive_srvc: Optional[Resource] = None
 
     def set_credentials(self, credentials: Optional[Credentials]) -> None:
         """Sets the credentials
@@ -35,6 +36,9 @@ class Creds:
         logger.info("Building slides connection")
         self.sld_srvc = build("slides", "v1", credentials=credentials)
         logger.info("Built slides connection")
+        logger.info("Building drive connection")
+        self.drive_srvc = build("drive", "v3", credentials=credentials)
+        logger.info("Built drive connection")
 
     @property
     def sheet_service(self) -> Resource:
@@ -62,6 +66,19 @@ class Creds:
         else:
             raise RuntimeError("Must run set_credentials before executing method")
 
+    @property
+    def drive_service(self) -> Resource:
+        """Returns the connects to the drive API
+
+        :raises RuntimeError: Must run set_credentials before executing method
+        :return: API connection
+        :rtype: :class:`googleapiclient.discovery.Resource`
+        """
+        if self.drive_srvc:
+            return self.drive_srvc
+        else:
+            raise RuntimeError("Must run set_credentials before executing method")
+
 
 creds = Creds()
 
@@ -76,6 +93,7 @@ def initialize_credentials(credential_location: str):
     SCOPES = [
         "https://www.googleapis.com/auth/presentations",
         "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
     ]
 
     _creds = None

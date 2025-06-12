@@ -48,6 +48,8 @@ class ShapeType(Enum):
     LINE = "LINE"
     IMAGE = "IMAGE"
     UNKNOWN = "UNKNOWN"
+    CUSTOM = "CUSTOM"
+    CHEVRON = "CHEVRON"
 
 
 class PlaceholderType(Enum):

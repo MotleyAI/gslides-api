@@ -15,8 +15,8 @@ from gslides_api.domain import (
 
 # Import PageElement and ElementKind directly to avoid circular imports
 from gslides_api.element import PageElement, ElementKind
-from gslides_api.execute import batch_update, get_slide_json
-from gslides_api.utils import duplicate_object, delete_object, dict_to_dot_separated_field_list
+from gslides_api.execute import batch_update, delete_object, duplicate_object, get_slide_json
+from gslides_api.utils import dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class Page(GSlidesBaseModel):
         """Override setattr to propagate presentation_id when it's set directly."""
         super().__setattr__(name, value)
         # If presentation_id was just set, propagate it to pageElements
-        if name == "presentation_id" and hasattr(self, 'pageElements'):
+        if name == "presentation_id" and hasattr(self, "pageElements"):
             self._propagate_presentation_id(value)
 
     @classmethod
@@ -256,3 +256,7 @@ class Page(GSlidesBaseModel):
 
 SlidePageProperties.model_rebuild()
 Page.model_rebuild()
+
+
+class Slide(Page):
+    pass

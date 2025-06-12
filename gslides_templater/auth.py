@@ -22,12 +22,14 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_SCOPES = [
     "https://www.googleapis.com/auth/presentations",
-    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/spreadsheets",
 ]
 
 
 class AuthConfig(BaseModel):
     """Configuration for authentication"""
+
     service_account_file: Optional[str] = None
     credentials_path: Optional[str] = None
     token_path: Optional[str] = None
@@ -38,16 +40,19 @@ class AuthConfig(BaseModel):
 
 class SlidesAPIError(Exception):
     """Base exception for Slides API"""
+
     pass
 
 
 class AuthenticationError(SlidesAPIError):
     """Authentication failed"""
+
     pass
 
 
 class TokenRefreshError(SlidesAPIError):
     """Token refresh failed"""
+
     pass
 
 
@@ -76,7 +81,7 @@ class CredentialManager:
         """
         self.scopes = scopes or DEFAULT_SCOPES.copy()
 
-    def from_service_account_file(self, service_account_file: str) -> 'Credentials':
+    def from_service_account_file(self, service_account_file: str) -> "Credentials":
         """
         Create credentials from service account file.
 
@@ -107,7 +112,7 @@ class CredentialManager:
             logger.error(f"Error loading service account credentials: {e}")
             raise AuthenticationError(f"Invalid service account file: {e}")
 
-    def from_saved_token(self, token_file: str) -> Optional['Credentials']:
+    def from_saved_token(self, token_file: str) -> Optional["Credentials"]:
         """
         Load credentials from saved token file.
 
@@ -126,10 +131,10 @@ class CredentialManager:
             return None
 
         try:
-            with open(token_file, 'r', encoding='utf-8') as f:
+            with open(token_file, "r", encoding="utf-8") as f:
                 token_data = json.load(f)
 
-            required_fields = ['token', 'refresh_token', 'client_id', 'client_secret']
+            required_fields = ["token", "refresh_token", "client_id", "client_secret"]
             if not all(field in token_data for field in required_fields):
                 logger.warning(f"Token file missing required fields: {token_file}")
                 return None
@@ -164,10 +169,13 @@ class CredentialManager:
             logger.warning(f"Failed to load token from {token_file}: {e}")
             return None
 
-    def from_oauth_flow(self, client_secrets_file: str,
-                        token_save_path: Optional[str] = None,
-                        use_local_server: bool = True,
-                        timeout: int = 300) -> 'Credentials':
+    def from_oauth_flow(
+        self,
+        client_secrets_file: str,
+        token_save_path: Optional[str] = None,
+        use_local_server: bool = True,
+        timeout: int = 300,
+    ) -> "Credentials":
         """
         Create credentials through OAuth flow.
 
@@ -190,9 +198,7 @@ class CredentialManager:
             raise AuthenticationError(f"OAuth credentials file not found: {client_secrets_file}")
 
         try:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                client_secrets_file, self.scopes
-            )
+            flow = InstalledAppFlow.from_client_secrets_file(client_secrets_file, self.scopes)
 
             if use_local_server:
                 print("Opening browser for authentication...")
@@ -200,7 +206,7 @@ class CredentialManager:
             else:
                 print("Console authentication mode")
                 print("Go to the following URL in your browser:")
-                auth_url, _ = flow.authorization_url(prompt='consent')
+                auth_url, _ = flow.authorization_url(prompt="consent")
                 print(f"\n{auth_url}\n")
 
                 auth_code = input("Enter the authorization code: ").strip()
@@ -221,7 +227,7 @@ class CredentialManager:
             logger.error(f"OAuth authentication failed: {e}")
             raise AuthenticationError(f"OAuth flow failed: {e}")
 
-    def from_application_default(self) -> Optional['Credentials']:
+    def from_application_default(self) -> Optional["Credentials"]:
         """
         Get credentials from Application Default Credentials (ADC).
 
@@ -247,16 +253,16 @@ class CredentialManager:
             token_path.parent.mkdir(parents=True, exist_ok=True)
 
             token_data = {
-                'token': credentials.token,
-                'refresh_token': credentials.refresh_token,
-                'token_uri': credentials.token_uri,
-                'client_id': credentials.client_id,
-                'client_secret': credentials.client_secret,
-                'scopes': credentials.scopes,
-                'expiry': credentials.expiry.isoformat() if credentials.expiry else None
+                "token": credentials.token,
+                "refresh_token": credentials.refresh_token,
+                "token_uri": credentials.token_uri,
+                "client_id": credentials.client_id,
+                "client_secret": credentials.client_secret,
+                "scopes": credentials.scopes,
+                "expiry": credentials.expiry.isoformat() if credentials.expiry else None,
             }
 
-            with open(token_file, 'w', encoding='utf-8') as f:
+            with open(token_file, "w", encoding="utf-8") as f:
                 json.dump(token_data, f, indent=2)
 
             logger.debug(f"Token saved to {token_file}")
@@ -271,8 +277,11 @@ class Credentials:
     Wrapper for Google API credentials with additional functionality.
     """
 
-    def __init__(self, credentials: Union[OAuth2Credentials, ServiceAccountCredentials],
-                 auth_method: str = "unknown"):
+    def __init__(
+        self,
+        credentials: Union[OAuth2Credentials, ServiceAccountCredentials],
+        auth_method: str = "unknown",
+    ):
         """
         Initialize credentials wrapper.
 
@@ -295,7 +304,7 @@ class Credentials:
     @property
     def expired(self) -> bool:
         """Check if credentials are expired."""
-        if not hasattr(self.credentials, 'expired'):
+        if not hasattr(self.credentials, "expired"):
             return False
         return self.credentials.expired
 
@@ -314,7 +323,7 @@ class Credentials:
             if not self.expired:
                 return False
 
-            if not hasattr(self.credentials, 'refresh_token') or not self.credentials.refresh_token:
+            if not hasattr(self.credentials, "refresh_token") or not self.credentials.refresh_token:
                 logger.warning("Cannot refresh credentials: no refresh token")
                 return False
 
@@ -352,17 +361,17 @@ class Credentials:
             Dictionary with credential information
         """
         info = {
-            'auth_method': self.auth_method,
-            'valid': self.valid,
-            'expired': self.expired,
-            'last_refresh': self._last_refresh_time
+            "auth_method": self.auth_method,
+            "valid": self.valid,
+            "expired": self.expired,
+            "last_refresh": self._last_refresh_time,
         }
 
-        if hasattr(self.credentials, 'service_account_email'):
-            info['service_account_email'] = self.credentials.service_account_email
+        if hasattr(self.credentials, "service_account_email"):
+            info["service_account_email"] = self.credentials.service_account_email
 
-        if hasattr(self.credentials, 'refresh_token'):
-            info['has_refresh_token'] = bool(self.credentials.refresh_token)
+        if hasattr(self.credentials, "refresh_token"):
+            info["has_refresh_token"] = bool(self.credentials.refresh_token)
 
         return info
 
@@ -410,9 +419,7 @@ def authenticate(config: Optional[AuthConfig] = None, **kwargs) -> Credentials:
         try:
             logger.info("Starting OAuth flow...")
             return manager.from_oauth_flow(
-                config.credentials_path,
-                config.token_path,
-                timeout=config.oauth_timeout
+                config.credentials_path, config.token_path, timeout=config.oauth_timeout
             )
         except Exception as e:
             logger.warning(f"OAuth authentication failed: {e}")
@@ -433,9 +440,11 @@ def authenticate(config: Optional[AuthConfig] = None, **kwargs) -> Credentials:
     )
 
 
-def setup_oauth_flow(client_secrets_file: str,
-                     token_save_path: str = "token.json",
-                     scopes: Optional[List[str]] = None) -> Credentials:
+def setup_oauth_flow(
+    client_secrets_file: str,
+    token_save_path: str = "token.json",
+    scopes: Optional[List[str]] = None,
+) -> Credentials:
     """
     Set up OAuth flow for interactive authentication.
 
@@ -502,10 +511,10 @@ def create_service_account_template(output_file: str = "service_account_template
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
         "token_uri": "https://oauth2.googleapis.com/token",
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-service-account%40your-project-id.iam.gserviceaccount.com"
+        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-service-account%40your-project-id.iam.gserviceaccount.com",
     }
 
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(template, f, indent=2)
 
     print(f"Service account template created: {output_file}")
@@ -530,11 +539,11 @@ def create_oauth_template(output_file: str = "oauth_credentials_template.json"):
             "token_uri": "https://oauth2.googleapis.com/token",
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
             "client_secret": "your-client-secret",
-            "redirect_uris": ["http://localhost"]
+            "redirect_uris": ["http://localhost"],
         }
     }
 
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(template, f, indent=2)
 
     print(f"OAuth credentials template created: {output_file}")
@@ -558,7 +567,7 @@ def check_credentials_file(file_path: str) -> dict:
         return {"exists": False, "error": "File not found"}
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if "type" in data and data["type"] == "service_account":
@@ -592,7 +601,7 @@ def check_credentials_file(file_path: str) -> dict:
             "exists": True,
             "type": cred_type,
             "valid": len(missing_fields) == 0,
-            "missing_fields": missing_fields
+            "missing_fields": missing_fields,
         }
 
         if cred_type == "service_account":
@@ -611,7 +620,7 @@ def check_credentials_file(file_path: str) -> dict:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
     print("Google Slides Templater Authentication Test")
     print("=" * 50)
