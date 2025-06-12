@@ -2,7 +2,7 @@ from typing import Optional, List, Union, ForwardRef, Dict
 
 import logging
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from gslides_api import PageBackgroundFill, ColorScheme
 from gslides_api.domain import (
@@ -76,6 +76,26 @@ class Page(GSlidesBaseModel):
 
     # Store the presentation ID for reference but exclude from model_dump
     presentation_id: Optional[str] = Field(default=None, exclude=True)
+
+    def _propagate_presentation_id(self, presentation_id: Optional[str] = None) -> None:
+        """Helper method to set presentation_id on all pageElements."""
+        target_id = presentation_id if presentation_id is not None else self.presentation_id
+        if target_id is not None and self.pageElements is not None:
+            for element in self.pageElements:
+                element.presentation_id = target_id
+
+    @model_validator(mode="after")
+    def set_presentation_id_on_elements(self) -> "Page":
+        """Automatically set presentation_id on all pageElements after model creation."""
+        self._propagate_presentation_id()
+        return self
+
+    def __setattr__(self, name: str, value) -> None:
+        """Override setattr to propagate presentation_id when it's set directly."""
+        super().__setattr__(name, value)
+        # If presentation_id was just set, propagate it to pageElements
+        if name == "presentation_id" and hasattr(self, 'pageElements'):
+            self._propagate_presentation_id(value)
 
     @classmethod
     def create_blank(

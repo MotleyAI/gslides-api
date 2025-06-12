@@ -96,6 +96,8 @@ class PageElementBase(GSlidesBaseModel):
     transform: Transform
     title: Optional[str] = None
     description: Optional[str] = None
+    # Store the presentation ID for reference but exclude from model_dump
+    presentation_id: Optional[str] = Field(default=None, exclude=True)
 
     def create_copy(self, parent_id: str, presentation_id: str):
         request = self.create_request(parent_id)
