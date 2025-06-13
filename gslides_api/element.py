@@ -18,7 +18,7 @@ from gslides_api.domain import (
     Group,
     ImageReplaceMethod,
 )
-from gslides_api.execute import batch_update
+from gslides_api.execute import batch_update, upload_image_to_drive
 from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 from gslides_templater import MarkdownProcessor
 
@@ -425,8 +425,21 @@ class ImageElement(PageElementBase):
             request["replaceImage"]["imageReplaceMethod"] = method.value
         return [request]
 
-    def replace_image(self, new_url: str, method: ImageReplaceMethod | None = None):
-        requests = self._replace_image_requests(new_url, method)
+    def replace_image(
+        self,
+        url: str | None = None,
+        file: str | None = None,
+        method: ImageReplaceMethod | None = None,
+    ):
+        if url is None and file is None:
+            raise ValueError("Must specify either url or file")
+        if url is not None and file is not None:
+            raise ValueError("Must specify either url or file, not both")
+
+        if file is not None:
+            url = upload_image_to_drive(file)
+
+        requests = self._replace_image_requests(url, method)
         return batch_update(requests, self.presentation_id)
 
 

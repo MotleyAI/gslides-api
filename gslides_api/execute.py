@@ -1,10 +1,7 @@
 from typing import Dict, Any
+import os
 
-
-import google.auth
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-
+from googleapiclient.http import MediaFileUpload
 from gslides_api.credentials import creds
 
 # The functions in this file are the only interaction with the raw gslides API in this library
@@ -87,3 +84,53 @@ def delete_object(object_id: str, presentation_id: str) -> None:
     """
     request = {"deleteObject": {"objectId": object_id}}
     batch_update([request], presentation_id)
+
+
+def upload_image_to_drive(image_path) -> str:
+    """
+    Uploads an image to Google Drive and returns the public URL.
+
+    Supports PNG, JPEG, and GIF image formats. The image type is automatically
+    detected from the file extension.
+
+    :param image_path: Path to the image file
+    :return: Public URL of the uploaded image
+    :raises ValueError: If the image format is not supported (not PNG, JPEG, or GIF)
+    """
+    # Define supported image formats and their MIME types
+    supported_formats = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif'
+    }
+
+    # Extract file extension and convert to lowercase
+    file_extension = os.path.splitext(image_path)[1].lower()
+
+    # Check if the format is supported
+    if file_extension not in supported_formats:
+        supported_exts = ', '.join(supported_formats.keys())
+        raise ValueError(
+            f"Unsupported image format '{file_extension}'. "
+            f"Supported formats are: {supported_exts}"
+        )
+
+    # Get the appropriate MIME type
+    mime_type = supported_formats[file_extension]
+
+    file_metadata = {"name": os.path.basename(image_path), "mimeType": mime_type}
+    media = MediaFileUpload(image_path, mimetype=mime_type)
+    uploaded = (
+        creds.drive_service.files()
+        .create(body=file_metadata, media_body=media, fields="id")
+        .execute()
+    )
+
+    creds.drive_service.permissions().create(
+        fileId=uploaded["id"],
+        # TODO: do we need "anyone"?
+        body={"type": "anyone", "role": "reader"},
+    ).execute()
+
+    return f"https://drive.google.com/uc?id={uploaded['id']}"
