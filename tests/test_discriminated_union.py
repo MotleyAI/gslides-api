@@ -2,8 +2,9 @@
 
 import pytest
 from pydantic import TypeAdapter, ValidationError
-from gslides_api.element import PageElement, TableElement, ImageElement, VideoElement
+from gslides_api.element.element import PageElement, TableElement, ImageElement, VideoElement
 from gslides_api.domain import Size, Transform, Table, Image, Video, VideoSourceType
+
 
 def test_discriminated_union():
     """Test that the discriminated union correctly instantiates the right subclass."""
@@ -16,14 +17,11 @@ def test_discriminated_union():
         "objectId": "test_id",
         "size": {"width": 100, "height": 100},
         "transform": {"translateX": 0, "translateY": 0, "scaleX": 1, "scaleY": 1},
-        "title": "Test Element"
+        "title": "Test Element",
     }
 
     # Test TableElement
-    table_data = {
-        **base_data,
-        "table": {"rows": 3, "columns": 4}
-    }
+    table_data = {**base_data, "table": {"rows": 3, "columns": 4}}
 
     print("Testing TableElement...")
     table_element = page_element_adapter.validate_python(table_data)
@@ -35,10 +33,7 @@ def test_discriminated_union():
     print()
 
     # Test ImageElement
-    image_data = {
-        **base_data,
-        "image": {"contentUrl": "https://example.com/image.jpg"}
-    }
+    image_data = {**base_data, "image": {"contentUrl": "https://example.com/image.jpg"}}
 
     print("Testing ImageElement...")
     image_element = page_element_adapter.validate_python(image_data)
@@ -55,8 +50,8 @@ def test_discriminated_union():
         "video": {
             "source": "YOUTUBE",
             "id": "dQw4w9WgXcQ",
-            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        }
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        },
     }
 
     print("Testing VideoElement...")
@@ -78,7 +73,7 @@ def test_table_element_instantiation():
         objectId="table_1",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        table=Table(rows=3, columns=4)
+        table=Table(rows=3, columns=4),
     )
     assert isinstance(table_element, TableElement)
     assert table_element.table.rows == 3
@@ -91,7 +86,7 @@ def test_image_element_instantiation():
         objectId="image_1",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        image=Image(contentUrl="https://example.com/image.jpg")
+        image=Image(contentUrl="https://example.com/image.jpg"),
     )
     assert isinstance(image_element, ImageElement)
     assert image_element.image.contentUrl == "https://example.com/image.jpg"
@@ -103,7 +98,7 @@ def test_video_element_instantiation():
         objectId="video_1",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        video=Video(source=VideoSourceType.YOUTUBE, id="dQw4w9WgXcQ")
+        video=Video(source=VideoSourceType.YOUTUBE, id="dQw4w9WgXcQ"),
     )
     assert isinstance(video_element, VideoElement)
     assert video_element.video.source == VideoSourceType.YOUTUBE

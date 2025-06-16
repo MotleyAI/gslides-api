@@ -1,7 +1,7 @@
 import pytest
 from gslides_api.page import Page
 from gslides_api import SlidePageProperties
-from gslides_api.shape_element import ShapeElement
+from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import Size, Transform, Shape, ShapeType, ShapeProperties
 
 

@@ -1,13 +1,13 @@
 import pytest
 from pydantic import TypeAdapter
-from gslides_api.element import (
+from gslides_api.element.element import (
     PageElement,
     LineElement,
     WordArtElement,
     SheetsChartElement,
 )
-from gslides_api.element_parent import PageElementBase
-from gslides_api.shape_element import ShapeElement
+from gslides_api.element.base import PageElementBase
+from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import (
     Size,
     Transform,
