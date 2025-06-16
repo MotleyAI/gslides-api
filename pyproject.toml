@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "gslides-api"
+version = "0.1.0"
+description = ""
+authors = ["motleycrew <info@motleycrew.ai>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.0.0"
+google-auth = "^2.0.0"
+google-api-python-client = "^2.0.0"
+google-auth-oauthlib = "^1.0.0"
+gslides = "^0.1.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
