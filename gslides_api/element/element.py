@@ -1,15 +1,11 @@
-from typing import Optional, Dict, Any, List, Union, Annotated
-from enum import Enum
+from typing import Dict, Any, List, Union, Annotated
 
 from pydantic import Field, Discriminator, Tag, field_validator
 
+
 from gslides_api.domain import (
-    GSlidesBaseModel,
-    Transform,
-    Shape,
     Table,
     Image,
-    Size,
     Video,
     Line,
     WordArt,
@@ -18,28 +14,13 @@ from gslides_api.domain import (
     Group,
     ImageReplaceMethod,
 )
+from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.execute import batch_update, upload_image_to_drive
+from gslides_api.element.shape import ShapeElement
 from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 from gslides_templater import MarkdownProcessor
 
 markdown_processor = MarkdownProcessor()
-
-
-class ElementKind(Enum):
-    """Enumeration of possible page element kinds based on the Google Slides API.
-
-    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages#pageelement
-    """
-
-    GROUP = "elementGroup"
-    SHAPE = "shape"
-    IMAGE = "image"
-    VIDEO = "video"
-    LINE = "line"
-    TABLE = "table"
-    WORD_ART = "wordArt"
-    SHEETS_CHART = "sheetsChart"
-    SPEAKER_SPOTLIGHT = "speakerSpotlight"
 
 
 def element_discriminator(v: Any) -> str:
@@ -86,236 +67,6 @@ def element_discriminator(v: Any) -> str:
 
     # Return None if no discriminator found - this will raise an error
     return None
-
-
-class PageElementBase(GSlidesBaseModel):
-    """Base class for all page elements."""
-
-    objectId: str
-    size: Size
-    transform: Transform
-    title: Optional[str] = None
-    description: Optional[str] = None
-    type: ElementKind = Field(description="The type of page element", exclude=True)
-    # Store the presentation ID for reference but exclude from model_dump
-    presentation_id: Optional[str] = Field(default=None, exclude=True)
-
-    def create_copy(self, parent_id: str, presentation_id: str):
-        request = self.create_request(parent_id)
-        out = batch_update(request, presentation_id)
-        try:
-            request_type = list(out["replies"][0].keys())[0]
-            new_element_id = out["replies"][0][request_type]["objectId"]
-            return new_element_id
-        except:
-            return None
-
-    def element_properties(self, parent_id: str) -> Dict[str, Any]:
-        """Get common element properties for API requests."""
-        # Common element properties
-        element_properties = {
-            "pageObjectId": parent_id,
-            "size": self.size.to_api_format(),
-            "transform": self.transform.to_api_format(),
-        }
-
-        # Add title and description if provided
-        if self.title is not None:
-            element_properties["title"] = self.title
-        if self.description is not None:
-            element_properties["description"] = self.description
-
-        return element_properties
-
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
-        """Convert a PageElement to a create request for the Google Slides API.
-
-        This method should be overridden by subclasses.
-        """
-        raise NotImplementedError("Subclasses must implement create_request method")
-
-    def update(
-        self, element_id: Optional[str] = None, presentation_id: Optional[str] = None
-    ) -> Dict[str, Any]:
-        if element_id is None:
-            element_id = self.objectId
-
-        if presentation_id is None:
-            presentation_id = self.presentation_id
-
-        requests = self.element_to_update_request(element_id)
-        if len(requests):
-            out = batch_update(requests, presentation_id)
-            return out
-        else:
-            return {}
-
-    def get_base_update_requests(self, element_id: str) -> List[Dict[str, Any]]:
-        """Convert a PageElement to an update request for the Google Slides API.
-        :param element_id: The id of the element to update, if not the same as e objectId
-        :type element_id: str, optional
-        :return: The update request
-        :rtype: list
-
-        """
-
-        # Update title and description if provided
-        requests = []
-        if self.title is not None or self.description is not None:
-            update_fields = []
-            properties = {}
-
-            if self.title is not None:
-                properties["title"] = self.title
-                update_fields.append("title")
-
-            if self.description is not None:
-                properties["description"] = self.description
-                update_fields.append("description")
-
-            if update_fields:
-                requests.append(
-                    {
-                        "updatePageElementProperties": {
-                            "objectId": element_id,
-                            "pageElementProperties": properties,
-                            "fields": ",".join(update_fields),
-                        }
-                    }
-                )
-        return requests
-
-    def element_to_update_request(self, element_id: str) -> List[Dict[str, Any]]:
-        """Convert a PageElement to an update request for the Google Slides API.
-
-        This method should be overridden by subclasses.
-        """
-        raise NotImplementedError("Subclasses must implement element_to_update_request method")
-
-    def to_markdown(self) -> str | None:
-        """Convert a PageElement to markdown.
-
-        This method should be overridden by subclasses.
-        """
-        raise NotImplementedError("Subclasses must implement to_markdown method")
-
-
-class ShapeElement(PageElementBase):
-    """Represents a shape element on a slide."""
-
-    shape: Shape
-    type: ElementKind = Field(
-        default=ElementKind.SHAPE, description="The type of page element", exclude=True
-    )
-
-    @field_validator("type")
-    @classmethod
-    def validate_type(cls, v):
-        return ElementKind.SHAPE
-
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
-        """Convert a PageElement to a create request for the Google Slides API."""
-        element_properties = self.element_properties(parent_id)
-        return [
-            {
-                "createShape": {
-                    "elementProperties": element_properties,
-                    "shapeType": self.shape.shapeType.value,
-                }
-            }
-        ]
-
-    def element_to_update_request(self, element_id: str) -> List[Dict[str, Any]]:
-        """Convert a PageElement to an update request for the Google Slides API.
-        :param element_id: The id of the element to update, if not the same as e objectId
-        :type element_id: str, optional
-        :return: The update request
-        :rtype: list
-
-        """
-
-        # Update title and description if provided
-        requests = self.get_base_update_requests(element_id)
-
-        # shape_properties = self.shape.shapeProperties.to_api_format()
-        ## TODO: fix the below, now causes error
-        # b'{\n  "error": {\n    "code": 400,\n    "message": "Invalid requests[0].updateShapeProperties: Updating shapeBackgroundFill propertyState to INHERIT is not supported for shape with no placeholder parent shape",\n    "status": "INVALID_ARGUMENT"\n  }\n}\n'
-        # out = [
-        #     {
-        #         "updateShapeProperties": {
-        #             "objectId": element_id,
-        #             "shapeProperties": shape_properties,
-        #             "fields": "*",
-        #         }
-        #     }
-        # ]
-        shape_requests = []
-        if self.shape.text is None:
-            return requests
-        for te in self.shape.text.textElements:
-            if te.textRun is None:
-                # TODO: What is the role of empty ParagraphMarkers?
-                continue
-
-            style = te.textRun.style.to_api_format()
-            shape_requests += [
-                {
-                    "insertText": {
-                        "objectId": element_id,
-                        "text": te.textRun.content,
-                        "insertionIndex": te.startIndex,
-                    }
-                },
-                {
-                    "updateTextStyle": {
-                        "objectId": element_id,
-                        "textRange": {
-                            "startIndex": te.startIndex or 0,
-                            "endIndex": te.endIndex,
-                            "type": "FIXED_RANGE",
-                        },
-                        "style": style,
-                        "fields": "*",
-                    }
-                },
-            ]
-
-        return requests + shape_requests
-
-    def _delete_text_request(self):
-        return [{"deleteText": {"objectId": self.objectId, "textRange": {"type": "ALL"}}}]
-
-    def delete_text(self):
-        return batch_update(self._delete_text_request(), self.presentation_id)
-
-    def to_markdown(self) -> str | None:
-        # TODO: make an implementation that doesn't suck
-        if hasattr(self.shape, "text") and self.shape.text is not None:
-            if self.shape.text.textElements:
-                out = []
-                for te in self.shape.text.textElements:
-                    if te.textRun is not None:
-                        out.append(te.textRun.content)
-                return "".join(out)
-            else:
-                return None
-
-    def _write_plain_text_requests(self, text: str):
-        raise NotImplementedError("Writing plain text to shape elements is not supported yet")
-
-    def _write_markdown_requests(self, markdown: str):
-        # TODO: Parse markdown with a proper parser into logical elements
-        # TODO: have separately applied formatting logic, accepting base_style from current elements
-        requests = markdown_processor.create_slides_requests(self.objectId, markdown)
-        return requests
-
-    def write_text(self, text: str, as_markdown: bool = True):
-        requests = self._delete_text_request()
-        if as_markdown:
-            requests += self._write_markdown_requests(text)
-        else:
-            requests += self._write_plain_text_requests(text)
-        return batch_update(requests, self.presentation_id)
 
 
 class TableElement(PageElementBase):

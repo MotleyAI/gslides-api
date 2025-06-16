@@ -1,15 +1,34 @@
 import pytest
 from pydantic import TypeAdapter
 from gslides_api.element import (
-    PageElement, PageElementBase, ShapeElement, LineElement,
-    WordArtElement, SheetsChartElement
+    PageElement,
+    LineElement,
+    WordArtElement,
+    SheetsChartElement,
 )
+from gslides_api.element_parent import PageElementBase
+from gslides_api.shape_element import ShapeElement
 from gslides_api.domain import (
-    Size, Transform, Shape, ShapeProperties, ShapeType,
-    Line, LineProperties, WordArt, SheetsChart, SheetsChartProperties,
-    SpeakerSpotlight, SpeakerSpotlightProperties, Group, Video, VideoProperties,
-    Image, ImageProperties, Table
+    Size,
+    Transform,
+    Shape,
+    ShapeProperties,
+    ShapeType,
+    Line,
+    LineProperties,
+    WordArt,
+    SheetsChart,
+    SheetsChartProperties,
+    SpeakerSpotlight,
+    SpeakerSpotlightProperties,
+    Group,
+    Video,
+    VideoProperties,
+    Image,
+    ImageProperties,
+    Table,
 )
+
 
 def test_page_element_base_fields():
     """Test that PageElementBase has all the required fields."""
@@ -20,7 +39,7 @@ def test_page_element_base_fields():
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
         title="Test Title",
         description="Test Description",
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties())
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     assert element.objectId == "test_id"
@@ -34,16 +53,14 @@ def test_page_element_base_fields():
     assert element.description == "Test Description"
     assert element.shape is not None
 
+
 def test_shape_element():
     """Test ShapeElement functionality."""
     element = ShapeElement(
         objectId="shape_id",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        shape=Shape(
-            shapeType=ShapeType.RECTANGLE,
-            shapeProperties=ShapeProperties()
-        )
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     assert element.shape is not None
@@ -55,16 +72,14 @@ def test_shape_element():
     assert "createShape" in request[0]
     assert request[0]["createShape"]["shapeType"] == "RECTANGLE"
 
+
 def test_line_element():
     """Test LineElement functionality."""
     element = LineElement(
         objectId="line_id",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        line=Line(
-            lineType="STRAIGHT",
-            lineProperties=LineProperties()
-        )
+        line=Line(lineType="STRAIGHT", lineProperties=LineProperties()),
     )
 
     assert element.line is not None
@@ -76,15 +91,14 @@ def test_line_element():
     assert "createLine" in request[0]
     assert request[0]["createLine"]["lineCategory"] == "STRAIGHT"
 
+
 def test_word_art_element():
     """Test WordArtElement functionality."""
     element = WordArtElement(
         objectId="wordart_id",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        wordArt=WordArt(
-            renderedText="Test Word Art"
-        )
+        wordArt=WordArt(renderedText="Test Word Art"),
     )
 
     assert element.wordArt is not None
@@ -96,6 +110,7 @@ def test_word_art_element():
     assert "createWordArt" in request[0]
     assert request[0]["createWordArt"]["renderedText"] == "Test Word Art"
 
+
 def test_sheets_chart_element():
     """Test SheetsChartElement functionality."""
     element = SheetsChartElement(
@@ -105,8 +120,8 @@ def test_sheets_chart_element():
         sheetsChart=SheetsChart(
             spreadsheetId="spreadsheet_id",
             chartId=123,
-            sheetsChartProperties=SheetsChartProperties()
-        )
+            sheetsChartProperties=SheetsChartProperties(),
+        ),
     )
 
     assert element.sheetsChart is not None
@@ -120,6 +135,7 @@ def test_sheets_chart_element():
     assert request[0]["createSheetsChart"]["spreadsheetId"] == "spreadsheet_id"
     assert request[0]["createSheetsChart"]["chartId"] == 123
 
+
 def test_update_request_with_title_description():
     """Test that update request includes title and description."""
     element = ShapeElement(
@@ -128,7 +144,7 @@ def test_update_request_with_title_description():
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
         title="Updated Title",
         description="Updated Description",
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties())
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     request = element.element_to_update_request("element_id")
@@ -141,8 +157,14 @@ def test_update_request_with_title_description():
             break
 
     assert update_request is not None
-    assert update_request["updatePageElementProperties"]["pageElementProperties"]["title"] == "Updated Title"
-    assert update_request["updatePageElementProperties"]["pageElementProperties"]["description"] == "Updated Description"
+    assert (
+        update_request["updatePageElementProperties"]["pageElementProperties"]["title"]
+        == "Updated Title"
+    )
+    assert (
+        update_request["updatePageElementProperties"]["pageElementProperties"]["description"]
+        == "Updated Description"
+    )
 
 
 def test_discriminated_union_with_type_adapter():
@@ -154,10 +176,7 @@ def test_discriminated_union_with_type_adapter():
         "objectId": "shape_id",
         "size": {"width": 100, "height": 100},
         "transform": {"translateX": 0, "translateY": 0, "scaleX": 1, "scaleY": 1},
-        "shape": {
-            "shapeType": "RECTANGLE",
-            "shapeProperties": {}
-        }
+        "shape": {"shapeType": "RECTANGLE", "shapeProperties": {}},
     }
 
     element = page_element_adapter.validate_python(shape_data)

@@ -1,7 +1,7 @@
 import pytest
 from gslides_api.page import Page
 from gslides_api import SlidePageProperties
-from gslides_api.element import ShapeElement
+from gslides_api.shape_element import ShapeElement
 from gslides_api.domain import Size, Transform, Shape, ShapeType, ShapeProperties
 
 
@@ -134,21 +134,21 @@ def test_presentation_id_propagation_on_creation():
         objectId="element1",
         size=Size(width=100, height=50),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0, translateY=0),
-        shape=Shape(shapeType=ShapeType.TEXT_BOX, shapeProperties=ShapeProperties())
+        shape=Shape(shapeType=ShapeType.TEXT_BOX, shapeProperties=ShapeProperties()),
     )
 
     element2 = ShapeElement(
         objectId="element2",
         size=Size(width=200, height=100),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=100, translateY=100),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties())
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Create Page with presentation_id and pageElements
     page = Page(
         objectId="slide1",
         presentation_id="test-presentation-123",
-        pageElements=[element1, element2]
+        pageElements=[element1, element2],
     )
 
     # Verify that presentation_id was propagated to all elements
@@ -164,21 +164,21 @@ def test_presentation_id_propagation_on_modification():
         objectId="element1",
         size=Size(width=100, height=50),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0, translateY=0),
-        shape=Shape(shapeType=ShapeType.TEXT_BOX, shapeProperties=ShapeProperties())
+        shape=Shape(shapeType=ShapeType.TEXT_BOX, shapeProperties=ShapeProperties()),
     )
 
     element2 = ShapeElement(
         objectId="element2",
         size=Size(width=200, height=100),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=100, translateY=100),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties())
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Create Page with initial presentation_id
     page = Page(
         objectId="slide1",
         presentation_id="initial-presentation-id",
-        pageElements=[element1, element2]
+        pageElements=[element1, element2],
     )
 
     # Verify initial state
@@ -198,10 +198,7 @@ def test_presentation_id_propagation_on_modification():
 def test_presentation_id_propagation_with_no_elements():
     """Test that Page with no pageElements works correctly and doesn't crash."""
     # Create Page with no pageElements
-    page = Page(
-        objectId="slide2",
-        presentation_id="test-presentation-789"
-    )
+    page = Page(objectId="slide2", presentation_id="test-presentation-789")
 
     # Verify that presentation_id is set correctly
     assert page.presentation_id == "test-presentation-789"
@@ -214,11 +211,7 @@ def test_presentation_id_propagation_with_no_elements():
 def test_presentation_id_propagation_with_empty_elements_list():
     """Test that Page with empty pageElements list works correctly."""
     # Create Page with empty pageElements list
-    page = Page(
-        objectId="slide3",
-        presentation_id="test-presentation-empty",
-        pageElements=[]
-    )
+    page = Page(objectId="slide3", presentation_id="test-presentation-empty", pageElements=[])
 
     # Verify that presentation_id is set correctly
     assert page.presentation_id == "test-presentation-empty"
@@ -231,17 +224,14 @@ def test_presentation_id_propagation_with_empty_elements_list():
 def test_presentation_id_propagation_when_adding_elements_later():
     """Test that pageElements added after Page creation get correct presentation_id."""
     # Create Page without pageElements initially
-    page = Page(
-        objectId="slide4",
-        presentation_id="test-presentation-later"
-    )
+    page = Page(objectId="slide4", presentation_id="test-presentation-later")
 
     # Create and add pageElements later
     element = ShapeElement(
         objectId="element3",
         size=Size(width=150, height=75),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=200, translateY=200),
-        shape=Shape(shapeType=ShapeType.ELLIPSE, shapeProperties=ShapeProperties())
+        shape=Shape(shapeType=ShapeType.ELLIPSE, shapeProperties=ShapeProperties()),
     )
 
     page.pageElements = [element]

@@ -4,17 +4,20 @@ import logging
 
 from pydantic import Field, model_validator
 
-from gslides_api import PageBackgroundFill, ColorScheme
+from gslides_api.element.base import ElementKind
+
 from gslides_api.domain import (
     GSlidesBaseModel,
     MasterProperties,
     NotesProperties,
     PageType,
     LayoutReference,
+    PageBackgroundFill,
+    ColorScheme,
 )
 
 # Import PageElement and ElementKind directly to avoid circular imports
-from gslides_api.element import PageElement, ElementKind
+from gslides_api.element.element import PageElement
 from gslides_api.execute import batch_update, delete_object, duplicate_object, get_slide_json
 from gslides_api.utils import dict_to_dot_separated_field_list
 
@@ -197,14 +200,14 @@ class Page(GSlidesBaseModel):
                         element_id = layout_elements[i].objectId
                     else:
                         element_id = element.create_copy(slide_id, presentation_id)
-                    element.update(presentation_id, element_id)
+                    element.update(presentation_id=presentation_id, element_id=element_id)
 
         return self.from_ids(presentation_id, slide_id)
 
     def select_elements(self, kind: ElementKind) -> List[PageElement]:
         if self.pageElements is None:
             return []
-        return [e for e in self.pageElements if getattr(e, kind.value) is not None]
+        return [e for e in self.pageElements if e.type == kind]
 
     @property
     def image_elements(self):
