@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from pydantic import Field, field_validator
 
 
-from gslides_api.domain import Shape, TextElement
+from gslides_api.domain import Shape, TextElement, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.execute import batch_update
 from gslides_api.markdown import markdown_to_text_elements
@@ -81,20 +81,31 @@ class ShapeElement(PageElementBase):
             else:
                 return None
 
-    def _write_plain_text_requests(self, text: str):
+    def _write_plain_text_requests(self, text: str, style: TextStyle | None = None):
         raise NotImplementedError("Writing plain text to shape elements is not supported yet")
 
-    def _write_markdown_requests(self, markdown: str):
-        elements = markdown_to_text_elements(markdown)
+    def _write_markdown_requests(self, markdown: str, style: TextStyle | None = None):
+        elements = markdown_to_text_elements(markdown, base_style=style)
         requests = text_elements_to_requests(elements, self.objectId)
         return requests
+
+    @property
+    def style(self):
+        if not hasattr(self.shape, "text") or self.shape.text is None:
+            return None
+        if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
+            return None
+        for te in self.shape.text.textElements:
+            if te.textRun is None:
+                continue
+            return te.textRun.style
 
     def write_text(self, text: str, as_markdown: bool = True):
         requests = self._delete_text_request()
         if as_markdown:
-            requests += self._write_markdown_requests(text)
+            requests += self._write_markdown_requests(text, style=self.style)
         else:
-            requests += self._write_plain_text_requests(text)
+            requests += self._write_plain_text_requests(text, style=self.style)
         return batch_update(requests, self.presentation_id)
 
 
