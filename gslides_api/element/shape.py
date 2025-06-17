@@ -71,16 +71,138 @@ class ShapeElement(PageElementBase):
         return batch_update(self._delete_text_request(), self.presentation_id)
 
     def to_markdown(self) -> str | None:
-        # TODO: make an implementation that doesn't suck
-        if hasattr(self.shape, "text") and self.shape.text is not None:
-            if self.shape.text.textElements:
-                out = []
-                for te in self.shape.text.textElements:
-                    if te.textRun is not None:
-                        out.append(te.textRun.content)
-                return "".join(out)
+        """Convert the shape's text content back to markdown format.
+
+        This method reconstructs markdown from the Google Slides API response,
+        handling formatting like bold, italic, bullet points, and code spans.
+        """
+        if not hasattr(self.shape, "text") or self.shape.text is None:
+            return None
+        if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
+            return None
+
+        result = []
+        current_paragraph = []
+        in_bullet_list = False
+
+        for i, te in enumerate(self.shape.text.textElements):
+            # Handle paragraph markers (for bullets and paragraph breaks)
+            if te.paragraphMarker is not None:
+                # Check if this is a bullet point
+                if te.paragraphMarker.bullet is not None:
+                    if not in_bullet_list:
+                        in_bullet_list = True
+                    # Don't add content for paragraph markers, just note the bullet state
+                    continue
+                else:
+                    # Regular paragraph marker - end of bullet list if we were in one
+                    if in_bullet_list:
+                        in_bullet_list = False
+                    continue
+
+            # Handle text runs
+            if te.textRun is not None:
+                content = te.textRun.content
+                style = te.textRun.style
+
+                # Handle bullet points - add bullet marker at start of line
+                if in_bullet_list and content.strip() and not current_paragraph:
+                    current_paragraph.append("* ")
+
+                # Apply formatting based on style
+                formatted_content = self._apply_markdown_formatting(content, style)
+                current_paragraph.append(formatted_content)
+
+                # Handle line breaks
+                if '\n' in content:
+                    # Join current paragraph and add to result
+                    paragraph_text = ''.join(current_paragraph).rstrip()
+                    if paragraph_text:
+                        result.append(paragraph_text)
+                    current_paragraph = []
+
+        # Add any remaining paragraph content
+        if current_paragraph:
+            paragraph_text = ''.join(current_paragraph).rstrip()
+            if paragraph_text:
+                result.append(paragraph_text)
+
+        return '\n'.join(result) if result else None
+
+    def _apply_markdown_formatting(self, content: str, style) -> str:
+        """Apply markdown formatting to content based on text style."""
+        if style is None:
+            return content
+
+        # Handle hyperlinks first (they take precedence)
+        if (hasattr(style, 'link') and style.link):
+            # Handle both dict and object cases
+            url = None
+            if isinstance(style.link, dict) and 'url' in style.link:
+                url = style.link['url']
+            elif hasattr(style.link, 'url'):
+                url = style.link.url
+
+            if url:
+                # For links, format as [text](url)
+                clean_content = content.strip()
+                if clean_content:
+                    return f"[{clean_content}]({url})"
+            return content
+
+        # Handle code spans (different font family)
+        if (hasattr(style, 'fontFamily') and style.fontFamily and
+            style.fontFamily.lower() in ['courier new', 'courier', 'monospace']):
+            # For code spans, only format the non-whitespace content
+            if content.strip():
+                return f"`{content.strip()}`"
+            return content
+
+        # For formatting, we need to preserve leading/trailing spaces
+        # but only format the actual text content
+        leading_space = ''
+        trailing_space = ''
+        text_content = content
+
+        # Extract leading spaces
+        for char in content:
+            if char in ' \t':
+                leading_space += char
             else:
-                return None
+                break
+
+        # Extract trailing spaces (but not newlines)
+        temp_content = content.rstrip('\n')
+        trailing_newlines = content[len(temp_content):]
+
+        for char in reversed(temp_content):
+            if char in ' \t':
+                trailing_space = char + trailing_space
+            else:
+                break
+
+        # Get the actual text content without leading/trailing spaces
+        text_content = content.strip(' \t').rstrip('\n')
+
+        # Apply formatting only to the text content
+        if text_content:
+            # Handle strikethrough first (can combine with other formatting)
+            if hasattr(style, 'strikethrough') and style.strikethrough:
+                text_content = f"~~{text_content}~~"
+
+            # Handle combined bold and italic (***text***)
+            if (hasattr(style, 'bold') and style.bold and
+                hasattr(style, 'italic') and style.italic):
+                text_content = f"***{text_content}***"
+            # Handle bold only
+            elif hasattr(style, 'bold') and style.bold:
+                text_content = f"**{text_content}**"
+            # Handle italic only
+            elif hasattr(style, 'italic') and style.italic:
+                text_content = f"*{text_content}*"
+
+        # Reconstruct with preserved spacing
+        return leading_space + text_content + trailing_space + trailing_newlines
 
     def _write_plain_text_requests(self, text: str, style: TextStyle | None = None):
         raise NotImplementedError("Writing plain text to shape elements is not supported yet")

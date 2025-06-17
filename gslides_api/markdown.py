@@ -2,6 +2,8 @@ import copy
 from typing import Optional, Any, List
 
 import marko
+from marko.ext.gfm import gfm
+from marko.ext.gfm.elements import Strikethrough
 from marko.inline import RawText
 from pydantic import BaseModel
 
@@ -29,7 +31,8 @@ def markdown_to_text_elements(
     start_index: int = 0,
     bullet_glyph_preset: Optional[BulletGlyphPreset] = BulletGlyphPreset.BULLET_DISC_CIRCLE_SQUARE,
 ) -> list[TextElement | CreateParagraphBulletsRequest]:
-    doc = marko.parse(markdown_text)
+    # Use GFM parser to support strikethrough and other GitHub Flavored Markdown features
+    doc = gfm.parse(markdown_text)
     elements_and_bullets = markdown_ast_to_text_elements(doc, base_style=base_style)
     elements = [e for e in elements_and_bullets if isinstance(e, TextElement)]
     bullets = [b for b in elements_and_bullets if isinstance(b, BulletPointGroup)]
@@ -98,6 +101,23 @@ def markdown_ast_to_text_elements(
         style = copy.deepcopy(style)
         style.bold = True
         out = markdown_ast_to_text_elements(markdown_ast.children[0], style)
+
+    elif isinstance(markdown_ast, marko.inline.Link):
+        # Handle hyperlinks by setting the link property in the style
+        style = copy.deepcopy(style)
+        style.link = {"url": markdown_ast.dest}
+        # Process the link text (children)
+        out = sum(
+            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
+        )
+
+    elif isinstance(markdown_ast, Strikethrough):
+        # Handle strikethrough text
+        style = copy.deepcopy(style)
+        style.strikethrough = True
+        out = sum(
+            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
+        )
 
     elif isinstance(markdown_ast, marko.block.Paragraph):
         out = sum(

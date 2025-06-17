@@ -9,9 +9,28 @@ here = os.path.dirname(os.path.abspath(__file__))
 credential_location = "/home/james/Dropbox/PyCharmProjects/gslides-playground/"
 initialize_credentials(credential_location)
 
-md = """This is a ***very*** *important* report 
+md = """# Comprehensive Markdown Test
+
+This is a ***very*** *important* report with **bold** text.
+
+## Currently Supported Features
+
 * It illustrates **bullet points**
 * And even `code` blocks
+* Plus *italic* formatting
+
+## New Features to Test
+
+Here's a [link to Google](https://google.com) for testing hyperlinks.
+
+Some ~~strikethrough~~ text to test deletion formatting.
+
+Ordered list example:
+1. First numbered item
+2. Second with **bold** text
+3. Third with `inline code`
+
+Mixed content with [links](https://example.com) and ~~crossed out~~ text.
 """
 
 out = marko.parse(md)
@@ -31,3 +50,46 @@ new_slide.pageElements[3].write_text(md, as_markdown=True)
 new_slide = Slide.from_ids(presentation_id, new_slide.objectId)
 print(new_slide.pageElements[3].model_dump())
 print("Kind of a copy written!")
+
+# Test markdown reconstruction
+print("\n" + "="*50)
+print("TESTING MARKDOWN RECONSTRUCTION")
+print("="*50)
+
+original_markdown = md.strip()
+print(f"Original markdown:\n{repr(original_markdown)}")
+
+reconstructed_markdown = new_slide.pageElements[3].to_markdown()
+print(f"\nReconstructed markdown:\n{repr(reconstructed_markdown)}")
+
+# Test if reconstruction is successful
+if reconstructed_markdown:
+    print(f"\nOriginal formatted:\n{original_markdown}")
+    print(f"\nReconstructed formatted:\n{reconstructed_markdown}")
+
+    # Simple comparison (ignoring minor whitespace differences)
+    original_normalized = ' '.join(original_markdown.split())
+    reconstructed_normalized = ' '.join(reconstructed_markdown.split()) if reconstructed_markdown else ""
+
+    if original_normalized == reconstructed_normalized:
+        print("\n✅ SUCCESS: Markdown reconstruction matches original!")
+    else:
+        print("\n❌ DIFFERENCE: Markdown reconstruction differs from original")
+        print(f"Original normalized: {repr(original_normalized)}")
+        print(f"Reconstructed normalized: {repr(reconstructed_normalized)}")
+
+        # Show character-by-character differences
+        import difflib
+        diff = list(difflib.unified_diff(
+            original_markdown.splitlines(keepends=True),
+            reconstructed_markdown.splitlines(keepends=True) if reconstructed_markdown else [],
+            fromfile='original',
+            tofile='reconstructed',
+            lineterm=''
+        ))
+        if diff:
+            print("\nDetailed differences:")
+            for line in diff:
+                print(line.rstrip())
+else:
+    print("\n❌ FAILED: No markdown was reconstructed")
