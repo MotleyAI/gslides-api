@@ -1,29 +1,66 @@
 import copy
-from typing import Optional, Any
+from typing import Optional, Any, List
 
 import marko
 from marko.inline import RawText
+from pydantic import BaseModel
+
 
 from gslides_api import TextElement
-from gslides_api.domain import TextRun, TextStyle
+from gslides_api.domain import BulletGlyphPreset, TextRun, TextStyle
+from gslides_api.requests import CreateParagraphBulletsRequest, Range, RangeType
+
+
+class BulletPointGroup(BaseModel):
+    children: List[TextElement]
+
+    @property
+    def start_index(self):
+        return self.children[0].startIndex
+
+    @property
+    def end_index(self):
+        return self.children[-1].endIndex
 
 
 def markdown_to_text_elements(
-    markdown_text: str, base_style: Optional[TextStyle] = None
-) -> list[TextElement]:
+    markdown_text: str,
+    base_style: Optional[TextStyle] = None,
+    start_index: int = 0,
+    bullet_glyph_preset: Optional[BulletGlyphPreset] = BulletGlyphPreset.BULLET_DISC_CIRCLE_SQUARE,
+) -> list[TextElement | CreateParagraphBulletsRequest]:
     doc = marko.parse(markdown_text)
-    elements = markdown_ast_to_text_elements(doc, base_style=base_style)
-    start_index = 0
+    elements_and_bullets = markdown_ast_to_text_elements(doc, base_style=base_style)
+    elements = [e for e in elements_and_bullets if isinstance(e, TextElement)]
+    bullets = [b for b in elements_and_bullets if isinstance(b, BulletPointGroup)]
+
+    # Assign indices to text elements
     for element in elements:
         element.startIndex = start_index
         element.endIndex = start_index + len(element.textRun.content)
         start_index = element.endIndex
+
+    # Sort bullets by start index, in reverse order so trimming the tabs doesn't mess others' indices
+    bullets.sort(key=lambda b: b.start_index, reverse=True)
+    for bullet in bullets:
+        elements.append(
+            CreateParagraphBulletsRequest(
+                objectId="",
+                textRange=Range(
+                    type=RangeType.FIXED_RANGE,
+                    startIndex=bullet.start_index,
+                    endIndex=bullet.end_index,
+                ),
+                bulletPreset=bullet_glyph_preset,
+            )
+        )
+
     return elements
 
 
 def markdown_ast_to_text_elements(
     markdown_ast: Any, base_style: Optional[TextStyle] = None
-) -> list[TextElement]:
+) -> list[TextElement | BulletPointGroup]:
     style = base_style or TextStyle()
     line_break = TextElement(
         endIndex=0,
@@ -40,7 +77,12 @@ def markdown_ast_to_text_elements(
     elif isinstance(markdown_ast, marko.block.BlankLine):
         out = [line_break]
     elif isinstance(markdown_ast, marko.inline.CodeSpan):
-        # TODO: handle code spans properly
+        style = copy.deepcopy(style)
+        style.fontFamily = "Courier New"
+        style.weightedFontFamily = None
+        style.foregroundColor = {
+            "opaqueColor": {"rgbColor": {"red": 0.8, "green": 0.2, "blue": 0.2}}
+        }
         out = [
             TextElement(
                 endIndex=0,
@@ -54,7 +96,7 @@ def markdown_ast_to_text_elements(
 
     elif isinstance(markdown_ast, marko.inline.StrongEmphasis):
         style = copy.deepcopy(style)
-        style.bold = not style.bold
+        style.bold = True
         out = markdown_ast_to_text_elements(markdown_ast.children[0], style)
 
     elif isinstance(markdown_ast, marko.block.Paragraph):
@@ -62,25 +104,35 @@ def markdown_ast_to_text_elements(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
         ) + [line_break]
     elif isinstance(markdown_ast, marko.block.Heading):
-        # TODO: handle heading levels properly, with font size bumps?
+        # TODO: handle heading levels properly, with font size bumps
         style = copy.deepcopy(style)
         style.bold = True
         out = sum(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
-        )
+        ) + [line_break]
 
     elif isinstance(markdown_ast, (marko.block.List, marko.block.Document)):
-        # TODO: handle list items properly, with bullets/numbers
         out = sum(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
         )
     elif isinstance(markdown_ast, marko.block.ListItem):
-        out = sum(
+        # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createparagraphbulletsrequest
+        # The bullet creation API is really messed up, forcing us to insert tabs that will be
+        # discarded as soon as the bullets are created. So we deal with it as best we can
+        pre_out = sum(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
         )
+        out = (
+            [TextElement(endIndex=0, textRun=TextRun(content="\t", style=style))]
+            + pre_out
+            + [BulletPointGroup(children=pre_out)]
+        )
+
     else:
         raise NotImplementedError(f"Unsupported markdown element: {markdown_ast}")
 
     for element in out:
-        assert isinstance(element, TextElement), f"Expected TextElement, got {type(element)}"
+        assert isinstance(
+            element, (TextElement, BulletPointGroup)
+        ), f"Expected TextElement or BulletPointGroup, got {type(element)}"
     return out

@@ -647,6 +647,77 @@ class PredefinedLayout(Enum):
     BIG_NUMBER = "BIG_NUMBER"
 
 
+class BulletGlyphPreset(Enum):
+    """Enumeration of preset patterns of bullet glyphs for lists.
+
+    These patterns use different kinds of bullets for different nesting levels:
+    - ARROW: An arrow, corresponding to Unicode U+2794
+    - ARROW3D: An arrow with 3D shading, corresponding to Unicode U+27a2
+    - CHECKBOX: A hollow square, corresponding to Unicode U+274f
+    - CIRCLE: A hollow circle, corresponding to Unicode U+25cb
+    - DIAMOND: A solid diamond, corresponding to Unicode U+25c6
+    - DIAMONDX: A diamond with an 'x', corresponding to Unicode U+2756
+    - HOLLOWDIAMOND: A hollow diamond, corresponding to Unicode U+25c7
+    - DISC: A solid circle, corresponding to Unicode U+25cf
+    - SQUARE: A solid square, corresponding to Unicode U+25a0
+    - STAR: A star, corresponding to Unicode U+2605
+    - LEFTTRIANGLE: A triangle pointing left, corresponding to Unicode U+25c4
+    - ALPHA: A lowercase letter, like 'a', 'b', or 'c'
+    - UPPERALPHA: An uppercase letter, like 'A', 'B', or 'C'
+    - DECIMAL: A number, like '1', '2', or '3'
+    - ZERODECIMAL: A number where single digits are prefixed with zero, like '01', '02', '03'
+    - ROMAN: A lowercase roman numeral, like 'i', 'ii', or 'iii'
+    - UPPERROMAN: An uppercase roman numeral, like 'I', 'II', or 'III'
+    """
+
+    # Bulleted list presets
+    BULLET_DISC_CIRCLE_SQUARE = "BULLET_DISC_CIRCLE_SQUARE"
+    """A bulleted list with a DISC, CIRCLE and SQUARE bullet glyph for the first 3 list nesting levels."""
+
+    BULLET_DIAMONDX_ARROW3D_SQUARE = "BULLET_DIAMONDX_ARROW3D_SQUARE"
+    """A bulleted list with a DIAMONDX, ARROW3D and SQUARE bullet glyph for the first 3 list nesting levels."""
+
+    BULLET_CHECKBOX = "BULLET_CHECKBOX"
+    """A bulleted list with CHECKBOX bullet glyphs for all list nesting levels."""
+
+    BULLET_ARROW_DIAMOND_DISC = "BULLET_ARROW_DIAMOND_DISC"
+    """A bulleted list with a ARROW, DIAMOND and DISC bullet glyph for the first 3 list nesting levels."""
+
+    BULLET_STAR_CIRCLE_SQUARE = "BULLET_STAR_CIRCLE_SQUARE"
+    """A bulleted list with a STAR, CIRCLE and SQUARE bullet glyph for the first 3 list nesting levels."""
+
+    BULLET_ARROW3D_CIRCLE_SQUARE = "BULLET_ARROW3D_CIRCLE_SQUARE"
+    """A bulleted list with a ARROW3D, CIRCLE and SQUARE bullet glyph for the first 3 list nesting levels."""
+
+    BULLET_LEFTTRIANGLE_DIAMOND_DISC = "BULLET_LEFTTRIANGLE_DIAMOND_DISC"
+    """A bulleted list with a LEFTTRIANGLE, DIAMOND and DISC bullet glyph for the first 3 list nesting levels."""
+
+    BULLET_DIAMONDX_HOLLOWDIAMOND_SQUARE = "BULLET_DIAMONDX_HOLLOWDIAMOND_SQUARE"
+    """A bulleted list with a DIAMONDX, HOLLOWDIAMOND and SQUARE bullet glyph for the first 3 list nesting levels."""
+
+    BULLET_DIAMOND_CIRCLE_SQUARE = "BULLET_DIAMOND_CIRCLE_SQUARE"
+    """A bulleted list with a DIAMOND, CIRCLE and SQUARE bullet glyph for the first 3 list nesting levels."""
+
+    # Numbered list presets
+    NUMBERED_DIGIT_ALPHA_ROMAN = "NUMBERED_DIGIT_ALPHA_ROMAN"
+    """A numbered list with DIGIT, ALPHA and ROMAN numeric glyphs for the first 3 list nesting levels, followed by periods."""
+
+    NUMBERED_DIGIT_ALPHA_ROMAN_PARENS = "NUMBERED_DIGIT_ALPHA_ROMAN_PARENS"
+    """A numbered list with DIGIT, ALPHA and ROMAN numeric glyphs for the first 3 list nesting levels, followed by parenthesis."""
+
+    NUMBERED_DIGIT_NESTED = "NUMBERED_DIGIT_NESTED"
+    """A numbered list with DIGIT numeric glyphs separated by periods, where each nesting level uses the previous nesting level's glyph as a prefix. For example: '1.', '1.1.', '2.', '2.2.'."""
+
+    NUMBERED_UPPERALPHA_ALPHA_ROMAN = "NUMBERED_UPPERALPHA_ALPHA_ROMAN"
+    """A numbered list with UPPERALPHA, ALPHA and ROMAN numeric glyphs for the first 3 list nesting levels, followed by periods."""
+
+    NUMBERED_UPPERROMAN_UPPERALPHA_DIGIT = "NUMBERED_UPPERROMAN_UPPERALPHA_DIGIT"
+    """A numbered list with UPPERROMAN, UPPERALPHA and DIGIT numeric glyphs for the first 3 list nesting levels, followed by periods."""
+
+    NUMBERED_ZERODIGIT_ALPHA_ROMAN = "NUMBERED_ZERODIGIT_ALPHA_ROMAN"
+    """A numbered list with ZERODIGIT, ALPHA and ROMAN numeric glyphs for the first 3 list nesting levels, followed by periods."""
+
+
 class LayoutReference(GSlidesBaseModel):
     """Represents a reference to a layout."""
 

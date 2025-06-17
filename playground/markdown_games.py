@@ -3,22 +3,16 @@ import os
 import marko
 
 from gslides_api import Presentation, initialize_credentials
-
+from gslides_api.page import Slide
 
 here = os.path.dirname(os.path.abspath(__file__))
 credential_location = "/home/james/Dropbox/PyCharmProjects/gslides-playground/"
 initialize_credentials(credential_location)
 
-md = """
-# Title
-Video Analysis Report for {client_name} - Period ending {end_date}
-## Subtitle *yes* **yes**
-This is a *very important* report.
+md = """This is a ***very*** *important* report 
 * It illustrates **bullet points**
-* And *deep* bullet points
-* And *more* bullet points
 * And even `code` blocks
-        """
+"""
 
 out = marko.parse(md)
 print(out)
@@ -34,4 +28,6 @@ source_presentation = Presentation.from_id(presentation_id)
 s = source_presentation.slides[8]
 new_slide = s.write_copy(9)
 new_slide.pageElements[3].write_text(md, as_markdown=True)
+new_slide = Slide.from_ids(presentation_id, new_slide.objectId)
+print(new_slide.pageElements[3].model_dump())
 print("Kind of a copy written!")

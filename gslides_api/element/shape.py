@@ -7,6 +7,7 @@ from gslides_api.domain import Shape, TextElement, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.execute import batch_update
 from gslides_api.markdown import markdown_to_text_elements
+from gslides_api.requests import GslidesAPIRequest
 
 
 class ShapeElement(PageElementBase):
@@ -109,11 +110,20 @@ class ShapeElement(PageElementBase):
         return batch_update(requests, self.presentation_id)
 
 
-def text_elements_to_requests(text_elements: List[TextElement], objectId: str):
+def text_elements_to_requests(text_elements: List[TextElement | GslidesAPIRequest], objectId: str):
     requests = []
     for te in text_elements:
+        if isinstance(te, GslidesAPIRequest):
+            te.objectId = objectId
+            requests += te.to_request()
+            continue
+        else:
+            assert isinstance(te, TextElement), f"Expected TextElement, got {te}"
         if te.textRun is None:
-            # TODO: What is the role of empty ParagraphMarkers?
+            # An empty text run will have a non-None ParagraphMarker
+            # Apparently there's no direct way to insert ParagraphMarkers, instead they have to be created
+            # as a side effect of inserting text or by specialized calls like createParagraphBullets
+            # So we just ignore them when inserting text
             continue
 
         style = te.textRun.style.to_api_format()
