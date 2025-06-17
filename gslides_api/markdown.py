@@ -13,7 +13,7 @@ from gslides_api.domain import BulletGlyphPreset, TextRun, TextStyle
 from gslides_api.requests import CreateParagraphBulletsRequest, Range, RangeType
 
 
-class BulletPointGroup(BaseModel):
+class ItemList(BaseModel):
     children: List[TextElement]
 
     @property
@@ -24,18 +24,26 @@ class BulletPointGroup(BaseModel):
     def end_index(self):
         return self.children[-1].endIndex
 
+class BulletPointGroup(ItemList):
+    pass
+
+class NumberedListGroup(ItemList):
+    pass
+
 
 def markdown_to_text_elements(
     markdown_text: str,
     base_style: Optional[TextStyle] = None,
     start_index: int = 0,
     bullet_glyph_preset: Optional[BulletGlyphPreset] = BulletGlyphPreset.BULLET_DISC_CIRCLE_SQUARE,
+    numbered_glyph_preset: Optional[BulletGlyphPreset] = BulletGlyphPreset.NUMBERED_DIGIT_ALPHA_ROMAN,
 ) -> list[TextElement | CreateParagraphBulletsRequest]:
     # Use GFM parser to support strikethrough and other GitHub Flavored Markdown features
     doc = gfm.parse(markdown_text)
     elements_and_bullets = markdown_ast_to_text_elements(doc, base_style=base_style)
     elements = [e for e in elements_and_bullets if isinstance(e, TextElement)]
     bullets = [b for b in elements_and_bullets if isinstance(b, BulletPointGroup)]
+    numbered_lists = [n for n in elements_and_bullets if isinstance(n, NumberedListGroup)]
 
     # Assign indices to text elements
     for element in elements:
@@ -58,12 +66,27 @@ def markdown_to_text_elements(
             )
         )
 
+    # Sort numbered lists by start index, in reverse order
+    numbered_lists.sort(key=lambda n: n.start_index, reverse=True)
+    for numbered_list in numbered_lists:
+        elements.append(
+            CreateParagraphBulletsRequest(
+                objectId="",
+                textRange=Range(
+                    type=RangeType.FIXED_RANGE,
+                    startIndex=numbered_list.start_index,
+                    endIndex=numbered_list.end_index,
+                ),
+                bulletPreset=numbered_glyph_preset,
+            )
+        )
+
     return elements
 
 
 def markdown_ast_to_text_elements(
-    markdown_ast: Any, base_style: Optional[TextStyle] = None
-) -> list[TextElement | BulletPointGroup]:
+    markdown_ast: Any, base_style: Optional[TextStyle] = None, is_ordered: Optional[bool] = None
+) -> list[TextElement | BulletPointGroup | NumberedListGroup]:
     style = base_style or TextStyle()
     line_break = TextElement(
         endIndex=0,
@@ -131,7 +154,12 @@ def markdown_ast_to_text_elements(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
         ) + [line_break]
 
-    elif isinstance(markdown_ast, (marko.block.List, marko.block.Document)):
+    elif isinstance(markdown_ast, marko.block.List):
+        # Handle lists - need to pass down whether this is ordered or not
+        out = sum(
+            [markdown_ast_to_text_elements(child, style, markdown_ast.ordered) for child in markdown_ast.children], []
+        )
+    elif isinstance(markdown_ast, marko.block.Document):
         out = sum(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
         )
@@ -142,10 +170,17 @@ def markdown_ast_to_text_elements(
         pre_out = sum(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
         )
+
+        # Create the appropriate group type based on whether this is an ordered list
+        if is_ordered:
+            list_group = NumberedListGroup(children=pre_out)
+        else:
+            list_group = BulletPointGroup(children=pre_out)
+
         out = (
             [TextElement(endIndex=0, textRun=TextRun(content="\t", style=style))]
             + pre_out
-            + [BulletPointGroup(children=pre_out)]
+            + [list_group]
         )
 
     else:
@@ -153,6 +188,6 @@ def markdown_ast_to_text_elements(
 
     for element in out:
         assert isinstance(
-            element, (TextElement, BulletPointGroup)
-        ), f"Expected TextElement or BulletPointGroup, got {type(element)}"
+            element, (TextElement, BulletPointGroup, NumberedListGroup)
+        ), f"Expected TextElement, BulletPointGroup, or NumberedListGroup, got {type(element)}"
     return out

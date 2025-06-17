@@ -84,6 +84,8 @@ class ShapeElement(PageElementBase):
         result = []
         current_paragraph = []
         in_bullet_list = False
+        current_bullet_glyph = None
+        self._current_bullet_glyph = None
 
         for i, te in enumerate(self.shape.text.textElements):
             # Handle paragraph markers (for bullets and paragraph breaks)
@@ -92,12 +94,15 @@ class ShapeElement(PageElementBase):
                 if te.paragraphMarker.bullet is not None:
                     if not in_bullet_list:
                         in_bullet_list = True
+                    # Store the bullet info for the next text content
+                    current_bullet_glyph = te.paragraphMarker.bullet.glyph if te.paragraphMarker.bullet.glyph else '●'
                     # Don't add content for paragraph markers, just note the bullet state
                     continue
                 else:
                     # Regular paragraph marker - end of bullet list if we were in one
                     if in_bullet_list:
                         in_bullet_list = False
+                        current_bullet_glyph = None
                     continue
 
             # Handle text runs
@@ -107,27 +112,29 @@ class ShapeElement(PageElementBase):
 
                 # Handle bullet points - add bullet marker at start of line
                 if in_bullet_list and content.strip() and not current_paragraph:
-                    current_paragraph.append("* ")
+                    # Use the stored bullet glyph to determine the marker
+                    bullet_marker = self._format_bullet_marker(current_bullet_glyph)
+                    current_paragraph.append(bullet_marker)
 
                 # Apply formatting based on style
                 formatted_content = self._apply_markdown_formatting(content, style)
                 current_paragraph.append(formatted_content)
 
                 # Handle line breaks
-                if '\n' in content:
+                if "\n" in content:
                     # Join current paragraph and add to result
-                    paragraph_text = ''.join(current_paragraph).rstrip()
+                    paragraph_text = "".join(current_paragraph).rstrip()
                     if paragraph_text:
                         result.append(paragraph_text)
                     current_paragraph = []
 
         # Add any remaining paragraph content
         if current_paragraph:
-            paragraph_text = ''.join(current_paragraph).rstrip()
+            paragraph_text = "".join(current_paragraph).rstrip()
             if paragraph_text:
                 result.append(paragraph_text)
 
-        return '\n'.join(result) if result else None
+        return "\n".join(result) if result else None
 
     def _apply_markdown_formatting(self, content: str, style) -> str:
         """Apply markdown formatting to content based on text style."""
@@ -135,12 +142,12 @@ class ShapeElement(PageElementBase):
             return content
 
         # Handle hyperlinks first (they take precedence)
-        if (hasattr(style, 'link') and style.link):
+        if hasattr(style, "link") and style.link:
             # Handle both dict and object cases
             url = None
-            if isinstance(style.link, dict) and 'url' in style.link:
-                url = style.link['url']
-            elif hasattr(style.link, 'url'):
+            if isinstance(style.link, dict) and "url" in style.link:
+                url = style.link["url"]
+            elif hasattr(style.link, "url"):
                 url = style.link.url
 
             if url:
@@ -151,8 +158,11 @@ class ShapeElement(PageElementBase):
             return content
 
         # Handle code spans (different font family)
-        if (hasattr(style, 'fontFamily') and style.fontFamily and
-            style.fontFamily.lower() in ['courier new', 'courier', 'monospace']):
+        if (
+            hasattr(style, "fontFamily")
+            and style.fontFamily
+            and style.fontFamily.lower() in ["courier new", "courier", "monospace"]
+        ):
             # For code spans, only format the non-whitespace content
             if content.strip():
                 return f"`{content.strip()}`"
@@ -160,49 +170,64 @@ class ShapeElement(PageElementBase):
 
         # For formatting, we need to preserve leading/trailing spaces
         # but only format the actual text content
-        leading_space = ''
-        trailing_space = ''
+        leading_space = ""
+        trailing_space = ""
         text_content = content
 
         # Extract leading spaces
         for char in content:
-            if char in ' \t':
+            if char in " \t":
                 leading_space += char
             else:
                 break
 
         # Extract trailing spaces (but not newlines)
-        temp_content = content.rstrip('\n')
-        trailing_newlines = content[len(temp_content):]
+        temp_content = content.rstrip("\n")
+        trailing_newlines = content[len(temp_content) :]
 
         for char in reversed(temp_content):
-            if char in ' \t':
+            if char in " \t":
                 trailing_space = char + trailing_space
             else:
                 break
 
         # Get the actual text content without leading/trailing spaces
-        text_content = content.strip(' \t').rstrip('\n')
+        text_content = content.strip(" \t").rstrip("\n")
 
         # Apply formatting only to the text content
         if text_content:
             # Handle strikethrough first (can combine with other formatting)
-            if hasattr(style, 'strikethrough') and style.strikethrough:
+            if hasattr(style, "strikethrough") and style.strikethrough:
                 text_content = f"~~{text_content}~~"
 
             # Handle combined bold and italic (***text***)
-            if (hasattr(style, 'bold') and style.bold and
-                hasattr(style, 'italic') and style.italic):
+            if hasattr(style, "bold") and style.bold and hasattr(style, "italic") and style.italic:
                 text_content = f"***{text_content}***"
             # Handle bold only
-            elif hasattr(style, 'bold') and style.bold:
+            elif hasattr(style, "bold") and style.bold:
                 text_content = f"**{text_content}**"
             # Handle italic only
-            elif hasattr(style, 'italic') and style.italic:
+            elif hasattr(style, "italic") and style.italic:
                 text_content = f"*{text_content}*"
 
         # Reconstruct with preserved spacing
         return leading_space + text_content + trailing_space + trailing_newlines
+
+    def _format_bullet_marker(self, glyph: str) -> str:
+        """Format the bullet marker based on the glyph from the API."""
+        if not glyph:
+            return "* "
+
+        # Check if this looks like a numbered list
+        if any(char.isdigit() for char in glyph) or any(char.isalpha() for char in glyph):
+            # This is a numbered list - use the glyph as-is if it ends with period
+            if glyph.endswith("."):
+                return f"{glyph} "
+            else:
+                return f"{glyph}. "
+        else:
+            # This is a bullet list
+            return "* "
 
     def _write_plain_text_requests(self, text: str, style: TextStyle | None = None):
         raise NotImplementedError("Writing plain text to shape elements is not supported yet")

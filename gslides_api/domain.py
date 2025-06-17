@@ -107,11 +107,23 @@ class BulletStyle(GSlidesBaseModel):
     fontFamily: Optional[str] = None
 
 
+class Bullet(GSlidesBaseModel):
+    """Represents a bullet point in a list.
+
+    Based on: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/text#Page.Bullet
+    """
+
+    listId: Optional[str] = None
+    nestingLevel: Optional[int] = None
+    glyph: Optional[str] = None
+    bulletStyle: Optional[TextStyle] = None
+
+
 class ParagraphMarker(GSlidesBaseModel):
     """Represents a paragraph marker with styling."""
 
     style: ParagraphStyle = Field(default_factory=ParagraphStyle)
-    bullet: Optional[Dict[str, Any]] = None
+    bullet: Optional[Bullet] = None
 
 
 class TextRun(GSlidesBaseModel):
