@@ -149,22 +149,16 @@ def test_update_request_with_title_description():
 
     request = element.element_to_update_request("element_id")
     assert len(request) >= 1
-    # Find the update request for page element properties
+    # Find the update request for page element alt text (title and description)
     update_request = None
     for req in request:
-        if "updatePageElementProperties" in req:
+        if "updatePageElementAltText" in req:
             update_request = req
             break
 
     assert update_request is not None
-    assert (
-        update_request["updatePageElementProperties"]["pageElementProperties"]["title"]
-        == "Updated Title"
-    )
-    assert (
-        update_request["updatePageElementProperties"]["pageElementProperties"]["description"]
-        == "Updated Description"
-    )
+    assert update_request["updatePageElementAltText"]["title"] == "Updated Title"
+    assert update_request["updatePageElementAltText"]["description"] == "Updated Description"
 
 
 def test_discriminated_union_with_type_adapter():

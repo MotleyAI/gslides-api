@@ -105,17 +105,27 @@ class TestShapeElementWriteMethods:
         ):
             slide_3_shape_element._write_plain_text_requests("test text")
 
-    @patch("gslides_api.element.markdown_processor")
-    def test_write_markdown_requests(self, mock_processor, slide_3_shape_element):
+    @patch("gslides_api.element.shape.markdown_to_text_elements")
+    def test_write_markdown_requests(self, mock_markdown_to_text_elements, slide_3_shape_element):
         """Test write_markdown_requests method."""
-        mock_processor.create_slides_requests.return_value = [{"test": "request"}]
+        # Mock the markdown_to_text_elements function to return a simple text element
+        from gslides_api.domain import TextElement, TextRun, TextStyle
+
+        mock_text_element = TextElement(
+            startIndex=0,
+            endIndex=13,
+            textRun=TextRun(content="Test markdown", style=TextStyle())
+        )
+        mock_markdown_to_text_elements.return_value = [mock_text_element]
 
         result = slide_3_shape_element._write_markdown_requests("# Test markdown")
 
-        mock_processor.create_slides_requests.assert_called_once_with(
-            slide_3_shape_element.objectId, "# Test markdown"
-        )
-        assert result == [{"test": "request"}]
+        mock_markdown_to_text_elements.assert_called_once_with("# Test markdown", base_style=None)
+
+        # Check that the result contains the expected requests
+        assert len(result) == 2  # insertText and updateTextStyle
+        assert result[0]["insertText"]["text"] == "Test markdown"
+        assert result[0]["insertText"]["objectId"] == slide_3_shape_element.objectId
 
     # Note: write_text method doesn't exist in the actual implementation
     # The tests above cover the actual methods that exist
@@ -166,7 +176,7 @@ class TestImageElementToMarkdown:
 class TestImageElementReplaceImageRequests:
     """Test ImageElement._replace_image_requests() method."""
 
-    @patch("gslides_api.element.image_url_is_valid")
+    @patch("gslides_api.element.element.image_url_is_valid")
     def test_replace_image_requests_success(self, mock_validate):
         """Test successful image replacement request generation."""
         mock_validate.return_value = True
@@ -203,7 +213,7 @@ class TestImageElementReplaceImageRequests:
         with pytest.raises(ValueError, match="Image URL must start with http:// or https://"):
             image_element._replace_image_requests("ftp://example.com/image.jpg")
 
-    @patch("gslides_api.element.image_url_is_valid")
+    @patch("gslides_api.element.element.image_url_is_valid")
     def test_replace_image_requests_url_not_accessible(self, mock_validate):
         """Test _replace_image_requests with URL that's not accessible."""
         mock_validate.return_value = False
@@ -218,7 +228,7 @@ class TestImageElementReplaceImageRequests:
         with pytest.raises(ValueError, match="Image URL is not accessible or invalid"):
             image_element._replace_image_requests("https://invalid-url.com/image.jpg")
 
-    @patch("gslides_api.element.image_url_is_valid")
+    @patch("gslides_api.element.element.image_url_is_valid")
     def test_replace_image_requests_with_method(self, mock_validate):
         """Test _replace_image_requests with ImageReplaceMethod."""
         mock_validate.return_value = True
