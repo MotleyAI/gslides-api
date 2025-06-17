@@ -3,13 +3,7 @@ import logging
 from typing import List, Optional, Dict, Any
 
 from gslides_api import Size, Dimension
-from gslides_api.execute import (
-    copy_presentation,
-    create_presentation,
-    delete_object,
-    get_presentation_json,
-    batch_update,
-)
+from gslides_api.execute import api_client
 from gslides_api.page import Page
 from gslides_api.domain import GSlidesBaseModel
 
@@ -32,7 +26,7 @@ class Presentation(GSlidesBaseModel):
     @classmethod
     def create_blank(cls, title: str = "New Presentation") -> "Presentation":
         """Create a blank presentation in Google Slides."""
-        new_id = create_presentation({"title": title})
+        new_id = api_client.create_presentation({"title": title})
         return cls.from_id(new_id)
 
     @classmethod
@@ -58,7 +52,7 @@ class Presentation(GSlidesBaseModel):
 
     @classmethod
     def from_id(cls, presentation_id: str) -> "Presentation":
-        presentation_json = get_presentation_json(presentation_id)
+        presentation_json = api_client.get_presentation_json(presentation_id)
         return cls.from_json(presentation_json)
 
     def copy_via_domain_objects(self) -> "Presentation":
@@ -66,12 +60,12 @@ class Presentation(GSlidesBaseModel):
         config = self.to_api_format()
         config.pop("presentationId", None)
         config.pop("revisionId", None)
-        new_id = create_presentation(config)
+        new_id = api_client.create_presentation(config)
         return self.from_id(new_id)
 
     def copy_via_drive(self, copy_title: Optional[str] = None):
         copy_title = copy_title or f"Copy of {self.title}"
-        new = copy_presentation(self.presentationId, copy_title)
+        new = api_client.copy_presentation(self.presentationId, copy_title)
         return self.from_id(new["id"])
 
     def sync_from_cloud(self):
@@ -88,7 +82,7 @@ class Presentation(GSlidesBaseModel):
         return match[0]
 
     def delete_slide(self, slide_id: str):
-        delete_object(slide_id, self.presentationId)
+        api_client.delete_object(slide_id, self.presentationId)
 
     @property
     def url(self):

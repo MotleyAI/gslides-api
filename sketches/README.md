@@ -45,7 +45,7 @@ Choose one of the authentication methods:
 ### 2. Basic Usage
 
 ```python
-from gslides_templater import create_templater, AuthConfig
+from sketches import create_templater, AuthConfig
 
 # Initialize with AuthConfig
 auth_config = AuthConfig(
@@ -244,7 +244,7 @@ templater.add_markdown_slide(presentation_id, markdown_text)
 ### Slides Configuration
 
 ```python
-from gslides_templater import SlidesConfig, LayoutConfig, MarkdownConfig
+from sketches import SlidesConfig, LayoutConfig, MarkdownConfig
 
 slides_config = SlidesConfig(
     max_retries=5,
@@ -303,9 +303,9 @@ new_presentation_id = templater.apply_template(template, template_data)
 ### Comprehensive Error Handling
 
 ```python
-from gslides_templater import (
-    SlidesAPIError, 
-    AuthenticationError, 
+from sketches import (
+    SlidesAPIError,
+    AuthenticationError,
     TemplateValidationError,
     MarkdownProcessingError,
     RateLimitExceededError
@@ -331,15 +331,15 @@ except SlidesAPIError as e:
 ### Element Positioning
 
 ```python
-from gslides_templater import ElementPosition
+from sketches import ElementPosition
 
 # Add text box with precise positioning
 position = ElementPosition(
-    x=100.0,      # X coordinate in points
-    y=200.0,      # Y coordinate in points  
+    x=100.0,  # X coordinate in points
+    y=200.0,  # Y coordinate in points  
     width=400.0,  # Width in points
-    height=100.0, # Height in points
-    layer=1       # Stacking layer
+    height=100.0,  # Height in points
+    layer=1  # Stacking layer
 )
 
 text_box_id = templater.add_text_box(
@@ -411,7 +411,7 @@ for name, info in template['placeholders'].items():
 ### Authentication Methods
 
 ```python
-from gslides_templater import AuthConfig, authenticate
+from sketches import AuthConfig, authenticate
 
 # Method 1: AuthConfig (Recommended)
 auth_config = AuthConfig(

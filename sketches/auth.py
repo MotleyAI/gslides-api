@@ -139,14 +139,14 @@ class CredentialManager:
                 logger.warning(f"Token file missing required fields: {token_file}")
                 return None
 
-            creds = OAuth2Credentials.from_authorized_user_info(token_data, self.scopes)
+           api_client = OAuth2Credentials.from_authorized_user_info(token_data, self.scopes)
 
-            if creds:
-                if not creds.valid:
-                    if creds.expired and creds.refresh_token:
+            ifapi_client:
+                if notapi_client.valid:
+                    ifapi_client.expired andapi_client.refresh_token:
                         logger.info("Token expired, refreshing...")
                         try:
-                            creds.refresh(Request())
+                           api_client.refresh(Request())
                             self._save_token(creds, token_file)
                             logger.info("Token refreshed and saved")
                         except Exception as refresh_error:
@@ -156,7 +156,7 @@ class CredentialManager:
                         logger.warning(f"Invalid token in {token_file}")
                         return None
 
-                if creds.valid:
+                ifapi_client.valid:
                     logger.info(f"Loaded valid token from {token_file}")
                     return Credentials(creds, auth_method="saved_token")
 
@@ -202,7 +202,7 @@ class CredentialManager:
 
             if use_local_server:
                 print("Opening browser for authentication...")
-                creds = flow.run_local_server(port=0, open_browser=True)
+               api_client = flow.run_local_server(port=0, open_browser=True)
             else:
                 print("Console authentication mode")
                 print("Go to the following URL in your browser:")
@@ -214,7 +214,7 @@ class CredentialManager:
                     raise AuthenticationError("No authorization code provided")
 
                 flow.fetch_token(code=auth_code)
-                creds = flow.credentials
+               api_client = flow.credentials
 
             if token_save_path:
                 self._save_token(creds, token_save_path)

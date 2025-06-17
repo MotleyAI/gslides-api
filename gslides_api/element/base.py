@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 
 from gslides_api.domain import GSlidesBaseModel, Transform, Size
-from gslides_api.execute import batch_update
+from gslides_api.execute import api_client
 
 
 class ElementKind(Enum):
@@ -38,7 +38,7 @@ class PageElementBase(GSlidesBaseModel):
 
     def create_copy(self, parent_id: str, presentation_id: str):
         request = self.create_request(parent_id)
-        out = batch_update(request, presentation_id)
+        out = api_client.batch_update(request, presentation_id)
         try:
             request_type = list(out["replies"][0].keys())[0]
             new_element_id = out["replies"][0][request_type]["objectId"]
@@ -113,7 +113,7 @@ class PageElementBase(GSlidesBaseModel):
 
         requests = self.element_to_update_request(element_id)
         if len(requests):
-            out = batch_update(requests, presentation_id)
+            out = api_client.batch_update(requests, presentation_id)
             return out
         else:
             return {}

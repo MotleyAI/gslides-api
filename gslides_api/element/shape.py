@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 
 from gslides_api.domain import Shape, TextElement, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.execute import batch_update
+from gslides_api.execute import api_client
 from gslides_api.markdown import markdown_to_text_elements
 from gslides_api.requests import GslidesAPIRequest
 
@@ -68,7 +68,7 @@ class ShapeElement(PageElementBase):
         return [{"deleteText": {"objectId": self.objectId, "textRange": {"type": "ALL"}}}]
 
     def delete_text(self):
-        return batch_update(self._delete_text_request(), self.presentation_id)
+        return api_client.batch_update(self._delete_text_request(), self.presentation_id)
 
     def to_markdown(self) -> str | None:
         """Convert the shape's text content back to markdown format.
@@ -298,7 +298,7 @@ class ShapeElement(PageElementBase):
             requests += self._write_markdown_requests(text, style=self.style)
         else:
             requests += self._write_plain_text_requests(text, style=self.style)
-        return batch_update(requests, self.presentation_id)
+        return api_client.batch_update(requests, self.presentation_id)
 
 
 def text_elements_to_requests(text_elements: List[TextElement | GslidesAPIRequest], objectId: str):

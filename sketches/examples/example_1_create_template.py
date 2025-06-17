@@ -14,7 +14,7 @@ import os
 # Add path to our package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from gslides_templater import create_templater, AuthConfig, SlidesAPIError, AuthenticationError
+from sketches import create_templater, AuthConfig, SlidesAPIError, AuthenticationError
 
 
 def main():
@@ -39,10 +39,7 @@ def main():
             return
 
         # Create auth config using new structure
-        auth_config = AuthConfig(
-            credentials_path=credentials_file,
-            token_path="token.json"
-        )
+        auth_config = AuthConfig(credentials_path=credentials_file, token_path="token.json")
 
         templater = create_templater(auth_config=auth_config)
         print("   ✓ Authentication successful")
@@ -74,7 +71,7 @@ def main():
             template_config = templater.create_template(
                 presentation_id=source_presentation_id,
                 template_name="presentation_template",
-                debug=False  # Disable debug for cleaner output
+                debug=False,  # Disable debug for cleaner output
             )
         except Exception as e:
             print(f"❌ Error creating template: {e}")
@@ -85,12 +82,14 @@ def main():
         print(f"   ✓ Processed slides: {len(template_config.get('slides', []))}")
 
         # Show slide size and layout info
-        slide_size = template_config.get('slide_size', {})
+        slide_size = template_config.get("slide_size", {})
         if slide_size:
-            print(f"   ✓ Slide size: {slide_size.get('width', 720)}x{slide_size.get('height', 540)} points")
+            print(
+                f"   ✓ Slide size: {slide_size.get('width', 720)}x{slide_size.get('height', 540)} points"
+            )
 
         # Show found placeholders
-        placeholders = template_config.get('placeholders', {})
+        placeholders = template_config.get("placeholders", {})
         if placeholders:
             print(f"\n📝 Found placeholders:")
             for name, info in placeholders.items():
@@ -100,22 +99,34 @@ def main():
                 print(f"     Slide: {info.get('slide_index', 0) + 1}")
 
                 # Show position info if available
-                position = info.get('position', {})
+                position = info.get("position", {})
                 if position:
-                    print(f"     Position: x={position.get('x', 0):.0f}, y={position.get('y', 0):.0f}")
-                    print(f"     Size: {position.get('width', 0):.0f}x{position.get('height', 0):.0f}")
+                    print(
+                        f"     Position: x={position.get('x', 0):.0f}, y={position.get('y', 0):.0f}"
+                    )
+                    print(
+                        f"     Size: {position.get('width', 0):.0f}x{position.get('height', 0):.0f}"
+                    )
                     print(f"     Layer: {info.get('layer', 0)}")
 
                 # Show Markdown example
-                markdown_example = info.get('example', '')
+                markdown_example = info.get("example", "")
                 if markdown_example:
-                    example_short = markdown_example[:100] + '...' if len(markdown_example) > 100 else markdown_example
+                    example_short = (
+                        markdown_example[:100] + "..."
+                        if len(markdown_example) > 100
+                        else markdown_example
+                    )
                     print(f"     Markdown: {example_short}")
 
                 # Show original example
-                original_example = info.get('original_example', '')
+                original_example = info.get("original_example", "")
                 if original_example and original_example != markdown_example:
-                    orig_short = original_example[:50] + '...' if len(original_example) > 50 else original_example
+                    orig_short = (
+                        original_example[:50] + "..."
+                        if len(original_example) > 50
+                        else original_example
+                    )
                     print(f"     Original: {orig_short}")
                 print()
         else:
@@ -143,11 +154,14 @@ def main():
         print(f"   Total placeholders: {len(template_config.get('placeholders', {}))}")
 
         # Show layout configuration
-        layout_config = template_config.get('layout_config', {})
+        layout_config = template_config.get("layout_config", {})
         if layout_config:
-            print(f"   Layout margins: {layout_config.get('margin_x', 50)}x{layout_config.get('margin_y', 50)}")
             print(
-                f"   Default element size: {layout_config.get('default_width', 620)}x{layout_config.get('default_height', 200)}")
+                f"   Layout margins: {layout_config.get('margin_x', 50)}x{layout_config.get('margin_y', 50)}"
+            )
+            print(
+                f"   Default element size: {layout_config.get('default_width', 620)}x{layout_config.get('default_height', 200)}"
+            )
 
         # Show usage example
         print(f"\n📖 Example data for filling template:")
@@ -156,9 +170,9 @@ def main():
         for name, info in placeholders.items():
             if example_count >= 3:
                 break
-            if info['type'] == 'text':
+            if info["type"] == "text":
                 print(f'       "{name}": "# New Header\\n\\nNew **text** with formatting",')
-            elif info['type'] == 'image':
+            elif info["type"] == "image":
                 print(f'       "{name}": "https://example.com/new-image.jpg",')
             example_count += 1
         if len(placeholders) > 3:
@@ -177,7 +191,7 @@ def main():
         # Show validation info
         print(f"\n🔍 Template validation:")
         template_info = templater.get_template_info(template_config)
-        element_types = template_info.get('element_types', {})
+        element_types = template_info.get("element_types", {})
         for elem_type, count in element_types.items():
             print(f"   {elem_type}: {count} elements")
 

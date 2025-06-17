@@ -75,10 +75,11 @@ def test_write_sets_presentation_id(monkeypatch):
 
     # Apply the monkeypatches
     import gslides_api.page
+    import gslides_api.execute
 
     monkeypatch.setattr(Page, "create_blank", mock_create_blank)
     monkeypatch.setattr(Page, "from_ids", classmethod(mock_from_ids))
-    monkeypatch.setattr(gslides_api.page, "batch_update", mock_slides_batch_update)
+    monkeypatch.setattr(gslides_api.execute.api_client, "batch_update", mock_slides_batch_update)
 
     # Call write_copy with a presentation_id
     result = slide.write_copy(presentation_id="test-presentation-id")
@@ -116,8 +117,9 @@ def test_duplicate_preserves_presentation_id(monkeypatch):
 
     # Apply the monkeypatches
     import gslides_api.page
+    import gslides_api.execute
 
-    monkeypatch.setattr(gslides_api.page, "duplicate_object", mock_duplicate_object)
+    monkeypatch.setattr(gslides_api.execute.api_client, "duplicate_object", mock_duplicate_object)
     monkeypatch.setattr(Page, "from_ids", classmethod(mock_from_ids))
 
     # Call duplicate

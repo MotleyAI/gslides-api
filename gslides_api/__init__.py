@@ -48,7 +48,7 @@ from .domain import (
 from .presentation import Presentation
 from .page import Page, LayoutProperties, SlidePageProperties
 from .element.base import ElementKind
-from .credentials import initialize_credentials
+from .execute import initialize_credentials
 
 # Import SlidePageProperties as PageProperties for backward compatibility
 PageProperties = SlidePageProperties

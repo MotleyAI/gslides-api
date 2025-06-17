@@ -14,13 +14,13 @@ import time
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from gslides_templater import (
+from sketches import (
     create_templater,
     AuthConfig,
     SlidesAPIError,
     AuthenticationError,
     TemplateValidationError,
-    MarkdownProcessingError
+    MarkdownProcessingError,
 )
 
 
@@ -31,8 +31,8 @@ def get_reliable_image_urls(count: int) -> list:
     reliable_images = []
 
     # Different colors and sizes for variety
-    colors = ['4285f4', 'ea4335', '34a853', 'fbbc04', '9aa0a6', 'f28b82', 'aecbfa', 'fdd663']
-    sizes = ['800x600', '600x400', '400x300', '500x500']
+    colors = ["4285f4", "ea4335", "34a853", "fbbc04", "9aa0a6", "f28b82", "aecbfa", "fdd663"]
+    sizes = ["800x600", "600x400", "400x300", "500x500"]
 
     for i in range(count):
         color = colors[i % len(colors)]
@@ -63,10 +63,7 @@ def main():
             return
 
         # Create auth config using new structure
-        auth_config = AuthConfig(
-            credentials_path=credentials_file,
-            token_path="token.json"
-        )
+        auth_config = AuthConfig(credentials_path=credentials_file, token_path="token.json")
 
         templater = create_templater(auth_config=auth_config)
         print("   ✓ Authentication successful")
@@ -91,25 +88,34 @@ def main():
         print(f"   ✓ Placeholders in template: {len(template_config.get('placeholders', {}))}")
 
         # Show template structure info
-        slide_size = template_config.get('slide_size', {})
+        slide_size = template_config.get("slide_size", {})
         if slide_size:
-            print(f"   ✓ Slide size: {slide_size.get('width', 720)}x{slide_size.get('height', 540)} points")
+            print(
+                f"   ✓ Slide size: {slide_size.get('width', 720)}x{slide_size.get('height', 540)} points"
+            )
 
-        layout_config = template_config.get('layout_config', {})
+        layout_config = template_config.get("layout_config", {})
         if layout_config:
-            print(f"   ✓ Layout margins: {layout_config.get('margin_x', 50)}x{layout_config.get('margin_y', 50)}")
+            print(
+                f"   ✓ Layout margins: {layout_config.get('margin_x', 50)}x{layout_config.get('margin_y', 50)}"
+            )
 
-        placeholders = template_config.get('placeholders', {})
+        placeholders = template_config.get("placeholders", {})
         if not placeholders:
             print("❌ No placeholders in template!")
             return
 
-        text_placeholders = {name: info for name, info in placeholders.items()
-                             if info['type'] == 'text'}
-        image_placeholders = {name: info for name, info in placeholders.items()
-                              if info['type'] == 'image'}
-        other_placeholders = {name: info for name, info in placeholders.items()
-                              if info['type'] not in ['text', 'image']}
+        text_placeholders = {
+            name: info for name, info in placeholders.items() if info["type"] == "text"
+        }
+        image_placeholders = {
+            name: info for name, info in placeholders.items() if info["type"] == "image"
+        }
+        other_placeholders = {
+            name: info
+            for name, info in placeholders.items()
+            if info["type"] not in ["text", "image"]
+        }
 
         print(f"\n📝 Found placeholders:")
         print(f"   📝 Text: {len(text_placeholders)}")
@@ -118,11 +124,13 @@ def main():
 
         print(f"\n   Placeholder examples:")
         for i, (name, info) in enumerate(list(placeholders.items())[:5]):
-            position = info.get('position', {})
+            position = info.get("position", {})
             if position:
-                print(f"   • {name} ({info['type']}) - slide {info.get('slide_index', 0) + 1} "
-                      f"[{position.get('x', 0):.0f},{position.get('y', 0):.0f}] "
-                      f"layer:{info.get('layer', 0)}")
+                print(
+                    f"   • {name} ({info['type']}) - slide {info.get('slide_index', 0) + 1} "
+                    f"[{position.get('x', 0):.0f},{position.get('y', 0):.0f}] "
+                    f"layer:{info.get('layer', 0)}"
+                )
             else:
                 print(f"   • {name} ({info['type']}) - slide {info.get('slide_index', 0) + 1}")
         if len(placeholders) > 5:
@@ -142,7 +150,7 @@ def main():
             "boys_love": """#### 🚂 **Boys and their hobbies!** 🔬\n\n- Building trains\n- Science experiments\n- *Endless curiosity*""",
             "slide_5_text_36": """##### ⭐ **Our little commander!** \n\n> "Leadership from diapers" 😎\n\n**Skills:**\n- Strategic thinking\n- Team coordination\n- *Natural charisma*""",
             "slide_3_text": """**Games and entertainment** 🎮\n\n- Video games\n- Board games\n- Outdoor activities\n\n*Fun for everyone!*""",
-            "slide_4_text": """### Walk in the park 🌳 \n\n`Healthy sleep` guaranteed! 😴\n\n**Benefits:**\n- Fresh air\n- Exercise\n- ~~Tired kids~~ Happy kids"""
+            "slide_4_text": """### Walk in the park 🌳 \n\n`Healthy sleep` guaranteed! 😴\n\n**Benefits:**\n- Fresh air\n- Exercise\n- ~~Tired kids~~ Happy kids""",
         }
 
         for placeholder_name in text_placeholders.keys():
@@ -150,9 +158,10 @@ def main():
                 new_data[placeholder_name] = text_data_examples[placeholder_name]
                 print(f"   📝 {placeholder_name}: personalized content")
             else:
-                slide_num = text_placeholders[placeholder_name].get('slide_index', 0) + 1
-                new_data[
-                    placeholder_name] = f"""**New content for slide {slide_num}**\n\n- Enhanced with **bold** text\n- *Italic* formatting\n- `Code style` elements\n\n> This is a quote for better presentation"""
+                slide_num = text_placeholders[placeholder_name].get("slide_index", 0) + 1
+                new_data[placeholder_name] = (
+                    f"""**New content for slide {slide_num}**\n\n- Enhanced with **bold** text\n- *Italic* formatting\n- `Code style` elements\n\n> This is a quote for better presentation"""
+                )
                 print(f"   📝 {placeholder_name}: generated Markdown (slide {slide_num})")
 
         # Get reliable images
@@ -168,13 +177,14 @@ def main():
                 print(f"   🖼️ {placeholder_name}: reliable image #{image_counter + 1}")
             else:
                 # Fallback to a simple placeholder
-                new_data[
-                    placeholder_name] = f"https://via.placeholder.com/600x400/cccccc/000000?text=Image+{image_counter + 1}"
+                new_data[placeholder_name] = (
+                    f"https://via.placeholder.com/600x400/cccccc/000000?text=Image+{image_counter + 1}"
+                )
                 print(f"   🖼️ {placeholder_name}: fallback image")
             image_counter += 1
 
         for placeholder_name in other_placeholders.keys():
-            placeholder_type = other_placeholders[placeholder_name]['type']
+            placeholder_type = other_placeholders[placeholder_name]["type"]
             new_data[placeholder_name] = f"New data for {placeholder_type} element"
             print(f"   📦 {placeholder_name}: data for {placeholder_type}")
 
@@ -189,8 +199,8 @@ def main():
                 if value.startswith("http"):
                     print(f"   🖼️ {name}: {value}")
                 else:
-                    preview = value[:80] + '...' if len(value) > 80 else value
-                    preview = preview.replace('\n', ' ↵ ')
+                    preview = value[:80] + "..." if len(value) > 80 else value
+                    preview = preview.replace("\n", " ↵ ")
                     print(f"   📝 {name}: {preview}")
         if len(new_data) > 3:
             print(f"   ... and {len(new_data) - 3} more elements")
@@ -199,16 +209,16 @@ def main():
         print(f"\n🔍 Validating template data...")
         try:
             validation_result = templater.validate_template_data(template_config, new_data)
-            if not validation_result['valid']:
+            if not validation_result["valid"]:
                 print(f"❌ Template validation failed:")
-                if validation_result['missing_placeholders']:
+                if validation_result["missing_placeholders"]:
                     print(f"   Missing: {validation_result['missing_placeholders']}")
-                if validation_result['invalid_types']:
+                if validation_result["invalid_types"]:
                     print(f"   Invalid types: {validation_result['invalid_types']}")
                 return
             else:
                 print(f"   ✅ All data is valid")
-                if validation_result['warnings']:
+                if validation_result["warnings"]:
                     print(f"   ⚠️ Warnings: {len(validation_result['warnings'])}")
         except Exception as e:
             print(f"⚠️ Validation error: {e}")
@@ -220,7 +230,7 @@ def main():
             new_presentation_id = templater.apply_template(
                 template=template_config,
                 data=new_data,
-                title=f"🎨 New presentation from template - {time.strftime('%d.%m.%Y %H:%M')}"
+                title=f"🎨 New presentation from template - {time.strftime('%d.%m.%Y %H:%M')}",
             )
         except TemplateValidationError as e:
             print(f"❌ Template validation error: {e}")
@@ -250,7 +260,7 @@ def main():
         print(f"   📦 Total elements: {presentation_info.get('total_elements', 'Unknown')}")
 
         # Element type breakdown
-        element_types = presentation_info.get('element_types', {})
+        element_types = presentation_info.get("element_types", {})
         if element_types:
             print(f"   📋 Element types:")
             for elem_type, count in element_types.items():
@@ -258,27 +268,27 @@ def main():
 
         print(f"\n🔄 Statistics of applied replacements:")
         replacement_stats = {
-            'text_replaced': 0,
-            'images_replaced': 0,
-            'other_replaced': 0,
-            'total_characters': 0,
-            'markdown_elements': 0
+            "text_replaced": 0,
+            "images_replaced": 0,
+            "other_replaced": 0,
+            "total_characters": 0,
+            "markdown_elements": 0,
         }
 
         for placeholder_name, value in new_data.items():
             placeholder_info = placeholders.get(placeholder_name, {})
-            placeholder_type = placeholder_info.get('type', 'unknown')
+            placeholder_type = placeholder_info.get("type", "unknown")
 
-            if placeholder_type == 'text':
-                replacement_stats['text_replaced'] += 1
-                replacement_stats['total_characters'] += len(str(value))
+            if placeholder_type == "text":
+                replacement_stats["text_replaced"] += 1
+                replacement_stats["total_characters"] += len(str(value))
                 # Count markdown elements
-                if any(marker in str(value) for marker in ['**', '*', '#', '`', '>', '-', '~~']):
-                    replacement_stats['markdown_elements'] += 1
-            elif placeholder_type == 'image':
-                replacement_stats['images_replaced'] += 1
+                if any(marker in str(value) for marker in ["**", "*", "#", "`", ">", "-", "~~"]):
+                    replacement_stats["markdown_elements"] += 1
+            elif placeholder_type == "image":
+                replacement_stats["images_replaced"] += 1
             else:
-                replacement_stats['other_replaced'] += 1
+                replacement_stats["other_replaced"] += 1
 
         print(f"   📝 Text elements replaced: {replacement_stats['text_replaced']}")
         print(f"   🖼️ Images replaced: {replacement_stats['images_replaced']}")
@@ -314,10 +324,13 @@ def main():
 
         # Show layout information
         if slide_size:
-            print(f"   📐 Slide dimensions: {slide_size.get('width', 720)}x{slide_size.get('height', 540)} points")
+            print(
+                f"   📐 Slide dimensions: {slide_size.get('width', 720)}x{slide_size.get('height', 540)} points"
+            )
         if layout_config:
             print(
-                f"   📏 Layout margins: {layout_config.get('margin_x', 50)}x{layout_config.get('margin_y', 50)} points")
+                f"   📏 Layout margins: {layout_config.get('margin_x', 50)}x{layout_config.get('margin_y', 50)} points"
+            )
 
     except FileNotFoundError as e:
         file_name = str(e).split("'")[1] if "'" in str(e) else "file"

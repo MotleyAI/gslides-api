@@ -18,7 +18,7 @@ from gslides_api.domain import (
 
 # Import PageElement and ElementKind directly to avoid circular imports
 from gslides_api.element.element import PageElement
-from gslides_api.execute import batch_update, delete_object, duplicate_object, get_slide_json
+from gslides_api.execute import api_client
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)
@@ -122,7 +122,7 @@ class Page(GSlidesBaseModel):
         if slide_layout_reference is not None:
             base["slideLayoutReference"] = slide_layout_reference.to_api_format()
 
-        out = batch_update([{"createSlide": base}], presentation_id)
+        out = api_client.batch_update([{"createSlide": base}], presentation_id)
         new_slide_id = out["replies"][0]["createSlide"]["objectId"]
 
         return cls.from_ids(presentation_id, new_slide_id)
@@ -130,7 +130,7 @@ class Page(GSlidesBaseModel):
     @classmethod
     def from_ids(cls, presentation_id: str, slide_id: str) -> "Page":
         # To avoid circular imports
-        json = get_slide_json(presentation_id, slide_id)
+        json = api_client.get_slide_json(presentation_id, slide_id)
         new_slide = cls.model_validate(json)
         new_slide.presentation_id = presentation_id
         return new_slide
@@ -168,7 +168,7 @@ class Page(GSlidesBaseModel):
                     }
                 }
             ]
-            batch_update(request, presentation_id)
+            api_client.batch_update(request, presentation_id)
         except Exception as e:
             logger.error(f"Error writing page properties: {e}")
 
@@ -187,7 +187,7 @@ class Page(GSlidesBaseModel):
                 }
             }
         ]
-        batch_update(request, presentation_id)
+        api_client.batch_update(request, presentation_id)
 
         if self.pageElements is not None:
             # Some elements came from layout, some were created manually
@@ -229,7 +229,7 @@ class Page(GSlidesBaseModel):
         assert (
             self.presentation_id is not None
         ), "self.presentation_id must be set when calling duplicate()"
-        new_id = duplicate_object(self.objectId, self.presentation_id, id_map)
+        new_id = api_client.duplicate_object(self.objectId, self.presentation_id, id_map)
         return self.from_ids(self.presentation_id, new_id)
 
     def delete(self) -> None:
@@ -237,7 +237,7 @@ class Page(GSlidesBaseModel):
             self.presentation_id is not None
         ), "self.presentation_id must be set when calling delete()"
 
-        return delete_object(self.objectId, self.presentation_id)
+        return api_client.delete_object(self.objectId, self.presentation_id)
 
     def move(self, insertion_index: int) -> None:
         """
@@ -254,7 +254,7 @@ class Page(GSlidesBaseModel):
                 }
             }
         ]
-        batch_update(request, self.presentation_id)
+        api_client.batch_update(request, self.presentation_id)
 
 
 SlidePageProperties.model_rebuild()

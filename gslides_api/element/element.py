@@ -15,7 +15,7 @@ from gslides_api.domain import (
     ImageReplaceMethod,
 )
 from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.execute import batch_update, upload_image_to_drive
+from gslides_api.execute import api_client
 from gslides_api.element.shape import ShapeElement
 from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 
@@ -185,10 +185,10 @@ class ImageElement(PageElementBase):
             raise ValueError("Must specify either url or file, not both")
 
         if file is not None:
-            url = upload_image_to_drive(file)
+            url = api_client.upload_image_to_drive(file)
 
         requests = self._replace_image_requests(url, method)
-        return batch_update(requests, self.presentation_id)
+        returnapi_client.batch_update(requests, self.presentation_id)
 
 
 class VideoElement(PageElementBase):

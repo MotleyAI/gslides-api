@@ -1,5 +1,5 @@
 from gslides_api import Presentation, initialize_credentials
-from gslides_api.execute import copy_presentation
+from gslides_api.execute import api_client
 from gslides_api.json_diff import json_diff
 
 credential_location = "/home/james/Dropbox/PyCharmProjects/gslides-playground/"
@@ -10,7 +10,7 @@ initialize_credentials(credential_location)
 presentation = Presentation.from_id(presentation_id)
 
 clone = presentation.clone()
-copy = copy_presentation(presentation_id, "Copy of Presentation")
+copy = api_client.copy_presentation(presentation_id, "Copy of Presentation")
 print(clone.url)
 
 

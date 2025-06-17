@@ -175,5 +175,5 @@ cython_debug/
 /token.json
 /playground/token.json
 /credentials.json
-/gslides_templater/examples/credentials.json
-/gslides_templater/examples/token.json
+/sketches/examples/credentials.json
+/sketches/examples/token.json
