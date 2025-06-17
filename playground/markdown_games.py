@@ -48,7 +48,25 @@ s = source_presentation.slides[8]
 new_slide = s.write_copy(9)
 new_slide.pageElements[3].write_text(md, as_markdown=True)
 new_slide = Slide.from_ids(presentation_id, new_slide.objectId)
-print(new_slide.pageElements[3].model_dump())
+
+# Save the API response for testing
+import json
+import os
+api_response = json.loads(new_slide.pageElements[3].model_dump_json())  # Convert to JSON-serializable format
+test_data_dir = os.path.join(os.path.dirname(__file__), '..', 'tests', 'test_data')
+os.makedirs(test_data_dir, exist_ok=True)
+test_data_file = os.path.join(test_data_dir, 'markdown_api_response.json')
+
+test_data = {
+    'original_markdown': md.strip(),
+    'api_response': api_response
+}
+
+with open(test_data_file, 'w') as f:
+    json.dump(test_data, f, indent=2)
+
+print(f"API response saved to: {test_data_file}")
+print(api_response)
 print("Kind of a copy written!")
 
 # Test markdown reconstruction

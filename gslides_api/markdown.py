@@ -24,8 +24,10 @@ class ItemList(BaseModel):
     def end_index(self):
         return self.children[-1].endIndex
 
+
 class BulletPointGroup(ItemList):
     pass
+
 
 class NumberedListGroup(ItemList):
     pass
@@ -36,14 +38,15 @@ def markdown_to_text_elements(
     base_style: Optional[TextStyle] = None,
     start_index: int = 0,
     bullet_glyph_preset: Optional[BulletGlyphPreset] = BulletGlyphPreset.BULLET_DISC_CIRCLE_SQUARE,
-    numbered_glyph_preset: Optional[BulletGlyphPreset] = BulletGlyphPreset.NUMBERED_DIGIT_ALPHA_ROMAN,
+    numbered_glyph_preset: Optional[
+        BulletGlyphPreset
+    ] = BulletGlyphPreset.NUMBERED_DIGIT_ALPHA_ROMAN,
 ) -> list[TextElement | CreateParagraphBulletsRequest]:
     # Use GFM parser to support strikethrough and other GitHub Flavored Markdown features
     doc = gfm.parse(markdown_text)
     elements_and_bullets = markdown_ast_to_text_elements(doc, base_style=base_style)
     elements = [e for e in elements_and_bullets if isinstance(e, TextElement)]
-    bullets = [b for b in elements_and_bullets if isinstance(b, BulletPointGroup)]
-    numbered_lists = [n for n in elements_and_bullets if isinstance(n, NumberedListGroup)]
+    list_items = [b for b in elements_and_bullets if isinstance(b, ItemList)]
 
     # Assign indices to text elements
     for element in elements:
@@ -52,32 +55,21 @@ def markdown_to_text_elements(
         start_index = element.endIndex
 
     # Sort bullets by start index, in reverse order so trimming the tabs doesn't mess others' indices
-    bullets.sort(key=lambda b: b.start_index, reverse=True)
-    for bullet in bullets:
+    list_items.sort(key=lambda b: b.start_index, reverse=True)
+    for item in list_items:
         elements.append(
             CreateParagraphBulletsRequest(
                 objectId="",
                 textRange=Range(
                     type=RangeType.FIXED_RANGE,
-                    startIndex=bullet.start_index,
-                    endIndex=bullet.end_index,
+                    startIndex=item.start_index,
+                    endIndex=item.end_index,
                 ),
-                bulletPreset=bullet_glyph_preset,
-            )
-        )
-
-    # Sort numbered lists by start index, in reverse order
-    numbered_lists.sort(key=lambda n: n.start_index, reverse=True)
-    for numbered_list in numbered_lists:
-        elements.append(
-            CreateParagraphBulletsRequest(
-                objectId="",
-                textRange=Range(
-                    type=RangeType.FIXED_RANGE,
-                    startIndex=numbered_list.start_index,
-                    endIndex=numbered_list.end_index,
+                bulletPreset=(
+                    bullet_glyph_preset
+                    if isinstance(item, BulletPointGroup)
+                    else numbered_glyph_preset
                 ),
-                bulletPreset=numbered_glyph_preset,
             )
         )
 
@@ -85,7 +77,7 @@ def markdown_to_text_elements(
 
 
 def markdown_ast_to_text_elements(
-    markdown_ast: Any, base_style: Optional[TextStyle] = None, is_ordered: Optional[bool] = None
+    markdown_ast: Any, base_style: Optional[TextStyle] = None
 ) -> list[TextElement | BulletPointGroup | NumberedListGroup]:
     style = base_style or TextStyle()
     line_break = TextElement(
@@ -156,9 +148,15 @@ def markdown_ast_to_text_elements(
 
     elif isinstance(markdown_ast, marko.block.List):
         # Handle lists - need to pass down whether this is ordered or not
-        out = sum(
-            [markdown_ast_to_text_elements(child, style, markdown_ast.ordered) for child in markdown_ast.children], []
+        pre_out = sum(
+            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children],
+            [],
         )
+        # Create the appropriate group type based on whether this is an ordered list
+        if markdown_ast.ordered:
+            out = pre_out + [NumberedListGroup(children=pre_out)]
+        else:
+            out = pre_out + [BulletPointGroup(children=pre_out)]
     elif isinstance(markdown_ast, marko.block.Document):
         out = sum(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
@@ -167,20 +165,9 @@ def markdown_ast_to_text_elements(
         # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createparagraphbulletsrequest
         # The bullet creation API is really messed up, forcing us to insert tabs that will be
         # discarded as soon as the bullets are created. So we deal with it as best we can
-        pre_out = sum(
+        # TODO: handle nested lists
+        out = [TextElement(endIndex=0, textRun=TextRun(content="\t", style=style))] + sum(
             [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
-        )
-
-        # Create the appropriate group type based on whether this is an ordered list
-        if is_ordered:
-            list_group = NumberedListGroup(children=pre_out)
-        else:
-            list_group = BulletPointGroup(children=pre_out)
-
-        out = (
-            [TextElement(endIndex=0, textRun=TextRun(content="\t", style=style))]
-            + pre_out
-            + [list_group]
         )
 
     else:
