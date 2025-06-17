@@ -1,0 +1,3586 @@
+{
+  "original_markdown": "This is a ***very*** *important* report with **bold** text.\n\n* It illustrates **bullet points**\n  * With nested sub-points\n  * And even more `code` blocks\n    * Third level nesting\n* And even `code` blocks\n* Plus *italic* formatting\n  * Nested italic *emphasis*\n  * With **bold** nested items\n\nHere's a [link to Google](https://google.com) for testing hyperlinks.\n\nSome ~~strikethrough~~ text to test deletion formatting.\n\nOrdered list example:\n1. First numbered item\n   1. Nested numbered sub-item\n   2. Another nested item with **bold**\n      1. Third level numbering\n2. Second with `inline code`\n   1. Nested under third\n   2. Final nested item\n\nMixed content with [links](https://example.com) and ~~crossed out~~ text.",
+  "api_response": {
+    "objectId": "SLIDES_API1987880507_0",
+    "size": {
+      "width": {
+        "magnitude": 3000000.0,
+        "unit": "EMU"
+      },
+      "height": {
+        "magnitude": 3000000.0,
+        "unit": "EMU"
+      }
+    },
+    "transform": {
+      "translateX": 537000.0,
+      "translateY": 6858000.0,
+      "scaleX": 3.2392,
+      "scaleY": 1.9903,
+      "unit": "EMU"
+    },
+    "title": null,
+    "description": null,
+    "shape": {
+      "shapeProperties": {
+        "shapeBackgroundFill": {
+          "solidFill": {
+            "color": {
+              "rgbColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0
+              },
+              "themeColor": null
+            },
+            "alpha": 1.0
+          },
+          "propertyState": "NOT_RENDERED"
+        },
+        "outline": {
+          "outlineFill": {
+            "solidFill": {
+              "color": {
+                "rgbColor": {
+                  "red": null,
+                  "green": null,
+                  "blue": null
+                },
+                "themeColor": null
+              },
+              "alpha": 1.0
+            }
+          },
+          "weight": {
+            "magnitude": 9525.0,
+            "unit": "EMU"
+          },
+          "propertyState": "NOT_RENDERED",
+          "dashStyle": "SOLID"
+        },
+        "shadow": {
+          "transform": {
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "unit": "EMU"
+          },
+          "blurRadius": {
+            "magnitude": null,
+            "unit": "EMU"
+          },
+          "color": {
+            "rgbColor": {
+              "red": null,
+              "green": null,
+              "blue": null
+            },
+            "themeColor": null
+          },
+          "alpha": 1.0,
+          "rotateWithShape": false,
+          "propertyState": "NOT_RENDERED",
+          "type": "OUTER",
+          "alignment": "BOTTOM_LEFT"
+        },
+        "autofit": {
+          "autofitType": "NONE",
+          "fontScale": 1
+        },
+        "contentAlignment": "TOP"
+      },
+      "shapeType": "TEXT_BOX",
+      "text": {
+        "textElements": [
+          {
+            "endIndex": 48,
+            "startIndex": null,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 10,
+            "startIndex": null,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "This is a ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 14,
+            "startIndex": 10,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "very",
+              "style": {
+                "bold": true,
+                "italic": true,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 700
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 15,
+            "startIndex": 14,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 24,
+            "startIndex": 15,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "important",
+              "style": {
+                "bold": false,
+                "italic": true,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 37,
+            "startIndex": 24,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " report with ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 41,
+            "startIndex": 37,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "bold",
+              "style": {
+                "bold": true,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 700
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 48,
+            "startIndex": 41,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " text.\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 49,
+            "startIndex": 48,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 49,
+            "startIndex": 48,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 78,
+            "startIndex": 49,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 36,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 18,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.mplphojqjgyw",
+                "nestingLevel": null,
+                "glyph": "\u25cf",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 64,
+            "startIndex": 49,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "It illustrates ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 77,
+            "startIndex": 64,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "bullet points",
+              "style": {
+                "bold": true,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 700
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 78,
+            "startIndex": 77,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 101,
+            "startIndex": 78,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 72,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 54,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.mplphojqjgyw",
+                "nestingLevel": 1,
+                "glyph": "\u25cb",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 101,
+            "startIndex": 78,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "With nested sub-points\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 127,
+            "startIndex": 101,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 72,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 54,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.mplphojqjgyw",
+                "nestingLevel": 1,
+                "glyph": "\u25cb",
+                "bulletStyle": {
+                  "bold": null,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": null,
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": null,
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 115,
+            "startIndex": 101,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "And even more ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 119,
+            "startIndex": 115,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "code",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Courier New",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {
+                      "red": 0.8,
+                      "green": 0.2,
+                      "blue": 0.2
+                    }
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Courier New",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 127,
+            "startIndex": 119,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " blocks\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 147,
+            "startIndex": 127,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 108,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 90,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.mplphojqjgyw",
+                "nestingLevel": 2,
+                "glyph": "\u25a0",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 147,
+            "startIndex": 127,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Third level nesting\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 168,
+            "startIndex": 147,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 36,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 18,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.mplphojqjgyw",
+                "nestingLevel": null,
+                "glyph": "\u25cf",
+                "bulletStyle": {
+                  "bold": null,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": null,
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": null,
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 156,
+            "startIndex": 147,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "And even ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 160,
+            "startIndex": 156,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "code",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Courier New",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {
+                      "red": 0.8,
+                      "green": 0.2,
+                      "blue": 0.2
+                    }
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Courier New",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 168,
+            "startIndex": 160,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " blocks\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 191,
+            "startIndex": 168,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 36,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 18,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.mplphojqjgyw",
+                "nestingLevel": null,
+                "glyph": "\u25cf",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 173,
+            "startIndex": 168,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Plus ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 179,
+            "startIndex": 173,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "italic",
+              "style": {
+                "bold": false,
+                "italic": true,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 191,
+            "startIndex": 179,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " formatting\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 214,
+            "startIndex": 191,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 72,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 54,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.mplphojqjgyw",
+                "nestingLevel": 1,
+                "glyph": "\u25cb",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 205,
+            "startIndex": 191,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Nested italic ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 213,
+            "startIndex": 205,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "emphasis",
+              "style": {
+                "bold": false,
+                "italic": true,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 214,
+            "startIndex": 213,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 237,
+            "startIndex": 214,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 72,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 54,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.mplphojqjgyw",
+                "nestingLevel": 1,
+                "glyph": "\u25cb",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 219,
+            "startIndex": 214,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "With ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 223,
+            "startIndex": 219,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "bold",
+              "style": {
+                "bold": true,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 700
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 237,
+            "startIndex": 223,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " nested items\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 238,
+            "startIndex": 237,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 238,
+            "startIndex": 237,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 286,
+            "startIndex": 238,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 247,
+            "startIndex": 238,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Here's a ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 261,
+            "startIndex": 247,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "link to Google",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": {
+                  "url": "https://google.com"
+                },
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 286,
+            "startIndex": 261,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " for testing hyperlinks.\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 287,
+            "startIndex": 286,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 287,
+            "startIndex": 286,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 340,
+            "startIndex": 287,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 292,
+            "startIndex": 287,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Some ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 305,
+            "startIndex": 292,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "strikethrough",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": true,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 340,
+            "startIndex": 305,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " text to test deletion formatting.\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 341,
+            "startIndex": 340,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 341,
+            "startIndex": 340,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 363,
+            "startIndex": 341,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 363,
+            "startIndex": 341,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Ordered list example:\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 383,
+            "startIndex": 363,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 36,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 18,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.pf0ghkjj7w23",
+                "nestingLevel": null,
+                "glyph": "1.",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 383,
+            "startIndex": 363,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "First numbered item\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 408,
+            "startIndex": 383,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 72,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 54,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.pf0ghkjj7w23",
+                "nestingLevel": 1,
+                "glyph": "a.",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 408,
+            "startIndex": 383,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Nested numbered sub-item\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 438,
+            "startIndex": 408,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 72,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 54,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.pf0ghkjj7w23",
+                "nestingLevel": 1,
+                "glyph": "b.",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 433,
+            "startIndex": 408,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Another nested item with ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 437,
+            "startIndex": 433,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "bold",
+              "style": {
+                "bold": true,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 700
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 438,
+            "startIndex": 437,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 460,
+            "startIndex": 438,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 108,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 90,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.pf0ghkjj7w23",
+                "nestingLevel": 2,
+                "glyph": "i.",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 460,
+            "startIndex": 438,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Third level numbering\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 484,
+            "startIndex": 460,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 36,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 18,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.pf0ghkjj7w23",
+                "nestingLevel": null,
+                "glyph": "2.",
+                "bulletStyle": {
+                  "bold": null,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": null,
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": null,
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 472,
+            "startIndex": 460,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Second with ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 483,
+            "startIndex": 472,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "inline code",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Courier New",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {
+                      "red": 0.8,
+                      "green": 0.2,
+                      "blue": 0.2
+                    }
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Courier New",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 484,
+            "startIndex": 483,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 503,
+            "startIndex": 484,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 72,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 54,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.pf0ghkjj7w23",
+                "nestingLevel": 1,
+                "glyph": "a.",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 503,
+            "startIndex": 484,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Nested under third\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 521,
+            "startIndex": 503,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "magnitude": 72,
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "magnitude": 54,
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": {
+                "listId": "kix.pf0ghkjj7w23",
+                "nestingLevel": 1,
+                "glyph": "b.",
+                "bulletStyle": {
+                  "bold": false,
+                  "italic": null,
+                  "underline": false,
+                  "strikethrough": null,
+                  "fontFamily": "Figtree",
+                  "fontSize": {
+                    "magnitude": 55,
+                    "unit": "PT"
+                  },
+                  "foregroundColor": null,
+                  "backgroundColor": null,
+                  "link": null,
+                  "weightedFontFamily": {
+                    "fontFamily": "Figtree",
+                    "weight": 400
+                  },
+                  "baselineOffset": null,
+                  "smallCaps": null
+                }
+              }
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 521,
+            "startIndex": 503,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Final nested item\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 522,
+            "startIndex": 521,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 522,
+            "startIndex": 521,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 569,
+            "startIndex": 522,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 541,
+            "startIndex": 522,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "Mixed content with ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 546,
+            "startIndex": 541,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "links",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": {
+                  "url": "https://example.com"
+                },
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 551,
+            "startIndex": 546,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " and ",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 562,
+            "startIndex": 551,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "crossed out",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": true,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 569,
+            "startIndex": 562,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": " text.\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          },
+          {
+            "endIndex": 570,
+            "startIndex": 569,
+            "paragraphMarker": {
+              "style": {
+                "direction": "LEFT_TO_RIGHT",
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "spacingMode": "COLLAPSE_LISTS",
+                "lineSpacing": 100.0,
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "alignment": "START"
+              },
+              "bullet": null
+            },
+            "textRun": null,
+            "autoText": null
+          },
+          {
+            "endIndex": 570,
+            "startIndex": 569,
+            "paragraphMarker": null,
+            "textRun": {
+              "content": "\n",
+              "style": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "fontFamily": "Figtree",
+                "fontSize": {
+                  "magnitude": 55,
+                  "unit": "PT"
+                },
+                "foregroundColor": {
+                  "opaqueColor": {
+                    "rgbColor": {}
+                  }
+                },
+                "backgroundColor": {},
+                "link": null,
+                "weightedFontFamily": {
+                  "fontFamily": "Figtree",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE",
+                "smallCaps": false
+              }
+            },
+            "autoText": null
+          }
+        ],
+        "lists": {
+          "kix.mplphojqjgyw": {
+            "listId": "kix.mplphojqjgyw",
+            "nestingLevel": {
+              "0": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "1": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "2": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "3": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "4": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "5": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "6": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "7": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "8": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              }
+            }
+          },
+          "kix.pf0ghkjj7w23": {
+            "listId": "kix.pf0ghkjj7w23",
+            "nestingLevel": {
+              "0": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "1": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "2": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "3": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "4": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "5": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "6": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "7": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              },
+              "8": {
+                "bulletStyle": {
+                  "backgroundColor": {},
+                  "foregroundColor": {
+                    "opaqueColor": {
+                      "rgbColor": {}
+                    }
+                  },
+                  "bold": false,
+                  "italic": false,
+                  "fontFamily": "Arial",
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  },
+                  "baselineOffset": "NONE",
+                  "smallCaps": false,
+                  "strikethrough": false,
+                  "underline": false,
+                  "weightedFontFamily": {
+                    "fontFamily": "Arial",
+                    "weight": 400
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "placeholder": null
+    }
+  }
+}

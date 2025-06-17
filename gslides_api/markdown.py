@@ -77,7 +77,7 @@ def markdown_to_text_elements(
 
 
 def markdown_ast_to_text_elements(
-    markdown_ast: Any, base_style: Optional[TextStyle] = None
+    markdown_ast: Any, base_style: Optional[TextStyle] = None, list_depth: int = 0
 ) -> list[TextElement | BulletPointGroup | NumberedListGroup]:
     style = base_style or TextStyle()
     line_break = TextElement(
@@ -110,12 +110,12 @@ def markdown_ast_to_text_elements(
     elif isinstance(markdown_ast, marko.inline.Emphasis):
         style = copy.deepcopy(style)
         style.italic = not style.italic
-        out = markdown_ast_to_text_elements(markdown_ast.children[0], style)
+        out = markdown_ast_to_text_elements(markdown_ast.children[0], style, list_depth)
 
     elif isinstance(markdown_ast, marko.inline.StrongEmphasis):
         style = copy.deepcopy(style)
         style.bold = True
-        out = markdown_ast_to_text_elements(markdown_ast.children[0], style)
+        out = markdown_ast_to_text_elements(markdown_ast.children[0], style, list_depth)
 
     elif isinstance(markdown_ast, marko.inline.Link):
         # Handle hyperlinks by setting the link property in the style
@@ -123,7 +123,11 @@ def markdown_ast_to_text_elements(
         style.link = {"url": markdown_ast.dest}
         # Process the link text (children)
         out = sum(
-            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
+            [
+                markdown_ast_to_text_elements(child, style, list_depth)
+                for child in markdown_ast.children
+            ],
+            [],
         )
 
     elif isinstance(markdown_ast, Strikethrough):
@@ -131,43 +135,72 @@ def markdown_ast_to_text_elements(
         style = copy.deepcopy(style)
         style.strikethrough = True
         out = sum(
-            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
+            [
+                markdown_ast_to_text_elements(child, style, list_depth)
+                for child in markdown_ast.children
+            ],
+            [],
         )
 
     elif isinstance(markdown_ast, marko.block.Paragraph):
         out = sum(
-            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
+            [
+                markdown_ast_to_text_elements(child, style, list_depth)
+                for child in markdown_ast.children
+            ],
+            [],
         ) + [line_break]
     elif isinstance(markdown_ast, marko.block.Heading):
         # TODO: handle heading levels properly, with font size bumps
         style = copy.deepcopy(style)
         style.bold = True
         out = sum(
-            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
+            [
+                markdown_ast_to_text_elements(child, style, list_depth)
+                for child in markdown_ast.children
+            ],
+            [],
         ) + [line_break]
 
     elif isinstance(markdown_ast, marko.block.List):
         # Handle lists - need to pass down whether this is ordered or not
         pre_out = sum(
-            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children],
+            [
+                markdown_ast_to_text_elements(child, style, list_depth + 1)
+                for child in markdown_ast.children
+            ],
             [],
         )
         # Create the appropriate group type based on whether this is an ordered list
-        if markdown_ast.ordered:
-            out = pre_out + [NumberedListGroup(children=pre_out)]
+        if list_depth == 0:
+            if markdown_ast.ordered:
+                out = pre_out + [NumberedListGroup(children=pre_out)]
+            else:
+                out = pre_out + [BulletPointGroup(children=pre_out)]
         else:
-            out = pre_out + [BulletPointGroup(children=pre_out)]
+            out = pre_out
     elif isinstance(markdown_ast, marko.block.Document):
         out = sum(
-            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
+            [
+                markdown_ast_to_text_elements(child, style, list_depth)
+                for child in markdown_ast.children
+            ],
+            [],
         )
     elif isinstance(markdown_ast, marko.block.ListItem):
         # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createparagraphbulletsrequest
         # The bullet creation API is really messed up, forcing us to insert tabs that will be
         # discarded as soon as the bullets are created. So we deal with it as best we can
         # TODO: handle nested lists
-        out = [TextElement(endIndex=0, textRun=TextRun(content="\t", style=style))] + sum(
-            [markdown_ast_to_text_elements(child, style) for child in markdown_ast.children], []
+        out = [
+            TextElement(endIndex=0, textRun=TextRun(content="\t", style=style))
+            for _ in range(list_depth)
+        ] + sum(
+            [
+                markdown_ast_to_text_elements(child, style, list_depth)
+                for child in markdown_ast.children
+            ],
+            [],
         )
 
     else:

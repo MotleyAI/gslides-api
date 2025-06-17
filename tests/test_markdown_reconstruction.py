@@ -56,63 +56,79 @@ class TestMarkdownReconstruction:
     
     def _assert_features_preserved(self, original: str, reconstructed: str):
         """Assert that key markdown features are preserved in reconstruction."""
-        
-        # Test that hyperlinks are preserved
-        assert '[link to Google](https://google.com)' in reconstructed, \
-            "Hyperlink to Google should be preserved"
-        assert '[links](https://example.com)' in reconstructed, \
-            "Hyperlink to example.com should be preserved"
-        
-        # Test that strikethrough is preserved
-        assert '~~strikethrough~~' in reconstructed, \
-            "Strikethrough formatting should be preserved"
-        assert '~~crossed out~~' in reconstructed, \
-            "Crossed out text should be preserved"
-        
-        # Test that bold formatting is preserved
-        assert '**bold**' in reconstructed, \
-            "Bold formatting should be preserved"
-        assert '***very***' in reconstructed, \
-            "Bold+italic formatting should be preserved"
-        
-        # Test that italic formatting is preserved
-        assert '*important*' in reconstructed, \
-            "Italic formatting should be preserved"
-        assert '*italic*' in reconstructed, \
-            "Italic text should be preserved"
-        
-        # Test that code spans are preserved
-        assert '`code`' in reconstructed, \
-            "Code spans should be preserved"
-        assert '`inline code`' in reconstructed, \
-            "Inline code should be preserved"
-        
-        # Test that bullet lists are preserved
-        assert '* It illustrates **bullet points**' in reconstructed, \
-            "Bullet list items should be preserved"
-        assert '* And even `code` blocks' in reconstructed, \
-            "Bullet list with code should be preserved"
-        
-        # Test that numbered lists are preserved
-        assert '1. First numbered item' in reconstructed, \
-            "First numbered list item should be preserved"
-        assert '2. Second with **bold** text' in reconstructed, \
-            "Second numbered list item should be preserved"
-        assert '3. Third with `inline code`' in reconstructed, \
-            "Third numbered list item should be preserved"
-        
+        import re
+
+        # Extract hyperlinks from original
+        hyperlink_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
+        original_hyperlinks = re.findall(hyperlink_pattern, original)
+        for link_text, url in original_hyperlinks:
+            expected_link = f'[{link_text}]({url})'
+            assert expected_link in reconstructed, \
+                f"Hyperlink '{expected_link}' should be preserved"
+
+        # Extract strikethrough text from original
+        strikethrough_pattern = r'~~([^~]+)~~'
+        original_strikethrough = re.findall(strikethrough_pattern, original)
+        for strikethrough_text in original_strikethrough:
+            expected_strikethrough = f'~~{strikethrough_text}~~'
+            assert expected_strikethrough in reconstructed, \
+                f"Strikethrough '{expected_strikethrough}' should be preserved"
+
+        # Extract bold formatting from original (including bold+italic)
+        bold_pattern = r'\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*'
+        original_bold_matches = re.findall(bold_pattern, original)
+        for bold_italic, bold_only in original_bold_matches:
+            if bold_italic:  # ***text*** (bold+italic)
+                expected_bold = f'***{bold_italic}***'
+            else:  # **text** (bold only)
+                expected_bold = f'**{bold_only}**'
+            assert expected_bold in reconstructed, \
+                f"Bold formatting '{expected_bold}' should be preserved"
+
+        # Extract italic formatting from original (single asterisks, not part of bold)
+        italic_pattern = r'(?<!\*)\*([^*]+)\*(?!\*)'
+        original_italic = re.findall(italic_pattern, original)
+        for italic_text in original_italic:
+            expected_italic = f'*{italic_text}*'
+            assert expected_italic in reconstructed, \
+                f"Italic formatting '{expected_italic}' should be preserved"
+
+        # Extract code spans from original
+        code_pattern = r'`([^`]+)`'
+        original_code = re.findall(code_pattern, original)
+        for code_text in original_code:
+            expected_code = f'`{code_text}`'
+            assert expected_code in reconstructed, \
+                f"Code span '{expected_code}' should be preserved"
+
+        # Extract bullet list items from original
+        bullet_pattern = r'^\* (.+)$'
+        original_bullets = re.findall(bullet_pattern, original, re.MULTILINE)
+        for bullet_text in original_bullets:
+            expected_bullet = f'* {bullet_text}'
+            assert expected_bullet in reconstructed, \
+                f"Bullet list item '{expected_bullet}' should be preserved"
+
+        # Extract numbered list items from original
+        numbered_pattern = r'^(\d+)\. (.+)$'
+        original_numbered = re.findall(numbered_pattern, original, re.MULTILINE)
+        for number, numbered_text in original_numbered:
+            expected_numbered = f'{number}. {numbered_text}'
+            assert expected_numbered in reconstructed, \
+                f"Numbered list item '{expected_numbered}' should be preserved"
+
         # Test that content is preserved (ignoring formatting differences)
         original_words = set(original.replace('*', '').replace('`', '').replace('#', '').replace('~', '').split())
         reconstructed_words = set(reconstructed.replace('*', '').replace('`', '').replace('#', '').replace('~', '').split())
-        
+
         # Remove markdown syntax and compare content
         missing_words = original_words - reconstructed_words
         extra_words = reconstructed_words - original_words
-        
+
         # Filter out very short words and punctuation that might differ
         missing_words = {w for w in missing_words if len(w) > 2 and w.isalpha()}
         extra_words = {w for w in extra_words if len(w) > 2 and w.isalpha()}
-        
+
         assert not missing_words, f"Missing words from reconstruction: {missing_words}"
         # Note: We allow extra words since headings become bold text, etc.
     

@@ -74,7 +74,7 @@ class ShapeElement(PageElementBase):
         """Convert the shape's text content back to markdown format.
 
         This method reconstructs markdown from the Google Slides API response,
-        handling formatting like bold, italic, bullet points, and code spans.
+        handling formatting like bold, italic, bullet points, nested lists, and code spans.
         """
         if not hasattr(self.shape, "text") or self.shape.text is None:
             return None
@@ -83,26 +83,30 @@ class ShapeElement(PageElementBase):
 
         result = []
         current_paragraph = []
-        in_bullet_list = False
-        current_bullet_glyph = None
-        self._current_bullet_glyph = None
+
+        # Track list state for proper nesting
+        current_list_info = None  # Will store (listId, nestingLevel, glyph, is_numbered)
+        pending_bullet_info = None  # Store bullet info until we get the text content
 
         for i, te in enumerate(self.shape.text.textElements):
             # Handle paragraph markers (for bullets and paragraph breaks)
             if te.paragraphMarker is not None:
                 # Check if this is a bullet point
                 if te.paragraphMarker.bullet is not None:
-                    if not in_bullet_list:
-                        in_bullet_list = True
-                    # Store the bullet info for the next text content
-                    current_bullet_glyph = te.paragraphMarker.bullet.glyph if te.paragraphMarker.bullet.glyph else '●'
-                    # Don't add content for paragraph markers, just note the bullet state
+                    bullet = te.paragraphMarker.bullet
+                    list_id = bullet.listId if hasattr(bullet, "listId") else None
+                    nesting_level = bullet.nestingLevel if hasattr(bullet, "nestingLevel") else 0
+                    glyph = bullet.glyph if hasattr(bullet, "glyph") and bullet.glyph else "●"
+
+                    # Determine if this is a numbered list based on the glyph
+                    is_numbered = self._is_numbered_list_glyph(glyph)
+
+                    # Store the bullet info to be used when we encounter the text content
+                    pending_bullet_info = (list_id, nesting_level, glyph, is_numbered)
                     continue
                 else:
-                    # Regular paragraph marker - end of bullet list if we were in one
-                    if in_bullet_list:
-                        in_bullet_list = False
-                        current_bullet_glyph = None
+                    # Regular paragraph marker - clear any pending bullet info
+                    pending_bullet_info = None
                     continue
 
             # Handle text runs
@@ -111,10 +115,16 @@ class ShapeElement(PageElementBase):
                 style = te.textRun.style
 
                 # Handle bullet points - add bullet marker at start of line
-                if in_bullet_list and content.strip() and not current_paragraph:
-                    # Use the stored bullet glyph to determine the marker
-                    bullet_marker = self._format_bullet_marker(current_bullet_glyph)
-                    current_paragraph.append(bullet_marker)
+                if pending_bullet_info and content.strip() and not current_paragraph:
+                    list_id, nesting_level, glyph, is_numbered = pending_bullet_info
+
+                    # Generate the appropriate indentation and bullet marker
+                    indent = self._get_list_indentation(nesting_level)
+                    bullet_marker = self._format_bullet_marker_with_nesting(glyph)
+
+                    current_paragraph.append(indent + bullet_marker)
+                    current_list_info = pending_bullet_info
+                    pending_bullet_info = None  # Clear after use
 
                 # Apply formatting based on style
                 formatted_content = self._apply_markdown_formatting(content, style)
@@ -213,6 +223,40 @@ class ShapeElement(PageElementBase):
         # Reconstruct with preserved spacing
         return leading_space + text_content + trailing_space + trailing_newlines
 
+    def _is_numbered_list_glyph(self, glyph: str) -> bool:
+        """Determine if a glyph represents a numbered list item."""
+        if not glyph:
+            return False
+
+        # Check if the glyph contains digits or letters (indicating numbering)
+        return any(char.isdigit() for char in glyph) or any(char.isalpha() for char in glyph)
+
+    def _get_list_indentation(self, nesting_level: int | None) -> str:
+        """Get the appropriate indentation for a list item based on nesting level."""
+        if nesting_level is None:
+            nesting_level = 0
+
+        # Use 2 spaces per nesting level for markdown compatibility
+        return "  " * nesting_level
+
+    def _format_bullet_marker_with_nesting(self, glyph: str) -> str:
+        """Format the bullet marker based on the glyph and nesting level.
+
+        According to the user's requirement, nested lists should be consistently
+        either all ordered or all unordered throughout the nesting hierarchy.
+        """
+        if not glyph:
+            return "* "
+
+        if any(char.isdigit() for char in glyph) or any(char.isalpha() for char in glyph):
+            # For numbered lists, convert all levels to numbered format
+            # Since markdown doesn't support nested numbering well, we'll use "1. " format for all levels
+            # and rely on indentation to show the hierarchy
+            return normalize_numbered_glyph(glyph)
+        else:
+            # This is a bullet list - use bullets for all levels
+            return "* "
+
     def _format_bullet_marker(self, glyph: str) -> str:
         """Format the bullet marker based on the glyph from the API."""
         if not glyph:
@@ -296,3 +340,25 @@ def text_elements_to_requests(text_elements: List[TextElement | GslidesAPIReques
             },
         ]
     return requests
+
+
+def normalize_numbered_glyph(glyph: str) -> str:
+    """Normalize the glyph for numbered lists."""
+    if glyph.endswith("."):
+        # Try to extract the number
+        number_part = glyph[:-1]
+    else:
+        number_part = glyph
+    latin = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"]
+    alpha = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+
+    if number_part in latin:
+        out = str(latin.index(number_part) + 1)
+    elif number_part in alpha:
+        out = str(alpha.index(number_part) + 1)
+    elif number_part.isdigit():
+        out = number_part
+    else:
+        raise ValueError(f"Unsupported glyph format: {glyph}")
+
+    return f"{out}. "
