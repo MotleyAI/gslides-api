@@ -188,7 +188,7 @@ class ImageElement(PageElementBase):
             url = api_client.upload_image_to_drive(file)
 
         requests = self._replace_image_requests(url, method)
-        returnapi_client.batch_update(requests, self.presentation_id)
+        return api_client.batch_update(requests, self.presentation_id)
 
 
 class VideoElement(PageElementBase):
