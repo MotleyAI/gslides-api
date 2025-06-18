@@ -1,22 +1,25 @@
-from typing import Optional, List, Union, ForwardRef
+from typing import Optional, List, Union, ForwardRef, Dict
 
 import logging
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
-from gslides_api import PageBackgroundFill, ColorScheme
+from gslides_api.element.base import ElementKind
+
 from gslides_api.domain import (
     GSlidesBaseModel,
     MasterProperties,
     NotesProperties,
     PageType,
     LayoutReference,
+    PageBackgroundFill,
+    ColorScheme,
 )
 
 # Import PageElement and ElementKind directly to avoid circular imports
-from gslides_api.element import PageElement, ElementKind
-from gslides_api.execute import slides_batch_update, get_slide_json
-from gslides_api.utils import duplicate_object, delete_object, dict_to_dot_separated_field_list
+from gslides_api.element.element import PageElement
+from gslides_api.execute import api_client
+from gslides_api.utils import dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +80,26 @@ class Page(GSlidesBaseModel):
     # Store the presentation ID for reference but exclude from model_dump
     presentation_id: Optional[str] = Field(default=None, exclude=True)
 
+    def _propagate_presentation_id(self, presentation_id: Optional[str] = None) -> None:
+        """Helper method to set presentation_id on all pageElements."""
+        target_id = presentation_id if presentation_id is not None else self.presentation_id
+        if target_id is not None and self.pageElements is not None:
+            for element in self.pageElements:
+                element.presentation_id = target_id
+
+    @model_validator(mode="after")
+    def set_presentation_id_on_elements(self) -> "Page":
+        """Automatically set presentation_id on all pageElements after model creation."""
+        self._propagate_presentation_id()
+        return self
+
+    def __setattr__(self, name: str, value) -> None:
+        """Override setattr to propagate presentation_id when it's set directly."""
+        super().__setattr__(name, value)
+        # If presentation_id was just set, propagate it to pageElements
+        if name == "presentation_id" and hasattr(self, "pageElements"):
+            self._propagate_presentation_id(value)
+
     @classmethod
     def create_blank(
         cls,
@@ -99,7 +122,7 @@ class Page(GSlidesBaseModel):
         if slide_layout_reference is not None:
             base["slideLayoutReference"] = slide_layout_reference.to_api_format()
 
-        out = slides_batch_update([{"createSlide": base}], presentation_id)
+        out = api_client.batch_update([{"createSlide": base}], presentation_id)
         new_slide_id = out["replies"][0]["createSlide"]["objectId"]
 
         return cls.from_ids(presentation_id, new_slide_id)
@@ -107,8 +130,9 @@ class Page(GSlidesBaseModel):
     @classmethod
     def from_ids(cls, presentation_id: str, slide_id: str) -> "Page":
         # To avoid circular imports
-        json = get_slide_json(presentation_id, slide_id)
+        json = api_client.get_slide_json(presentation_id, slide_id)
         new_slide = cls.model_validate(json)
+        new_slide.presentation_id = presentation_id
         return new_slide
 
     def write_copy(
@@ -144,7 +168,7 @@ class Page(GSlidesBaseModel):
                     }
                 }
             ]
-            slides_batch_update(request, presentation_id)
+            api_client.batch_update(request, presentation_id)
         except Exception as e:
             logger.error(f"Error writing page properties: {e}")
 
@@ -163,7 +187,7 @@ class Page(GSlidesBaseModel):
                 }
             }
         ]
-        slides_batch_update(request, presentation_id)
+        api_client.batch_update(request, presentation_id)
 
         if self.pageElements is not None:
             # Some elements came from layout, some were created manually
@@ -176,14 +200,14 @@ class Page(GSlidesBaseModel):
                         element_id = layout_elements[i].objectId
                     else:
                         element_id = element.create_copy(slide_id, presentation_id)
-                    element.update(presentation_id, element_id)
+                    element.update(presentation_id=presentation_id, element_id=element_id)
 
         return self.from_ids(presentation_id, slide_id)
 
     def select_elements(self, kind: ElementKind) -> List[PageElement]:
         if self.pageElements is None:
             return []
-        return [e for e in self.pageElements if getattr(e, kind.value) is not None]
+        return [e for e in self.pageElements if e.type == kind]
 
     @property
     def image_elements(self):
@@ -191,7 +215,12 @@ class Page(GSlidesBaseModel):
             return []
         return [e for e in self.pageElements if e.image is not None]
 
-    def duplicate(self) -> "Page":
+    def get_element_by_id(self, element_id: str) -> PageElement:
+        if self.pageElements is None:
+            return None
+        return next((e for e in self.pageElements if e.objectId == element_id), None)
+
+    def duplicate(self, id_map: Dict[str, str] = None) -> "Page":
         """
         Duplicates the slide in the same presentation.
 
@@ -200,7 +229,7 @@ class Page(GSlidesBaseModel):
         assert (
             self.presentation_id is not None
         ), "self.presentation_id must be set when calling duplicate()"
-        new_id = duplicate_object(self.objectId, self.presentation_id)
+        new_id = api_client.duplicate_object(self.objectId, self.presentation_id, id_map)
         return self.from_ids(self.presentation_id, new_id)
 
     def delete(self) -> None:
@@ -208,7 +237,7 @@ class Page(GSlidesBaseModel):
             self.presentation_id is not None
         ), "self.presentation_id must be set when calling delete()"
 
-        return delete_object(self.objectId, self.presentation_id)
+        return api_client.delete_object(self.objectId, self.presentation_id)
 
     def move(self, insertion_index: int) -> None:
         """
@@ -225,8 +254,12 @@ class Page(GSlidesBaseModel):
                 }
             }
         ]
-        slides_batch_update(request, self.presentation_id)
+        api_client.batch_update(request, self.presentation_id)
 
 
 SlidePageProperties.model_rebuild()
 Page.model_rebuild()
+
+
+class Slide(Page):
+    pass

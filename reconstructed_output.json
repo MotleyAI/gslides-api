@@ -679,8 +679,8 @@
                       "listId": "kix.w2tlt6by9ykw",
                       "glyph": "\u25cf",
                       "bulletStyle": {
-                        "strikethrough": true,
-                        "underline": false
+                        "underline": false,
+                        "strikethrough": true
                       }
                     }
                   }
@@ -715,8 +715,8 @@
                       "glyph": "\u25cf",
                       "bulletStyle": {
                         "bold": false,
-                        "fontFamily": "Courier New",
                         "underline": false,
+                        "fontFamily": "Courier New",
                         "weightedFontFamily": {
                           "fontFamily": "Courier New",
                           "weight": 400
