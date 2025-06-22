@@ -25,13 +25,13 @@ from gslides_api.request.request import (
     UpdateVideoPropertiesRequest,
     UpdateLinePropertiesRequest,
     UpdateSheetsChartPropertiesRequest,
-    CreateTableRequest,
     CreateImageRequest,
     CreateVideoRequest,
     CreateLineRequest,
     CreateWordArtRequest,
     CreateSheetsChartRequest,
 )
+from gslides_api.request.table import CreateTableRequest
 
 
 def element_discriminator(v: Any) -> str:

@@ -10,15 +10,12 @@ from gslides_api.domain import (
     LayoutReference,
     ShapeProperties,
     ImageProperties,
-    Size,
-    Transform,
 )
 from gslides_api.request.domain import (
     Range,
     TableCellLocation,
     ElementProperties,
     PlaceholderIdMapping,
-    ObjectIdMapping,
 )
 
 
@@ -358,23 +355,12 @@ class UpdateSheetsChartPropertiesRequest(GslidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the sheets chart to update")
-    sheetsChartProperties: Dict[str, Any] = Field(description="The sheets chart properties to update")
+    sheetsChartProperties: Dict[str, Any] = Field(
+        description="The sheets chart properties to update"
+    )
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'sheetsChartProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
-
-
-class CreateTableRequest(GslidesAPIRequest):
-    """Creates a new table.
-
-    This request creates a new table on the specified page with the given number of rows and columns.
-
-    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createtablerequest
-    """
-
-    elementProperties: Dict[str, Any] = Field(description="The element properties for the table")
-    rows: int = Field(description="Number of rows in the table")
-    columns: int = Field(description="Number of columns in the table")
 
 
 class CreateImageRequest(GslidesAPIRequest):
@@ -434,6 +420,178 @@ class CreateSheetsChartRequest(GslidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createsheetschartrequest
     """
 
-    elementProperties: Dict[str, Any] = Field(description="The element properties for the sheets chart")
-    spreadsheetId: str = Field(description="The ID of the Google Sheets spreadsheet that contains the chart")
+    elementProperties: Dict[str, Any] = Field(
+        description="The element properties for the sheets chart"
+    )
+    spreadsheetId: str = Field(
+        description="The ID of the Google Sheets spreadsheet that contains the chart"
+    )
     chartId: int = Field(description="The ID of the specific chart in the spreadsheet")
+
+
+class ReplaceAllTextRequest(GslidesAPIRequest):
+    """Replaces all instances of text matching some criteria with replace text.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replacealltextrequest
+    """
+
+    containsText: Dict[str, Any] = Field(
+        description="Finds all instances of text matching this substring"
+    )
+    replaceText: str = Field(description="The text that will replace the matched text")
+    pageObjectIds: Optional[List[str]] = Field(
+        default=None,
+        description="If non-empty, limits the matches to page elements only on the given pages",
+    )
+
+
+class UpdatePageElementTransformRequest(GslidesAPIRequest):
+    """Updates the transform of a page element.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatepageelementtransformrequest
+    """
+
+    objectId: str = Field(description="The object ID of the page element to update")
+    transform: Dict[str, Any] = Field(
+        description="The input transform matrix used to update the page element"
+    )
+    applyMode: str = Field(description="The apply mode of the transform update")
+
+
+class RefreshSheetsChartRequest(GslidesAPIRequest):
+    """Refreshes an embedded Google Sheets chart by replacing it with the latest version of the chart from Google Sheets.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#refreshsheetschartrequest
+    """
+
+    objectId: str = Field(description="The object ID of the chart to refresh")
+
+
+class ReplaceAllShapesWithImageRequest(GslidesAPIRequest):
+    """Replaces all shapes that match the given criteria with the provided image.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replaceallshapeswithimagerequest
+    """
+
+    containsText: Dict[str, Any] = Field(
+        description="If set, this request will replace all of the shapes that contain the given text"
+    )
+    imageUrl: Optional[str] = Field(default=None, description="The image URL")
+    imageReplaceMethod: Optional[str] = Field(default=None, description="The image replace method")
+    pageObjectIds: Optional[List[str]] = Field(
+        default=None,
+        description="If non-empty, limits the matches to page elements only on the given pages",
+    )
+
+
+class ReplaceAllShapesWithSheetsChartRequest(GslidesAPIRequest):
+    """Replaces all shapes that match the given criteria with the provided Google Sheets chart.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replaceallshapeswithsheetschartrequest
+    """
+
+    containsText: Dict[str, Any] = Field(
+        description="The criteria that the shapes must match in order to be replaced"
+    )
+    spreadsheetId: str = Field(
+        description="The ID of the Google Sheets spreadsheet that contains the chart"
+    )
+    chartId: int = Field(
+        description="The ID of the specific chart in the Google Sheets spreadsheet"
+    )
+    linkingMode: Optional[str] = Field(
+        default=None,
+        description="The mode with which the chart is linked to the source spreadsheet",
+    )
+    pageObjectIds: Optional[List[str]] = Field(
+        default=None,
+        description="If non-empty, limits the matches to page elements only on the given pages",
+    )
+
+
+class DeleteParagraphBulletsRequest(GslidesAPIRequest):
+    """Deletes bullets from all of the paragraphs that overlap with the given text index range.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#deleteparagraphbulletsrequest
+    """
+
+    objectId: str = Field(
+        description="The object ID of the shape or table containing the text to delete bullets from"
+    )
+    cellLocation: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="The optional table cell location if the text to be modified is in a table cell",
+    )
+    textRange: Dict[str, Any] = Field(description="The range of text to delete bullets from")
+
+
+class UpdateParagraphStyleRequest(GslidesAPIRequest):
+    """Updates the styling for all of the paragraphs within a Shape or Table that overlap with the given text index range.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updateparagraphstylerequest
+    """
+
+    objectId: str = Field(
+        description="The object ID of the shape or table with the text to be styled"
+    )
+    cellLocation: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="The location of the cell in the table containing the paragraph(s) to style",
+    )
+    style: Dict[str, Any] = Field(description="The paragraph's style")
+    textRange: Dict[str, Any] = Field(
+        description="The range of text containing the paragraph(s) to style"
+    )
+    fields: str = Field(description="The fields that should be updated")
+
+
+class GroupObjectsRequest(GslidesAPIRequest):
+    """Groups objects to create an object group.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#groupobjectsrequest
+    """
+
+    groupObjectId: Optional[str] = Field(
+        default=None, description="A user-supplied object ID for the group to be created"
+    )
+    childrenObjectIds: List[str] = Field(description="The object IDs of the objects to group")
+
+
+class UngroupObjectsRequest(GslidesAPIRequest):
+    """Ungroups objects, such as groups.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#ungroupobjectsrequest
+    """
+
+    objectIds: List[str] = Field(description="The object IDs of the objects to ungroup")
+
+
+class UpdatePageElementsZOrderRequest(GslidesAPIRequest):
+    """Updates the Z-order of page elements.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatepageelementsZorderrequest
+    """
+
+    pageElementObjectIds: List[str] = Field(
+        description="The object IDs of the page elements to update"
+    )
+    operation: str = Field(description="The Z-order operation to apply on the page elements")
+
+
+class UpdateLineCategoryRequest(GslidesAPIRequest):
+    """Updates the category of a line.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatelinecategoryrequest
+    """
+
+    objectId: str = Field(description="The object ID of the line the update is applied to")
+    lineCategory: str = Field(description="The line category to update to")
+
+
+class RerouteLineRequest(GslidesAPIRequest):
+    """Reroutes a line such that it's connected at the two closest connection sites on the connected page elements.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#reroutelinerequest
+    """
+
+    objectId: str = Field(description="The object ID of the line to reroute")

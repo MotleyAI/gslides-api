@@ -90,7 +90,7 @@ class GoogleAPIClient:
             return {}
 
         assert all(isinstance(r, GslidesAPIRequest) for r in requests)
-        re_requests = [r.to_request() if isinstance(r, GslidesAPIRequest) else r for r in requests]
+        re_requests = [r.to_request() for r in requests]
 
         try:
             return (
