@@ -84,3 +84,7 @@ class BasePage(GSlidesBaseModel):
         if self.pageElements is None:
             return None
         return next((e for e in self.pageElements if e.objectId == element_id), None)
+
+
+# Rebuild models to resolve forward references
+BasePage.model_rebuild()

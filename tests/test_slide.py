@@ -1,5 +1,5 @@
 import pytest
-from gslides_api.page_all import Slide, SlideProperties
+from gslides_api import Slide, SlideProperties
 from gslides_api.page.base import PageProperties
 from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import Size, Transform, Shape, ShapeType, ShapeProperties
@@ -74,7 +74,7 @@ def test_write_sets_presentation_id(monkeypatch):
         )
 
     # Apply the monkeypatches
-    import gslides_api.page_all
+    import gslides_api.page
     import gslides_api.execute
 
     monkeypatch.setattr(Slide, "create_blank", mock_create_blank)
@@ -116,7 +116,7 @@ def test_duplicate_preserves_presentation_id(monkeypatch):
         )
 
     # Apply the monkeypatches
-    import gslides_api.page_all
+    import gslides_api.page
     import gslides_api.execute
 
     monkeypatch.setattr(gslides_api.execute.api_client, "duplicate_object", mock_duplicate_object)

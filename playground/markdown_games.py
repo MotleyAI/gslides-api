@@ -2,8 +2,7 @@ import os
 
 import marko
 
-from gslides_api import Presentation, initialize_credentials
-from gslides_api.page_all import Slide
+from gslides_api import Presentation, Slide, initialize_credentials
 
 here = os.path.dirname(os.path.abspath(__file__))
 credential_location = "/home/james/Dropbox/PyCharmProjects/gslides-playground/"

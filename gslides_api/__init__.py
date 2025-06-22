@@ -43,16 +43,16 @@ from .domain import (
     Group,
 )
 from .presentation import Presentation
-from .page_all import (
+from .page.page import (
+    Layout,
+    LayoutProperties,
+    Master,
     MasterProperties,
+    Notes,
+    NotesMaster,
     NotesProperties,
     Page,
     Slide,
-    Layout,
-    Notes,
-    Master,
-    NotesMaster,
-    LayoutProperties,
     SlideProperties,
 )
 from .page.base import BasePage, PageProperties, PageType
