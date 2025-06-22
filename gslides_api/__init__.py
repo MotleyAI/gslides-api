@@ -46,7 +46,7 @@ from .domain import (
     Group,
 )
 from .presentation import Presentation
-from .page import Page, LayoutProperties, SlidePageProperties
+from .page import Page, BasePage, Slide, Layout, Notes, Master, NotesMaster, LayoutProperties, SlidePageProperties
 from .element.base import ElementKind
 from .execute import initialize_credentials
 

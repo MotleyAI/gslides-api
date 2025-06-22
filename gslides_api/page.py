@@ -1,8 +1,8 @@
-from typing import Optional, List, Union, ForwardRef, Dict
+from typing import Optional, List, Union, ForwardRef, Dict, Any, Annotated
 
 import logging
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, Discriminator, Tag, field_validator
 
 from gslides_api.element.base import ElementKind
 
@@ -24,12 +24,43 @@ from gslides_api.utils import dict_to_dot_separated_field_list
 logger = logging.getLogger(__name__)
 
 
+def page_discriminator(v: Any) -> str:
+    """Discriminator function to determine which Page subclass to use based on which properties field is present."""
+    if isinstance(v, dict):
+        if v.get("slideProperties") is not None:
+            return "slide"
+        elif v.get("layoutProperties") is not None:
+            return "layout"
+        elif v.get("notesProperties") is not None:
+            return "notes"
+        elif v.get("masterProperties") is not None:
+            return "master"
+        # Handle notes master case - it has pageType but no specific properties
+        elif v.get("pageType") == "NOTES_MASTER":
+            return "notes_master"
+    else:
+        # Handle model instances
+        if hasattr(v, "slideProperties") and v.slideProperties is not None:
+            return "slide"
+        elif hasattr(v, "layoutProperties") and v.layoutProperties is not None:
+            return "layout"
+        elif hasattr(v, "notesProperties") and v.notesProperties is not None:
+            return "notes"
+        elif hasattr(v, "masterProperties") and v.masterProperties is not None:
+            return "master"
+        elif hasattr(v, "pageType") and v.pageType == PageType.NOTES_MASTER:
+            return "notes_master"
+
+    # If no discriminator found, raise an error
+    raise ValueError("Cannot determine page type - no valid properties found")
+
+
 class SlideProperties(GSlidesBaseModel):
     """Represents properties of a slide."""
 
     layoutObjectId: Optional[str] = None
     masterObjectId: Optional[str] = None
-    notesPage: Optional[ForwardRef("Page")] = None
+    notesPage: Optional[ForwardRef("BasePage")] = None
     isSkipped: Optional[bool] = None
 
 
@@ -60,8 +91,15 @@ class LayoutPageProperties(LayoutProperties):
     colorScheme: Optional[ColorScheme] = None
 
 
-class Page(GSlidesBaseModel):
-    """Represents a slide in a presentation."""
+class PageProperties(GSlidesBaseModel):
+    """Represents properties of a page."""
+
+    pageBackgroundFill: Optional[PageBackgroundFill] = None
+    colorScheme: Optional[ColorScheme] = None
+
+
+class BasePage(GSlidesBaseModel):
+    """Base class for all page types in a presentation."""
 
     objectId: Optional[str] = None
     pageElements: Optional[List[PageElement]] = (
@@ -69,13 +107,7 @@ class Page(GSlidesBaseModel):
     )
     revisionId: Optional[str] = None
     pageProperties: Optional[Union[SlidePageProperties, LayoutPageProperties]] = None
-    pageType: Optional[PageType] = None
-
-    # Union field properties - only one of these should be set
-    slideProperties: Optional[SlideProperties] = None
-    layoutProperties: Optional[LayoutProperties] = None
-    notesProperties: Optional[NotesProperties] = None
-    masterProperties: Optional[MasterProperties] = None
+    pageType: Optional[PageType] = Field(default=None, exclude=True)
 
     # Store the presentation ID for reference but exclude from model_dump
     presentation_id: Optional[str] = Field(default=None, exclude=True)
@@ -88,7 +120,7 @@ class Page(GSlidesBaseModel):
                 element.presentation_id = target_id
 
     @model_validator(mode="after")
-    def set_presentation_id_on_elements(self) -> "Page":
+    def set_presentation_id_on_elements(self) -> "BasePage":
         """Automatically set presentation_id on all pageElements after model creation."""
         self._propagate_presentation_id()
         return self
@@ -107,7 +139,7 @@ class Page(GSlidesBaseModel):
         insertion_index: Optional[int] = None,
         slide_layout_reference: Optional[LayoutReference] = None,
         layoout_placeholder_id_mapping: Optional[dict] = None,
-    ) -> "Page":
+    ) -> "BasePage":
         """Create a blank slide in a Google Slides presentation.
 
         Args:
@@ -128,7 +160,7 @@ class Page(GSlidesBaseModel):
         return cls.from_ids(presentation_id, new_slide_id)
 
     @classmethod
-    def from_ids(cls, presentation_id: str, slide_id: str) -> "Page":
+    def from_ids(cls, presentation_id: str, slide_id: str) -> "BasePage":
         # To avoid circular imports
         json = api_client.get_slide_json(presentation_id, slide_id)
         new_slide = cls.model_validate(json)
@@ -139,7 +171,7 @@ class Page(GSlidesBaseModel):
         self,
         insertion_index: Optional[int] = None,
         presentation_id: Optional[str] = None,
-    ) -> "Page":
+    ) -> "BasePage":
         """Write the slide to a Google Slides presentation.
 
         Args:
@@ -147,6 +179,10 @@ class Page(GSlidesBaseModel):
             insertion_index: The index to insert the slide at. If not provided, the slide will be added at the end.
         """
         presentation_id = presentation_id or self.presentation_id
+
+        # This method is primarily for slides, so we need to check if we have slide properties
+        if not hasattr(self, "slideProperties") or self.slideProperties is None:
+            raise ValueError("write_copy is only supported for slide pages")
 
         new_slide = self.create_blank(
             presentation_id,
@@ -257,9 +293,88 @@ class Page(GSlidesBaseModel):
         api_client.batch_update(request, self.presentation_id)
 
 
-SlidePageProperties.model_rebuild()
-Page.model_rebuild()
+class Slide(BasePage):
+    """Represents a slide page in a presentation."""
+
+    slideProperties: SlideProperties
+    pageType: PageType = Field(default=PageType.SLIDE, description="The type of page", exclude=True)
+
+    @field_validator("pageType")
+    @classmethod
+    def validate_page_type(cls, v):
+        return PageType.SLIDE
 
 
-class Slide(Page):
-    pass
+class Layout(BasePage):
+    """Represents a layout page in a presentation."""
+
+    layoutProperties: LayoutProperties
+    pageType: PageType = Field(
+        default=PageType.LAYOUT, description="The type of page", exclude=True
+    )
+
+    @field_validator("pageType")
+    @classmethod
+    def validate_page_type(cls, v):
+        return PageType.LAYOUT
+
+
+class Notes(BasePage):
+    """Represents a notes page in a presentation."""
+
+    notesProperties: NotesProperties
+    pageType: PageType = Field(default=PageType.NOTES, description="The type of page", exclude=True)
+
+    @field_validator("pageType")
+    @classmethod
+    def validate_page_type(cls, v):
+        return PageType.NOTES
+
+
+class Master(BasePage):
+    """Represents a master page in a presentation."""
+
+    masterProperties: MasterProperties
+    pageType: PageType = Field(
+        default=PageType.MASTER, description="The type of page", exclude=True
+    )
+
+    @field_validator("pageType")
+    @classmethod
+    def validate_page_type(cls, v):
+        return PageType.MASTER
+
+
+class NotesMaster(BasePage):
+    """Represents a notes master page in a presentation."""
+
+    pageType: PageType = Field(
+        default=PageType.NOTES_MASTER, description="The type of page", exclude=True
+    )
+
+    @field_validator("pageType")
+    @classmethod
+    def validate_page_type(cls, v):
+        return PageType.NOTES_MASTER
+
+
+# Create the discriminated union type
+Page = Annotated[
+    Union[
+        Annotated[Slide, Tag("slide")],
+        Annotated[Layout, Tag("layout")],
+        Annotated[Notes, Tag("notes")],
+        Annotated[Master, Tag("master")],
+        Annotated[NotesMaster, Tag("notes_master")],
+    ],
+    Discriminator(page_discriminator),
+]
+
+
+# SlidePageProperties.model_rebuild()
+# Rebuild all page models to handle forward references
+Slide.model_rebuild()
+Layout.model_rebuild()
+Notes.model_rebuild()
+Master.model_rebuild()
+NotesMaster.model_rebuild()
