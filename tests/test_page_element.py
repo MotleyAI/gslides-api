@@ -87,10 +87,17 @@ def test_line_element():
     assert element.line.lineType == "STRAIGHT"
 
     # Create request should generate a valid request
-    request = element.create_request("page_id")
-    assert len(request) == 1
-    assert "createLine" in request[0]
-    assert request[0]["createLine"]["lineCategory"] == "STRAIGHT"
+    request_objects = element.create_request("page_id")
+    assert len(request_objects) == 1
+
+    # Convert request objects to dictionaries to test the final format
+    requests = []
+    for req_obj in request_objects:
+        requests.extend(req_obj.to_request())
+
+    assert len(requests) == 1
+    assert "createLine" in requests[0]
+    assert requests[0]["createLine"]["lineCategory"] == "STRAIGHT"
 
 
 def test_word_art_element():
@@ -106,10 +113,17 @@ def test_word_art_element():
     assert element.wordArt.renderedText == "Test Word Art"
 
     # Create request should generate a valid request
-    request = element.create_request("page_id")
-    assert len(request) == 1
-    assert "createWordArt" in request[0]
-    assert request[0]["createWordArt"]["renderedText"] == "Test Word Art"
+    request_objects = element.create_request("page_id")
+    assert len(request_objects) == 1
+
+    # Convert request objects to dictionaries to test the final format
+    requests = []
+    for req_obj in request_objects:
+        requests.extend(req_obj.to_request())
+
+    assert len(requests) == 1
+    assert "createWordArt" in requests[0]
+    assert requests[0]["createWordArt"]["renderedText"] == "Test Word Art"
 
 
 def test_sheets_chart_element():
@@ -130,11 +144,18 @@ def test_sheets_chart_element():
     assert element.sheetsChart.chartId == 123
 
     # Create request should generate a valid request
-    request = element.create_request("page_id")
-    assert len(request) == 1
-    assert "createSheetsChart" in request[0]
-    assert request[0]["createSheetsChart"]["spreadsheetId"] == "spreadsheet_id"
-    assert request[0]["createSheetsChart"]["chartId"] == 123
+    request_objects = element.create_request("page_id")
+    assert len(request_objects) == 1
+
+    # Convert request objects to dictionaries to test the final format
+    requests = []
+    for req_obj in request_objects:
+        requests.extend(req_obj.to_request())
+
+    assert len(requests) == 1
+    assert "createSheetsChart" in requests[0]
+    assert requests[0]["createSheetsChart"]["spreadsheetId"] == "spreadsheet_id"
+    assert requests[0]["createSheetsChart"]["chartId"] == 123
 
 
 def test_update_request_with_title_description():

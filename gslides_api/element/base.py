@@ -86,7 +86,7 @@ class PageElementBase(GSlidesBaseModel):
         else:
             return []
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert a PageElement to a create request for the Google Slides API.
 
         This method should be overridden by subclasses.

@@ -25,6 +25,12 @@ from gslides_api.request.request import (
     UpdateVideoPropertiesRequest,
     UpdateLinePropertiesRequest,
     UpdateSheetsChartPropertiesRequest,
+    CreateTableRequest,
+    CreateImageRequest,
+    CreateVideoRequest,
+    CreateLineRequest,
+    CreateWordArtRequest,
+    CreateSheetsChartRequest,
 )
 
 
@@ -87,18 +93,15 @@ class TableElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.TABLE
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert a TableElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
-        return [
-            {
-                "createTable": {
-                    "elementProperties": element_properties,
-                    "rows": self.table.rows,
-                    "columns": self.table.columns,
-                }
-            }
-        ]
+        request = CreateTableRequest(
+            elementProperties=element_properties,
+            rows=self.table.rows,
+            columns=self.table.columns,
+        )
+        return [request]
 
     def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
         """Convert a TableElement to an update request for the Google Slides API."""
@@ -119,17 +122,14 @@ class ImageElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.IMAGE
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert an ImageElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
-        return [
-            {
-                "createImage": {
-                    "elementProperties": element_properties,
-                    "url": self.image.contentUrl,
-                }
-            }
-        ]
+        request = CreateImageRequest(
+            elementProperties=element_properties,
+            url=self.image.contentUrl,
+        )
+        return [request]
 
     def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
         """Convert an ImageElement to an update request for the Google Slides API."""
@@ -210,22 +210,19 @@ class VideoElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.VIDEO
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert a VideoElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
 
         if self.video.source is None:
             raise ValueError("Video source type is required")
 
-        return [
-            {
-                "createVideo": {
-                    "elementProperties": element_properties,
-                    "source": self.video.source.value,
-                    "id": self.video.id,
-                }
-            }
-        ]
+        request = CreateVideoRequest(
+            elementProperties=element_properties,
+            source=self.video.source.value,
+            id=self.video.id,
+        )
+        return [request]
 
     def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
         """Convert a VideoElement to an update request for the Google Slides API."""
@@ -256,17 +253,14 @@ class LineElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.LINE
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert a LineElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
-        return [
-            {
-                "createLine": {
-                    "elementProperties": element_properties,
-                    "lineCategory": self.line.lineType if self.line.lineType else "STRAIGHT",
-                }
-            }
-        ]
+        request = CreateLineRequest(
+            elementProperties=element_properties,
+            lineCategory=self.line.lineType if self.line.lineType else "STRAIGHT",
+        )
+        return [request]
 
     def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
         """Convert a LineElement to an update request for the Google Slides API."""
@@ -297,21 +291,18 @@ class WordArtElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.WORD_ART
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert a WordArtElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
 
         if not self.wordArt.renderedText:
             raise ValueError("Rendered text is required for Word Art")
 
-        return [
-            {
-                "createWordArt": {
-                    "elementProperties": element_properties,
-                    "renderedText": self.wordArt.renderedText,
-                }
-            }
-        ]
+        request = CreateWordArtRequest(
+            elementProperties=element_properties,
+            renderedText=self.wordArt.renderedText,
+        )
+        return [request]
 
     def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
         """Convert a WordArtElement to an update request for the Google Slides API."""
@@ -332,22 +323,19 @@ class SheetsChartElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.SHEETS_CHART
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert a SheetsChartElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
 
         if not self.sheetsChart.spreadsheetId or not self.sheetsChart.chartId:
             raise ValueError("Spreadsheet ID and Chart ID are required for Sheets Chart")
 
-        return [
-            {
-                "createSheetsChart": {
-                    "elementProperties": element_properties,
-                    "spreadsheetId": self.sheetsChart.spreadsheetId,
-                    "chartId": self.sheetsChart.chartId,
-                }
-            }
-        ]
+        request = CreateSheetsChartRequest(
+            elementProperties=element_properties,
+            spreadsheetId=self.sheetsChart.spreadsheetId,
+            chartId=self.sheetsChart.chartId,
+        )
+        return [request]
 
     def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
         """Convert a SheetsChartElement to an update request for the Google Slides API."""
@@ -381,7 +369,7 @@ class SpeakerSpotlightElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.SPEAKER_SPOTLIGHT
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert a SpeakerSpotlightElement to a create request for the Google Slides API."""
         # Note: Speaker spotlight creation is not directly supported in the API
         # This is a placeholder implementation
@@ -408,7 +396,7 @@ class GroupElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.GROUP
 
-    def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
+    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
         """Convert a GroupElement to a create request for the Google Slides API."""
         # Note: Group creation is typically done by grouping existing elements
         # This is a placeholder implementation

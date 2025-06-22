@@ -362,3 +362,78 @@ class UpdateSheetsChartPropertiesRequest(GslidesAPIRequest):
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'sheetsChartProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
+
+
+class CreateTableRequest(GslidesAPIRequest):
+    """Creates a new table.
+
+    This request creates a new table on the specified page with the given number of rows and columns.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createtablerequest
+    """
+
+    elementProperties: Dict[str, Any] = Field(description="The element properties for the table")
+    rows: int = Field(description="Number of rows in the table")
+    columns: int = Field(description="Number of columns in the table")
+
+
+class CreateImageRequest(GslidesAPIRequest):
+    """Creates a new image.
+
+    This request creates a new image on the specified page from a URL.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createimagerequest
+    """
+
+    elementProperties: Dict[str, Any] = Field(description="The element properties for the image")
+    url: str = Field(description="The image URL")
+
+
+class CreateVideoRequest(GslidesAPIRequest):
+    """Creates a new video.
+
+    This request creates a new video on the specified page.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createvideorequest
+    """
+
+    elementProperties: Dict[str, Any] = Field(description="The element properties for the video")
+    source: str = Field(description="The video source type (e.g., 'YOUTUBE')")
+    id: str = Field(description="The video ID")
+
+
+class CreateLineRequest(GslidesAPIRequest):
+    """Creates a new line.
+
+    This request creates a new line on the specified page.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createlinerequest
+    """
+
+    elementProperties: Dict[str, Any] = Field(description="The element properties for the line")
+    lineCategory: str = Field(description="The line category (e.g., 'STRAIGHT')")
+
+
+class CreateWordArtRequest(GslidesAPIRequest):
+    """Creates a new word art.
+
+    This request creates a new word art on the specified page.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createwordartrequest
+    """
+
+    elementProperties: Dict[str, Any] = Field(description="The element properties for the word art")
+    renderedText: str = Field(description="The text to render as word art")
+
+
+class CreateSheetsChartRequest(GslidesAPIRequest):
+    """Creates a new sheets chart.
+
+    This request creates a new sheets chart on the specified page.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createsheetschartrequest
+    """
+
+    elementProperties: Dict[str, Any] = Field(description="The element properties for the sheets chart")
+    spreadsheetId: str = Field(description="The ID of the Google Sheets spreadsheet that contains the chart")
+    chartId: int = Field(description="The ID of the specific chart in the spreadsheet")
