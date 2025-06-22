@@ -1,16 +1,13 @@
 from .base import BasePage, PageProperties, PageType
 from .page import (
     Page,
-    Slide,
     Layout,
-    Notes,
     Master,
     NotesMaster,
-    SlideProperties,
     LayoutProperties,
-    NotesProperties,
     MasterProperties,
 )
+from .slide import Notes, NotesProperties, Slide, SlideProperties
 
 __all__ = [
     "BasePage",

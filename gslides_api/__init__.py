@@ -48,13 +48,10 @@ from .page.page import (
     LayoutProperties,
     Master,
     MasterProperties,
-    Notes,
     NotesMaster,
-    NotesProperties,
     Page,
-    Slide,
-    SlideProperties,
 )
+from .page import Notes, NotesProperties, Slide, SlideProperties
 from .page.base import BasePage, PageProperties, PageType
 from .element.base import ElementKind
 from .execute import initialize_credentials
