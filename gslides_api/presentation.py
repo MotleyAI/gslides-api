@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 
 from gslides_api import Size, Dimension
 from gslides_api.execute import api_client
-from gslides_api.page import Page
+from gslides_api.page_all import Page
 from gslides_api.domain import GSlidesBaseModel
 
 logger = logging.getLogger(__name__)

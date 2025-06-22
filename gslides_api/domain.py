@@ -615,28 +615,6 @@ class PageBackgroundFill(GSlidesBaseModel):
     stretchedPictureFill: Optional[StretchedPictureFill] = None
 
 
-class NotesProperties(GSlidesBaseModel):
-    """Represents properties of notes."""
-
-    speakerNotesObjectId: str
-
-
-class MasterProperties(GSlidesBaseModel):
-    """Represents properties of a master slide."""
-
-    displayName: Optional[str] = None
-
-
-class PageType(Enum):
-    """Enumeration of possible page types."""
-
-    SLIDE = "SLIDE"
-    MASTER = "MASTER"
-    LAYOUT = "LAYOUT"
-    NOTES = "NOTES"
-    NOTES_MASTER = "NOTES_MASTER"
-
-
 class PredefinedLayout(Enum):
     """Enumeration of predefined slide layouts.
 

@@ -30,9 +30,6 @@ from .domain import (
     PageBackgroundFill,
     AutoText,
     AutoTextType,
-    MasterProperties,
-    NotesProperties,
-    PageType,
     PredefinedLayout,
     ColorScheme,
     ThemeColorPair,
@@ -46,6 +43,18 @@ from .domain import (
     Group,
 )
 from .presentation import Presentation
-from .page import Page, BasePage, Slide, Layout, Notes, Master, NotesMaster, LayoutProperties, SlideProperties, PageProperties
+from .page_all import (
+    MasterProperties,
+    NotesProperties,
+    Page,
+    Slide,
+    Layout,
+    Notes,
+    Master,
+    NotesMaster,
+    LayoutProperties,
+    SlideProperties,
+)
+from .page.base import BasePage, PageProperties, PageType
 from .element.base import ElementKind
 from .execute import initialize_credentials

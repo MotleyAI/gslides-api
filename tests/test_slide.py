@@ -1,5 +1,6 @@
 import pytest
-from gslides_api.page import Slide, SlideProperties, PageProperties
+from gslides_api.page_all import Slide, SlideProperties
+from gslides_api.page.base import PageProperties
 from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import Size, Transform, Shape, ShapeType, ShapeProperties
 
@@ -73,7 +74,7 @@ def test_write_sets_presentation_id(monkeypatch):
         )
 
     # Apply the monkeypatches
-    import gslides_api.page
+    import gslides_api.page_all
     import gslides_api.execute
 
     monkeypatch.setattr(Slide, "create_blank", mock_create_blank)
@@ -115,7 +116,7 @@ def test_duplicate_preserves_presentation_id(monkeypatch):
         )
 
     # Apply the monkeypatches
-    import gslides_api.page
+    import gslides_api.page_all
     import gslides_api.execute
 
     monkeypatch.setattr(gslides_api.execute.api_client, "duplicate_object", mock_duplicate_object)
@@ -201,7 +202,11 @@ def test_presentation_id_propagation_on_modification():
 def test_presentation_id_propagation_with_no_elements():
     """Test that Page with no pageElements works correctly and doesn't crash."""
     # Create Page with no pageElements
-    page = Slide(objectId="slide2", slideProperties=SlideProperties(), presentation_id="test-presentation-789")
+    page = Slide(
+        objectId="slide2",
+        slideProperties=SlideProperties(),
+        presentation_id="test-presentation-789",
+    )
 
     # Verify that presentation_id is set correctly
     assert page.presentation_id == "test-presentation-789"
@@ -214,7 +219,12 @@ def test_presentation_id_propagation_with_no_elements():
 def test_presentation_id_propagation_with_empty_elements_list():
     """Test that Page with empty pageElements list works correctly."""
     # Create Page with empty pageElements list
-    page = Slide(objectId="slide3", slideProperties=SlideProperties(), presentation_id="test-presentation-empty", pageElements=[])
+    page = Slide(
+        objectId="slide3",
+        slideProperties=SlideProperties(),
+        presentation_id="test-presentation-empty",
+        pageElements=[],
+    )
 
     # Verify that presentation_id is set correctly
     assert page.presentation_id == "test-presentation-empty"
@@ -227,7 +237,11 @@ def test_presentation_id_propagation_with_empty_elements_list():
 def test_presentation_id_propagation_when_adding_elements_later():
     """Test that pageElements added after Page creation get correct presentation_id."""
     # Create Page without pageElements initially
-    page = Slide(objectId="slide4", slideProperties=SlideProperties(), presentation_id="test-presentation-later")
+    page = Slide(
+        objectId="slide4",
+        slideProperties=SlideProperties(),
+        presentation_id="test-presentation-later",
+    )
 
     # Create and add pageElements later
     element = ShapeElement(
