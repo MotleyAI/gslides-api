@@ -273,14 +273,6 @@ class ShapeElement(PageElementBase):
             # This is a bullet list
             return "* "
 
-    def _write_plain_text_requests(self, text: str, style: TextStyle | None = None):
-        raise NotImplementedError("Writing plain text to shape elements is not supported yet")
-
-    def _write_markdown_requests(self, markdown: str, style: TextStyle | None = None):
-        elements = markdown_to_text_elements(markdown, base_style=style)
-        requests = text_elements_to_requests(elements, self.objectId)
-        return requests
-
     @property
     def style(self):
         if not hasattr(self.shape, "text") or self.shape.text is None:
@@ -292,12 +284,14 @@ class ShapeElement(PageElementBase):
                 continue
             return te.textRun.style
 
-    def write_text(self, text: str, as_markdown: bool = True):
+    def write_text(self, text: str, as_markdown: bool = True, style: TextStyle | None = None):
+        style = style or self.style
         requests = self._delete_text_request()
         if as_markdown:
-            requests += self._write_markdown_requests(text, style=self.style)
+            elements = markdown_to_text_elements(text, base_style=style)
+            requests += text_elements_to_requests(elements, self.objectId)
         else:
-            requests += self._write_plain_text_requests(text, style=self.style)
+            raise NotImplementedError("Plain text writing not implemented yet")
         return api_client.batch_update(requests, self.presentation_id)
 
 

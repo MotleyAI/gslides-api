@@ -95,42 +95,6 @@ class TestShapeElementToMarkdown:
         assert result is None
 
 
-class TestShapeElementWriteMethods:
-    """Test ShapeElement write methods."""
-
-    def test_write_plain_text_requests_not_implemented(self, slide_3_shape_element):
-        """Test that _write_plain_text_requests raises NotImplementedError."""
-        with pytest.raises(
-            NotImplementedError, match="Writing plain text to shape elements is not supported yet"
-        ):
-            slide_3_shape_element._write_plain_text_requests("test text")
-
-    @patch("gslides_api.element.shape.markdown_to_text_elements")
-    def test_write_markdown_requests(self, mock_markdown_to_text_elements, slide_3_shape_element):
-        """Test write_markdown_requests method."""
-        # Mock the markdown_to_text_elements function to return a simple text element
-        from gslides_api.domain import TextElement, TextRun, TextStyle
-
-        mock_text_element = TextElement(
-            startIndex=0,
-            endIndex=13,
-            textRun=TextRun(content="Test markdown", style=TextStyle())
-        )
-        mock_markdown_to_text_elements.return_value = [mock_text_element]
-
-        result = slide_3_shape_element._write_markdown_requests("# Test markdown")
-
-        mock_markdown_to_text_elements.assert_called_once_with("# Test markdown", base_style=None)
-
-        # Check that the result contains the expected requests
-        assert len(result) == 2  # insertText and updateTextStyle
-        assert result[0]["insertText"]["text"] == "Test markdown"
-        assert result[0]["insertText"]["objectId"] == slide_3_shape_element.objectId
-
-    # Note: write_text method doesn't exist in the actual implementation
-    # The tests above cover the actual methods that exist
-
-
 class TestImageElementToMarkdown:
     """Test ImageElement.to_markdown() method."""
 
