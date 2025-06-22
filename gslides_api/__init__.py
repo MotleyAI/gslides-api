@@ -54,4 +54,4 @@ from .page.page import (
 from .page import Notes, NotesProperties, Slide, SlideProperties
 from .page.base import BasePage, PageProperties, PageType
 from .element.base import ElementKind
-from .execute import initialize_credentials
+from .client import initialize_credentials

@@ -15,7 +15,7 @@ from gslides_api.domain import (
     ImageReplaceMethod,
 )
 from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.execute import api_client
+from gslides_api.client import api_client
 from gslides_api.element.shape import ShapeElement
 from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 

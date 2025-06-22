@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 
 from gslides_api.domain import GSlidesBaseModel, Transform, Size
-from gslides_api.execute import api_client
+from gslides_api.client import api_client
 
 
 class ElementKind(Enum):

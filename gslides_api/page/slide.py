@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 
 from gslides_api.page.base import BasePage, ElementKind, PageType
 from gslides_api.domain import GSlidesBaseModel, LayoutReference
-from gslides_api.execute import api_client
+from gslides_api.client import api_client
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 

@@ -1,7 +1,7 @@
 import pytest
 import os
 from unittest.mock import patch, MagicMock
-from gslides_api.execute import api_client
+from gslides_api.client import api_client
 
 
 class TestUploadImageToDrive:
@@ -10,13 +10,13 @@ class TestUploadImageToDrive:
     def test_supported_png_format(self):
         """Test that PNG format is correctly detected and processed."""
         with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-            "gslides_api.execute.MediaFileUpload"
+            "gslides_api.client.MediaFileUpload"
         ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
             # Setup mocks
             mock_basename.return_value = "test_image.png"
-            mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
-            mock_drive_service.permissions().create().execute.return_value = {}
+            mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
+            mock_drive_service.permissions().create().client.return_value = {}
 
             # Test PNG format
             result = api_client.upload_image_to_drive("test_image.png")
@@ -43,13 +43,13 @@ class TestUploadImageToDrive:
 
         for image_path, expected_mime_type in test_cases:
             with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-                "gslides_api.execute.MediaFileUpload"
+                "gslides_api.client.MediaFileUpload"
             ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
-                mock_drive_service.permissions().create().execute.return_value = {}
+                mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
+                mock_drive_service.permissions().create().client.return_value = {}
 
                 # Test the format
                 result = api_client.upload_image_to_drive(image_path)
@@ -65,13 +65,13 @@ class TestUploadImageToDrive:
     def test_supported_gif_format(self):
         """Test that GIF format is correctly detected and processed."""
         with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-            "gslides_api.execute.MediaFileUpload"
+            "gslides_api.client.MediaFileUpload"
         ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
             # Setup mocks
             mock_basename.return_value = "test_image.gif"
-            mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
-            mock_drive_service.permissions().create().execute.return_value = {}
+            mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
+            mock_drive_service.permissions().create().client.return_value = {}
 
             # Test GIF format
             result = api_client.upload_image_to_drive("test_image.gif")
@@ -125,13 +125,13 @@ class TestUploadImageToDrive:
 
         for image_path in test_cases:
             with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-                "gslides_api.execute.MediaFileUpload"
+                "gslides_api.client.MediaFileUpload"
             ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
-                mock_drive_service.permissions().create().execute.return_value = {}
+                mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
+                mock_drive_service.permissions().create().client.return_value = {}
 
                 # Should not raise an exception
                 result = api_client.upload_image_to_drive(image_path)
@@ -148,13 +148,13 @@ class TestUploadImageToDrive:
 
         for image_path in test_paths:
             with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-                "gslides_api.execute.MediaFileUpload"
+                "gslides_api.client.MediaFileUpload"
             ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
-                mock_drive_service.permissions().create().execute.return_value = {}
+                mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
+                mock_drive_service.permissions().create().client.return_value = {}
 
                 # Should not raise an exception
                 result = api_client.upload_image_to_drive(image_path)

@@ -7,7 +7,7 @@ from gslides_api.domain import ColorScheme, PageBackgroundFill
 from gslides_api.domain import GSlidesBaseModel
 from gslides_api.element.element import PageElement
 from gslides_api.element.base import ElementKind
-from gslides_api.execute import api_client
+from gslides_api.client import api_client
 
 
 class PageType(Enum):

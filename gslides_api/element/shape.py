@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 
 from gslides_api.domain import Shape, TextElement, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.execute import api_client
+from gslides_api.client import api_client
 from gslides_api.markdown import markdown_to_text_elements
 from gslides_api.request.request import GslidesAPIRequest
 

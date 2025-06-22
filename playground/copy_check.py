@@ -1,5 +1,5 @@
 from gslides_api import Presentation, initialize_credentials
-from gslides_api.execute import api_client
+from gslides_api.client import api_client
 from gslides_api.json_diff import json_diff
 
 credential_location = "/home/james/Dropbox/PyCharmProjects/gslides-playground/"
