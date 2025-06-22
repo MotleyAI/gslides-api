@@ -1,20 +1,9 @@
-from typing import Optional, Dict, Any, List
 from enum import Enum
+from typing import Optional, Dict, Any, List
+
 from pydantic import Field, model_validator
 
-from gslides_api.domain import GSlidesBaseModel, BulletGlyphPreset
-
-
-class GslidesAPIRequest(GSlidesBaseModel):
-    """Base class for all requests to the Google Slides API."""
-
-    def to_request(self) -> List[Dict[str, Any]]:
-        """Convert to the format expected by the Google Slides API."""
-        request_name = self.__class__.__name__.replace("Request", "")
-        # make first letter lowercase
-        request_name = request_name[0].lower() + request_name[1:]
-
-        return [{request_name: self.to_api_format()}]
+from gslides_api.domain import GSlidesBaseModel
 
 
 class RangeType(Enum):
@@ -88,30 +77,28 @@ class TableCellLocation(GSlidesBaseModel):
         return self
 
 
-class CreateParagraphBulletsRequest(GslidesAPIRequest):
-    """Creates bullets for paragraphs in a shape or table cell.
+class ElementProperties(GSlidesBaseModel):
+    """Represents common properties for creating page elements.
 
-    This request converts plain paragraphs into bulleted lists using a specified
-    bullet preset pattern. The bullets are applied to all paragraphs that overlap
-    with the given text range.
-
-    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createparagraphbulletsrequest
+    Used when creating new elements like shapes, images, etc.
     """
 
-    objectId: str = Field(
-        description="The object ID of the shape or table containing the text to add bullets to"
-    )
-    textRange: Range = Field(
-        description="The range of text to add bullets to, based on TextElement indexes"
-    )
-    bulletPreset: Optional[BulletGlyphPreset] = Field(
-        default=None, description="The kinds of bullet glyphs to be used"
-    )
-    cellLocation: Optional[TableCellLocation] = Field(
-        default=None,
-        description="The optional table cell location if the text to be modified is in a table cell. If present, the objectId must refer to a table.",
-    )
+    pageObjectId: str = Field(description="The object ID of the page where the element will be created")
+    size: Optional[Dict[str, Any]] = Field(default=None, description="The size of the element")
+    transform: Optional[Dict[str, Any]] = Field(default=None, description="The transform to apply to the element")
+    title: Optional[str] = Field(default=None, description="The title of the element")
+    description: Optional[str] = Field(default=None, description="The description of the element")
 
-    def to_request(self) -> List[Dict[str, Any]]:
-        """Convert the request to a format suitable for the Google Slides API."""
-        return [{"createParagraphBullets": self.to_api_format()}]
+
+class PlaceholderIdMapping(GSlidesBaseModel):
+    """Represents a mapping of placeholder IDs for slide creation."""
+
+    layoutPlaceholder: Dict[str, Any] = Field(description="The placeholder on the layout")
+    layoutPlaceholderObjectId: str = Field(description="The object ID of the layout placeholder")
+    objectId: str = Field(description="The object ID to assign to the placeholder")
+
+
+class ObjectIdMapping(GSlidesBaseModel):
+    """Represents a mapping of object IDs for duplication operations."""
+
+    objectIds: Dict[str, str] = Field(description="A map of object IDs to their new IDs")

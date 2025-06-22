@@ -1,0 +1,260 @@
+import logging
+from typing import Dict, Any, Optional
+import os
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import Resource, build
+
+from googleapiclient.http import MediaFileUpload
+
+from gslides_api.request.request import (
+    GSlidesAPIRequest,
+    DuplicateObjectRequest,
+    DeleteObjectRequest,
+)
+
+
+# The functions in this file are the only interaction with the raw gslides API in this library
+class GoogleAPIClient:
+    # Initial version from the gslides package
+    """The credentials object to build the connections to the APIs"""
+
+    def __init__(self) -> None:
+        """Constructor method"""
+        self.crdtls: Optional[Credentials] = None
+        self.sht_srvc: Optional[Resource] = None
+        self.sld_srvc: Optional[Resource] = None
+        self.drive_srvc: Optional[Resource] = None
+
+    def set_credentials(self, credentials: Optional[Credentials]) -> None:
+        """Sets the credentials
+
+        :param credentials: :class:`google.oauth2.credentials.Credentials`
+        :type credentials: :class:`google.oauth2.credentials.Credentials`
+
+        """
+        self.crdtls = credentials
+        logger.info("Building sheets connection")
+        self.sht_srvc = build("sheets", "v4", credentials=credentials)
+        logger.info("Built sheets connection")
+        logger.info("Building slides connection")
+        self.sld_srvc = build("slides", "v1", credentials=credentials)
+        logger.info("Built slides connection")
+        logger.info("Building drive connection")
+        self.drive_srvc = build("drive", "v3", credentials=credentials)
+        logger.info("Built drive connection")
+
+    @property
+    def sheet_service(self) -> Resource:
+        """Returns the connects to the sheets API
+
+        :raises RuntimeError: Must run set_credentials before executing method
+        :return: API connection
+        :rtype: :class:`googleapiclient.discovery.Resource`
+        """
+        if self.sht_srvc:
+            return self.sht_srvc
+        else:
+            raise RuntimeError("Must run set_credentials before executing method")
+
+    @property
+    def slide_service(self) -> Resource:
+        """Returns the connects to the slides API
+
+        :raises RuntimeError: Must run set_credentials before executing method
+        :return: API connection
+        :rtype: :class:`googleapiclient.discovery.Resource`
+        """
+        if self.sht_srvc:
+            return self.sld_srvc
+        else:
+            raise RuntimeError("Must run set_credentials before executing method")
+
+    @property
+    def drive_service(self) -> Resource:
+        """Returns the connects to the drive API
+
+        :raises RuntimeError: Must run set_credentials before executing method
+        :return: API connection
+        :rtype: :class:`googleapiclient.discovery.Resource`
+        """
+        if self.drive_srvc:
+            return self.drive_srvc
+        else:
+            raise RuntimeError("Must run set_credentials before executing method")
+
+    def batch_update(self, requests: list, presentation_id: str) -> Dict[str, Any]:
+        if not len(requests):
+            return {}
+
+        assert all(isinstance(r, GSlidesAPIRequest) for r in requests)
+        re_requests = [r.to_request() for r in requests]
+
+        try:
+            return (
+                self.slide_service.presentations()
+                .batchUpdate(presentationId=presentation_id, body={"requests": re_requests})
+                .execute()
+            )
+        except Exception as e:
+            logger.error(f"Failed to execute batch update: {e}")
+            raise e
+
+        return (
+            self.slide_service.presentations()
+            .batchUpdate(presentationId=presentation_id, body={"requests": re_requests})
+            .execute()
+        )
+
+    def create_presentation(self, config: dict) -> str:
+        # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/create
+        out = self.slide_service.presentations().create(body=config).execute()
+        return out["presentationId"]
+
+    def get_slide_json(self, presentation_id: str, slide_id: str) -> Dict[str, Any]:
+        return (
+            self.slide_service.presentations()
+            .pages()
+            .get(presentationId=presentation_id, pageObjectId=slide_id)
+            .execute()
+        )
+
+    def get_presentation_json(self, presentation_id: str) -> Dict[str, Any]:
+        return self.slide_service.presentations().get(presentationId=presentation_id).execute()
+
+    # TODO: test this out and adjust the credentials readme (Drive API scope, anything else?)
+    # https://developers.google.com/workspace/slides/api/guides/presentations#python
+    def copy_presentation(self, presentation_id, copy_title):
+        """
+        Creates the copy Presentation the user has access to.
+        Load pre-authorized user credentials from the environment.
+        TODO(developer) - See https://developers.google.com/identity
+        for guides on implementing OAuth2 for the application.
+        """
+
+        return (
+            self.drive_service.files()
+            .copy(fileId=presentation_id, body={"name": copy_title})
+            .execute()
+        )
+
+    def duplicate_object(
+        self, object_id: str, presentation_id: str, id_map: Dict[str, str] = None
+    ) -> str:
+        """Duplicates an object in a Google Slides presentation.
+        When duplicating a slide, the duplicate slide will be created immediately following the specified slide.
+        When duplicating a page element, the duplicate will be placed on the same page at the same position
+        as the original.
+
+        Args:
+            object_id: The ID of the object to duplicate.
+            presentation_id: The ID of the presentation containing the object.
+            id_map: A dictionary mapping the IDs of the original objects to the IDs of the duplicated objects.
+
+        Returns:
+            The ID of the duplicated object.
+        """
+        request = DuplicateObjectRequest(objectId=object_id, objectIds=id_map)
+        out = self.batch_update([request], presentation_id)
+        new_object_id = out["replies"][0]["duplicateObject"]["objectId"]
+        return new_object_id
+
+    def delete_object(self, object_id: str, presentation_id: str) -> None:
+        """Deletes an object in a Google Slides presentation.
+
+        Args:
+            object_id: The ID of the object to delete.
+            presentation_id: The ID of the presentation containing the object.
+        """
+        request = DeleteObjectRequest(objectId=object_id)
+        self.batch_update([request], presentation_id)
+
+    def upload_image_to_drive(self, image_path) -> str:
+        """
+        Uploads an image to Google Drive and returns the public URL.
+
+        Supports PNG, JPEG, and GIF image formats. The image type is automatically
+        detected from the file extension.
+
+        :param image_path: Path to the image file
+        :return: Public URL of the uploaded image
+        :raises ValueError: If the image format is not supported (not PNG, JPEG, or GIF)
+        """
+        # Define supported image formats and their MIME types
+        supported_formats = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+        }
+
+        # Extract file extension and convert to lowercase
+        file_extension = os.path.splitext(image_path)[1].lower()
+
+        # Check if the format is supported
+        if file_extension not in supported_formats:
+            supported_exts = ", ".join(supported_formats.keys())
+            raise ValueError(
+                f"Unsupported image format '{file_extension}'. "
+                f"Supported formats are: {supported_exts}"
+            )
+
+        # Get the appropriate MIME type
+        mime_type = supported_formats[file_extension]
+
+        file_metadata = {"name": os.path.basename(image_path), "mimeType": mime_type}
+        media = MediaFileUpload(image_path, mimetype=mime_type)
+        uploaded = (
+            self.drive_service.files()
+            .create(body=file_metadata, media_body=media, fields="id")
+            .execute()
+        )
+
+        self.drive_service.permissions().create(
+            fileId=uploaded["id"],
+            # TODO: do we need "anyone"?
+            body={"type": "anyone", "role": "reader"},
+        ).execute()
+
+        return f"https://drive.google.com/uc?id={uploaded['id']}"
+
+
+api_client = GoogleAPIClient()
+
+logger = logging.getLogger(__name__)
+
+
+def initialize_credentials(credential_location: str):
+    """
+
+    :param credential_location:
+    :return:
+    """
+
+    SCOPES = [
+        "https://www.googleapis.com/auth/presentations",
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+    ]
+
+    _creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists(credential_location + "token.json"):
+        _creds = Credentials.from_authorized_user_file(credential_location + "token.json", SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not _creds or not _creds.valid:
+        if _creds and _creds.expired and _creds.refresh_token:
+            _creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                credential_location + "credentials.json", SCOPES
+            )
+            _creds = flow.run_local_server()
+        # Save the credentials for the next run
+        with open(credential_location + "token.json", "w") as token:
+            token.write(_creds.to_json())
+    api_client.set_credentials(_creds)

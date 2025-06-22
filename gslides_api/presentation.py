@@ -2,10 +2,12 @@ import copy
 import logging
 from typing import List, Optional, Dict, Any
 
-from gslides_api import Size, Dimension
-from gslides_api.execute import api_client
-from gslides_api.page import Page
+from gslides_api.page.page import Page
+from gslides_api.domain import Size
+from gslides_api.client import api_client
 from gslides_api.domain import GSlidesBaseModel
+from gslides_api.page.slide import Slide
+from gslides_api.page.page import Layout, Master, NotesMaster
 
 logger = logging.getLogger(__name__)
 
@@ -15,13 +17,13 @@ class Presentation(GSlidesBaseModel):
 
     presentationId: Optional[str]
     pageSize: Size
-    slides: Optional[List[Page]] = None
+    slides: Optional[List[Slide]] = None
     title: Optional[str] = None
     locale: Optional[str] = None
     revisionId: Optional[str] = None
-    masters: Optional[List[Page]] = None
-    layouts: Optional[List[Page]] = None
-    notesMaster: Optional[Page] = None
+    masters: Optional[List[Master]] = None
+    layouts: Optional[List[Layout]] = None
+    notesMaster: Optional[NotesMaster] = None
 
     @classmethod
     def create_blank(cls, title: str = "New Presentation") -> "Presentation":

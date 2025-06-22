@@ -1,7 +1,7 @@
 import pytest
 import os
 from unittest.mock import patch, MagicMock
-from gslides_api.execute import api_client
+from gslides_api.client import api_client
 
 
 class TestUploadImageToDrive:
@@ -10,7 +10,7 @@ class TestUploadImageToDrive:
     def test_supported_png_format(self):
         """Test that PNG format is correctly detected and processed."""
         with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-            "gslides_api.execute.MediaFileUpload"
+            "gslides_api.client.MediaFileUpload"
         ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
             # Setup mocks
@@ -43,7 +43,7 @@ class TestUploadImageToDrive:
 
         for image_path, expected_mime_type in test_cases:
             with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-                "gslides_api.execute.MediaFileUpload"
+                "gslides_api.client.MediaFileUpload"
             ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
                 # Setup mocks
@@ -65,7 +65,7 @@ class TestUploadImageToDrive:
     def test_supported_gif_format(self):
         """Test that GIF format is correctly detected and processed."""
         with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-            "gslides_api.execute.MediaFileUpload"
+            "gslides_api.client.MediaFileUpload"
         ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
             # Setup mocks
@@ -125,7 +125,7 @@ class TestUploadImageToDrive:
 
         for image_path in test_cases:
             with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-                "gslides_api.execute.MediaFileUpload"
+                "gslides_api.client.MediaFileUpload"
             ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
                 # Setup mocks
@@ -148,7 +148,7 @@ class TestUploadImageToDrive:
 
         for image_path in test_paths:
             with patch.object(api_client, "drive_srvc") as mock_drive_service, patch(
-                "gslides_api.execute.MediaFileUpload"
+                "gslides_api.client.MediaFileUpload"
             ) as mock_media_upload, patch("os.path.basename") as mock_basename:
 
                 # Setup mocks

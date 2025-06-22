@@ -224,7 +224,7 @@ class SlidesTemplater:
 
         for attempt in range(self.slides_config.max_retries):
             try:
-                result = func(*args, **kwargs).execute()
+                result = func(*args, **kwargs).client()
                 if attempt > 0:
                     logger.info(f"Request succeeded on attempt {attempt + 1}")
                 return result

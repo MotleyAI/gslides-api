@@ -275,7 +275,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_3"
           }
@@ -437,7 +436,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_6"
           }
@@ -963,7 +961,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_10"
           }
@@ -1276,7 +1273,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_15"
           }
@@ -1438,7 +1434,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_18"
           }
@@ -1690,7 +1685,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_22"
           }
@@ -2069,7 +2063,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_27"
           }
@@ -2490,7 +2483,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_32"
           }
@@ -2664,7 +2656,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_35"
           }
@@ -2976,7 +2967,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_39"
           }
@@ -3288,7 +3278,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_43"
           }
@@ -3840,7 +3829,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_47"
           }
@@ -4152,7 +4140,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_51"
           }
@@ -4448,7 +4435,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_55"
           }
@@ -4843,7 +4829,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_59"
           }
@@ -5270,7 +5255,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_63"
           }
@@ -5697,7 +5681,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_67"
           }
@@ -7538,7 +7521,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_71"
           }
@@ -7910,7 +7892,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_75"
           }
@@ -8174,7 +8155,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_79"
           }
@@ -8438,7 +8418,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_83"
           }
@@ -8759,7 +8738,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_87"
           }
@@ -8858,7 +8836,6 @@
               "propertyState": "INHERIT"
             }
           },
-          "pageType": "NOTES",
           "notesProperties": {
             "speakerNotesObjectId": "SLIDES_API2026791344_89"
           }
@@ -10944,7 +10921,6 @@
           ]
         }
       },
-      "pageType": "MASTER",
       "masterProperties": {
         "displayName": "Simple Light"
       }
@@ -11830,7 +11806,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "TITLE",
@@ -12298,7 +12273,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "SECTION_HEADER",
@@ -12949,7 +12923,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "TITLE_AND_BODY",
@@ -14064,7 +14037,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "TITLE_AND_TWO_COLUMNS",
@@ -14432,7 +14404,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "TITLE_ONLY",
@@ -15264,7 +15235,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "ONE_COLUMN_TEXT",
@@ -15723,7 +15693,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "MAIN_POINT",
@@ -16965,7 +16934,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "SECTION_TITLE_AND_DESCRIPTION",
@@ -17194,7 +17162,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "CAPTION_ONLY",
@@ -17954,7 +17921,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "BIG_NUMBER",
@@ -18039,7 +18005,6 @@
           "propertyState": "INHERIT"
         }
       },
-      "pageType": "LAYOUT",
       "layoutProperties": {
         "masterObjectId": "simple-light-2",
         "name": "BLANK",
@@ -19111,7 +19076,6 @@
           }
         ]
       }
-    },
-    "pageType": "NOTES_MASTER"
+    }
   }
 }

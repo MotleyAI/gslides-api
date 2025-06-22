@@ -30,9 +30,6 @@ from .domain import (
     PageBackgroundFill,
     AutoText,
     AutoTextType,
-    MasterProperties,
-    NotesProperties,
-    PageType,
     PredefinedLayout,
     ColorScheme,
     ThemeColorPair,
@@ -46,9 +43,32 @@ from .domain import (
     Group,
 )
 from .presentation import Presentation
-from .page import Page, LayoutProperties, SlidePageProperties
+from .page.page import (
+    Layout,
+    LayoutProperties,
+    Master,
+    MasterProperties,
+    NotesMaster,
+    Page,
+)
+from .page import Notes, NotesProperties, Slide, SlideProperties
+from .page.base import BasePage, PageProperties, PageType
 from .element.base import ElementKind
-from .execute import initialize_credentials
-
-# Import SlidePageProperties as PageProperties for backward compatibility
-PageProperties = SlidePageProperties
+from .client import initialize_credentials
+from .request.request import (
+    CreateParagraphBulletsRequest,
+    InsertTextRequest,
+    UpdateTextStyleRequest,
+    DeleteTextRequest,
+    CreateShapeRequest,
+    UpdateShapePropertiesRequest,
+    UpdateImagePropertiesRequest,
+    ReplaceImageRequest,
+    CreateSlideRequest,
+    UpdateSlidePropertiesRequest,
+    UpdateSlidesPositionRequest,
+    UpdatePagePropertiesRequest,
+    DeleteObjectRequest,
+    DuplicateObjectRequest,
+)
+from .request.domain import Range, RangeType, TableCellLocation, ElementProperties
