@@ -185,3 +185,24 @@ class Slide(BasePage):
         new_slide_id = out["replies"][0]["createSlide"]["objectId"]
 
         return cls.from_ids(presentation_id, new_slide_id)
+
+    @property
+    def speaker_notes_element_id(self):
+        return self.slideProperties.notesPage.notesProperties.speakerNotesObjectId
+
+    def read_speaker_notes(self) -> str | None:
+        """Read the speaker notes for the slide."""
+        # Apparently the API guarantees this will always be set
+        for e in self.notes_page.pageElements:
+            if e.objectId == self.speaker_notes_element_id:
+                return e.to_markdown()
+        return None
+
+    def write_speaker_notes(self, text: str):
+        """Write speaker notes for the slide."""
+        # make sure notes page exists
+
+        for e in self.notes_page.pageElements:
+            if e.objectId == self.speaker_notes_element_id:
+                e.write_text(text, as_markdown=False)
+                return

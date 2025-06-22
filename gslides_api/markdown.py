@@ -10,7 +10,8 @@ from pydantic import BaseModel
 
 from gslides_api import TextElement
 from gslides_api.domain import BulletGlyphPreset, TextRun, TextStyle
-from gslides_api.requests import CreateParagraphBulletsRequest, Range, RangeType
+from gslides_api.request.domain import Range, RangeType
+from gslides_api.request.request import CreateParagraphBulletsRequest
 
 
 class ItemList(BaseModel):
