@@ -1,6 +1,5 @@
 import pytest
-from gslides_api.page import Page
-from gslides_api import SlidePageProperties
+from gslides_api.page import Slide, SlideProperties, PageProperties
 from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import Size, Transform, Shape, ShapeType, ShapeProperties
 
@@ -8,12 +7,12 @@ from gslides_api.domain import Size, Transform, Shape, ShapeType, ShapePropertie
 def test_presentation_id_not_in_api_format():
     """Test that presentation_id is not included in the API format."""
     # Create a minimal slide
-    slide = Page(
+    slide = Slide(
         objectId="test-slide-id",
-        slideProperties=SlidePageProperties(
+        slideProperties=SlideProperties(
             layoutObjectId="test-layout-id", masterObjectId="test-master-id"
         ),
-        pageProperties=SlidePageProperties(pageBackgroundFill={}),
+        pageProperties=PageProperties(pageBackgroundFill={}),
         presentation_id="test-presentation-id",
     )
 
@@ -32,12 +31,12 @@ def test_presentation_id_not_in_api_format():
 def test_write_sets_presentation_id(monkeypatch):
     """Test that the write_copy method sets the presentation_id."""
     # Create a minimal slide
-    slide = Page(
+    slide = Slide(
         objectId="test-slide-id",
-        slideProperties=SlidePageProperties(
+        slideProperties=SlideProperties(
             layoutObjectId="test-layout-id", masterObjectId="test-master-id"
         ),
-        pageProperties=SlidePageProperties(pageBackgroundFill={}),
+        pageProperties=PageProperties(pageBackgroundFill={}),
     )
 
     # Mock the create_blank method to avoid API calls
@@ -49,12 +48,12 @@ def test_write_sets_presentation_id(monkeypatch):
         layoout_placeholder_id_mapping=None,
     ):
         # Return a Slide object instead of just a string
-        mock_slide = Page(
+        mock_slide = Slide(
             objectId="new-slide-id",
-            slideProperties=SlidePageProperties(
+            slideProperties=SlideProperties(
                 layoutObjectId="test-layout-id", masterObjectId="test-master-id"
             ),
-            pageProperties=SlidePageProperties(pageBackgroundFill={}),
+            pageProperties=PageProperties(pageBackgroundFill={}),
         )
         return mock_slide
 
@@ -64,12 +63,12 @@ def test_write_sets_presentation_id(monkeypatch):
 
     # Mock the from_ids method to avoid API calls
     def mock_from_ids(cls, presentation_id, slide_id):
-        return Page(
+        return Slide(
             objectId=slide_id,
-            slideProperties=SlidePageProperties(
+            slideProperties=SlideProperties(
                 layoutObjectId="test-layout-id", masterObjectId="test-master-id"
             ),
-            pageProperties=SlidePageProperties(pageBackgroundFill={}),
+            pageProperties=PageProperties(pageBackgroundFill={}),
             presentation_id=presentation_id,
         )
 
@@ -77,8 +76,8 @@ def test_write_sets_presentation_id(monkeypatch):
     import gslides_api.page
     import gslides_api.execute
 
-    monkeypatch.setattr(Page, "create_blank", mock_create_blank)
-    monkeypatch.setattr(Page, "from_ids", classmethod(mock_from_ids))
+    monkeypatch.setattr(Slide, "create_blank", mock_create_blank)
+    monkeypatch.setattr(Slide, "from_ids", classmethod(mock_from_ids))
     monkeypatch.setattr(gslides_api.execute.api_client, "batch_update", mock_slides_batch_update)
 
     # Call write_copy with a presentation_id
@@ -91,12 +90,12 @@ def test_write_sets_presentation_id(monkeypatch):
 def test_duplicate_preserves_presentation_id(monkeypatch):
     """Test that the duplicate method preserves the presentation_id."""
     # Create a minimal slide
-    slide = Page(
+    slide = Slide(
         objectId="test-slide-id",
-        slideProperties=SlidePageProperties(
+        slideProperties=SlideProperties(
             layoutObjectId="test-layout-id", masterObjectId="test-master-id"
         ),
-        pageProperties=SlidePageProperties(pageBackgroundFill={}),
+        pageProperties=PageProperties(pageBackgroundFill={}),
         presentation_id="test-presentation-id",
     )
 
@@ -106,12 +105,12 @@ def test_duplicate_preserves_presentation_id(monkeypatch):
 
     # Mock the from_ids method to avoid API calls
     def mock_from_ids(cls, presentation_id, slide_id):
-        return Page(
+        return Slide(
             objectId=slide_id,
-            slideProperties=SlidePageProperties(
+            slideProperties=SlideProperties(
                 layoutObjectId="test-layout-id", masterObjectId="test-master-id"
             ),
-            pageProperties=SlidePageProperties(pageBackgroundFill={}),
+            pageProperties=PageProperties(pageBackgroundFill={}),
             presentation_id=presentation_id,
         )
 
@@ -120,7 +119,7 @@ def test_duplicate_preserves_presentation_id(monkeypatch):
     import gslides_api.execute
 
     monkeypatch.setattr(gslides_api.execute.api_client, "duplicate_object", mock_duplicate_object)
-    monkeypatch.setattr(Page, "from_ids", classmethod(mock_from_ids))
+    monkeypatch.setattr(Slide, "from_ids", classmethod(mock_from_ids))
 
     # Call duplicate
     result = slide.duplicate()
@@ -147,8 +146,9 @@ def test_presentation_id_propagation_on_creation():
     )
 
     # Create Page with presentation_id and pageElements
-    page = Page(
+    page = Slide(
         objectId="slide1",
+        slideProperties=SlideProperties(),
         presentation_id="test-presentation-123",
         pageElements=[element1, element2],
     )
@@ -177,8 +177,9 @@ def test_presentation_id_propagation_on_modification():
     )
 
     # Create Page with initial presentation_id
-    page = Page(
+    page = Slide(
         objectId="slide1",
+        slideProperties=SlideProperties(),
         presentation_id="initial-presentation-id",
         pageElements=[element1, element2],
     )
@@ -200,7 +201,7 @@ def test_presentation_id_propagation_on_modification():
 def test_presentation_id_propagation_with_no_elements():
     """Test that Page with no pageElements works correctly and doesn't crash."""
     # Create Page with no pageElements
-    page = Page(objectId="slide2", presentation_id="test-presentation-789")
+    page = Slide(objectId="slide2", slideProperties=SlideProperties(), presentation_id="test-presentation-789")
 
     # Verify that presentation_id is set correctly
     assert page.presentation_id == "test-presentation-789"
@@ -213,7 +214,7 @@ def test_presentation_id_propagation_with_no_elements():
 def test_presentation_id_propagation_with_empty_elements_list():
     """Test that Page with empty pageElements list works correctly."""
     # Create Page with empty pageElements list
-    page = Page(objectId="slide3", presentation_id="test-presentation-empty", pageElements=[])
+    page = Slide(objectId="slide3", slideProperties=SlideProperties(), presentation_id="test-presentation-empty", pageElements=[])
 
     # Verify that presentation_id is set correctly
     assert page.presentation_id == "test-presentation-empty"
@@ -226,7 +227,7 @@ def test_presentation_id_propagation_with_empty_elements_list():
 def test_presentation_id_propagation_when_adding_elements_later():
     """Test that pageElements added after Page creation get correct presentation_id."""
     # Create Page without pageElements initially
-    page = Page(objectId="slide4", presentation_id="test-presentation-later")
+    page = Slide(objectId="slide4", slideProperties=SlideProperties(), presentation_id="test-presentation-later")
 
     # Create and add pageElements later
     element = ShapeElement(

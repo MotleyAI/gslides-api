@@ -55,40 +55,9 @@ def page_discriminator(v: Any) -> str:
     raise ValueError("Cannot determine page type - no valid properties found")
 
 
-class SlideProperties(GSlidesBaseModel):
-    """Represents properties of a slide."""
-
-    layoutObjectId: Optional[str] = None
-    masterObjectId: Optional[str] = None
-    notesPage: Optional[ForwardRef("BasePage")] = None
-    isSkipped: Optional[bool] = None
-
-
-class LayoutProperties(GSlidesBaseModel):
-    """Represents properties of a layout."""
-
-    masterObjectId: Optional[str] = None
-    name: Optional[str] = None
-    displayName: Optional[str] = None
-
-
 # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages#pageproperties
 # The page will inherit properties from the parent page.
 # Depending on the page type the hierarchy is defined in either SlideProperties or LayoutProperties.
-
-
-class SlidePageProperties(SlideProperties):
-    """Represents properties of a page."""
-
-    pageBackgroundFill: Optional[PageBackgroundFill] = None
-    colorScheme: Optional[ColorScheme] = None
-
-
-class LayoutPageProperties(LayoutProperties):
-    """Represents properties of a page."""
-
-    pageBackgroundFill: Optional[PageBackgroundFill] = None
-    colorScheme: Optional[ColorScheme] = None
 
 
 class PageProperties(GSlidesBaseModel):
@@ -106,7 +75,7 @@ class BasePage(GSlidesBaseModel):
         None  # Make optional to preserve original JSON exactly
     )
     revisionId: Optional[str] = None
-    pageProperties: Optional[Union[SlidePageProperties, LayoutPageProperties]] = None
+    pageProperties: Optional[PageProperties] = None
     pageType: Optional[PageType] = Field(default=None, exclude=True)
 
     # Store the presentation ID for reference but exclude from model_dump
@@ -293,16 +262,12 @@ class BasePage(GSlidesBaseModel):
         api_client.batch_update(request, self.presentation_id)
 
 
-class Slide(BasePage):
-    """Represents a slide page in a presentation."""
+class LayoutProperties(GSlidesBaseModel):
+    """Represents properties of a layout."""
 
-    slideProperties: SlideProperties
-    pageType: PageType = Field(default=PageType.SLIDE, description="The type of page", exclude=True)
-
-    @field_validator("pageType")
-    @classmethod
-    def validate_page_type(cls, v):
-        return PageType.SLIDE
+    masterObjectId: Optional[str] = None
+    name: Optional[str] = None
+    displayName: Optional[str] = None
 
 
 class Layout(BasePage):
@@ -329,6 +294,27 @@ class Notes(BasePage):
     @classmethod
     def validate_page_type(cls, v):
         return PageType.NOTES
+
+
+class SlideProperties(GSlidesBaseModel):
+    """Represents properties of a slide."""
+
+    layoutObjectId: Optional[str] = None
+    masterObjectId: Optional[str] = None
+    notesPage: Notes = None
+    isSkipped: Optional[bool] = None
+
+
+class Slide(BasePage):
+    """Represents a slide page in a presentation."""
+
+    slideProperties: SlideProperties
+    pageType: PageType = Field(default=PageType.SLIDE, description="The type of page", exclude=True)
+
+    @field_validator("pageType")
+    @classmethod
+    def validate_page_type(cls, v):
+        return PageType.SLIDE
 
 
 class Master(BasePage):

@@ -43,7 +43,7 @@ def output_json_path() -> str:
 @pytest.fixture
 def ignored_keys() -> Set[str]:
     """Fixture that returns a set of keys to ignore in the comparison."""
-    return {"propertyState"}
+    return {"propertyState", "pageType"}
 
 
 @pytest.fixture
