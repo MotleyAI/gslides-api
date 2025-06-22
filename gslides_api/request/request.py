@@ -19,7 +19,7 @@ from gslides_api.request.domain import (
 )
 
 
-class GslidesAPIRequest(GSlidesBaseModel):
+class GSlidesAPIRequest(GSlidesBaseModel):
     """Base class for all requests to the Google Slides API."""
 
     def to_request(self) -> List[Dict[str, Any]]:
@@ -31,7 +31,7 @@ class GslidesAPIRequest(GSlidesBaseModel):
         return [{request_name: self.to_api_format()}]
 
 
-class CreateParagraphBulletsRequest(GslidesAPIRequest):
+class CreateParagraphBulletsRequest(GSlidesAPIRequest):
     """Creates bullets for paragraphs in a shape or table cell.
 
     This request converts plain paragraphs into bulleted lists using a specified
@@ -56,7 +56,7 @@ class CreateParagraphBulletsRequest(GslidesAPIRequest):
     )
 
 
-class InsertTextRequest(GslidesAPIRequest):
+class InsertTextRequest(GSlidesAPIRequest):
     """Inserts text into a shape or table cell.
 
     This request inserts text at the specified insertion index within a shape or table cell.
@@ -79,7 +79,7 @@ class InsertTextRequest(GslidesAPIRequest):
     )
 
 
-class UpdateTextStyleRequest(GslidesAPIRequest):
+class UpdateTextStyleRequest(GSlidesAPIRequest):
     """Updates the styling of text within a Shape or Table.
 
     This request updates the text style for the specified range of text within a shape or table cell.
@@ -106,7 +106,7 @@ class UpdateTextStyleRequest(GslidesAPIRequest):
     )
 
 
-class DeleteTextRequest(GslidesAPIRequest):
+class DeleteTextRequest(GSlidesAPIRequest):
     """Deletes text from a shape or table cell.
 
     This request deletes text from the specified range within a shape or table cell.
@@ -127,7 +127,7 @@ class DeleteTextRequest(GslidesAPIRequest):
     )
 
 
-class CreateShapeRequest(GslidesAPIRequest):
+class CreateShapeRequest(GSlidesAPIRequest):
     """Creates a new shape.
 
     This request creates a new shape on the specified page. The shape can be of various types
@@ -144,7 +144,7 @@ class CreateShapeRequest(GslidesAPIRequest):
     shapeType: ShapeType = Field(description="The shape type")
 
 
-class UpdateShapePropertiesRequest(GslidesAPIRequest):
+class UpdateShapePropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a Shape.
 
     This request updates the shape properties for the specified shape.
@@ -159,7 +159,7 @@ class UpdateShapePropertiesRequest(GslidesAPIRequest):
     )
 
 
-class ReplaceImageRequest(GslidesAPIRequest):
+class ReplaceImageRequest(GSlidesAPIRequest):
     """Replaces an existing image with a new image.
 
     This request replaces the image at the specified object ID with a new image from the provided URL.
@@ -177,7 +177,7 @@ class ReplaceImageRequest(GslidesAPIRequest):
     )
 
 
-class CreateSlideRequest(GslidesAPIRequest):
+class CreateSlideRequest(GSlidesAPIRequest):
     """Creates a new slide.
 
     This request creates a new slide in the presentation. The slide can be created with a specific
@@ -204,7 +204,7 @@ class CreateSlideRequest(GslidesAPIRequest):
     )
 
 
-class UpdateSlidePropertiesRequest(GslidesAPIRequest):
+class UpdateSlidePropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a Slide.
 
     This request updates the slide properties for the specified slide.
@@ -219,7 +219,7 @@ class UpdateSlidePropertiesRequest(GslidesAPIRequest):
     )
 
 
-class UpdateSlidesPositionRequest(GslidesAPIRequest):
+class UpdateSlidesPositionRequest(GSlidesAPIRequest):
     """Updates the position of slides in the presentation.
 
     This request moves slides to a new position in the presentation.
@@ -235,7 +235,7 @@ class UpdateSlidesPositionRequest(GslidesAPIRequest):
     )
 
 
-class UpdatePagePropertiesRequest(GslidesAPIRequest):
+class UpdatePagePropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a Page.
 
     This request updates the page properties for the specified page.
@@ -250,7 +250,7 @@ class UpdatePagePropertiesRequest(GslidesAPIRequest):
     )
 
 
-class DeleteObjectRequest(GslidesAPIRequest):
+class DeleteObjectRequest(GSlidesAPIRequest):
     """Deletes an object, either a page or page element, from the presentation.
 
     This request deletes the specified object from the presentation. If the object is a page,
@@ -262,7 +262,7 @@ class DeleteObjectRequest(GslidesAPIRequest):
     objectId: str = Field(description="The object ID of the page or page element to delete")
 
 
-class DuplicateObjectRequest(GslidesAPIRequest):
+class DuplicateObjectRequest(GSlidesAPIRequest):
     """Duplicates a slide or page element.
 
     This request duplicates the specified slide or page element. When duplicating a slide,
@@ -278,7 +278,7 @@ class DuplicateObjectRequest(GslidesAPIRequest):
     )
 
 
-class UpdateImagePropertiesRequest(GslidesAPIRequest):
+class UpdateImagePropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of an Image.
 
     This request updates the image properties for the specified image.
@@ -293,7 +293,7 @@ class UpdateImagePropertiesRequest(GslidesAPIRequest):
     )
 
 
-class UpdatePageElementAltTextRequest(GslidesAPIRequest):
+class UpdatePageElementAltTextRequest(GSlidesAPIRequest):
     """Updates the alt text title and/or description of a page element.
 
     This request updates the alternative text (alt text) for accessibility purposes
@@ -316,7 +316,7 @@ class UpdatePageElementAltTextRequest(GslidesAPIRequest):
     )
 
 
-class UpdateVideoPropertiesRequest(GslidesAPIRequest):
+class UpdateVideoPropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a Video.
 
     This request updates the video properties for the specified video.
@@ -331,7 +331,7 @@ class UpdateVideoPropertiesRequest(GslidesAPIRequest):
     )
 
 
-class UpdateLinePropertiesRequest(GslidesAPIRequest):
+class UpdateLinePropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a Line.
 
     This request updates the line properties for the specified line.
@@ -346,7 +346,7 @@ class UpdateLinePropertiesRequest(GslidesAPIRequest):
     )
 
 
-class UpdateSheetsChartPropertiesRequest(GslidesAPIRequest):
+class UpdateSheetsChartPropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a SheetsChart.
 
     This request updates the sheets chart properties for the specified chart.
@@ -363,7 +363,7 @@ class UpdateSheetsChartPropertiesRequest(GslidesAPIRequest):
     )
 
 
-class CreateImageRequest(GslidesAPIRequest):
+class CreateImageRequest(GSlidesAPIRequest):
     """Creates a new image.
 
     This request creates a new image on the specified page from a URL.
@@ -375,7 +375,7 @@ class CreateImageRequest(GslidesAPIRequest):
     url: str = Field(description="The image URL")
 
 
-class CreateVideoRequest(GslidesAPIRequest):
+class CreateVideoRequest(GSlidesAPIRequest):
     """Creates a new video.
 
     This request creates a new video on the specified page.
@@ -388,7 +388,7 @@ class CreateVideoRequest(GslidesAPIRequest):
     id: str = Field(description="The video ID")
 
 
-class CreateLineRequest(GslidesAPIRequest):
+class CreateLineRequest(GSlidesAPIRequest):
     """Creates a new line.
 
     This request creates a new line on the specified page.
@@ -400,7 +400,7 @@ class CreateLineRequest(GslidesAPIRequest):
     lineCategory: str = Field(description="The line category (e.g., 'STRAIGHT')")
 
 
-class CreateWordArtRequest(GslidesAPIRequest):
+class CreateWordArtRequest(GSlidesAPIRequest):
     """Creates a new word art.
 
     This request creates a new word art on the specified page.
@@ -412,7 +412,7 @@ class CreateWordArtRequest(GslidesAPIRequest):
     renderedText: str = Field(description="The text to render as word art")
 
 
-class CreateSheetsChartRequest(GslidesAPIRequest):
+class CreateSheetsChartRequest(GSlidesAPIRequest):
     """Creates a new sheets chart.
 
     This request creates a new sheets chart on the specified page.
@@ -429,7 +429,7 @@ class CreateSheetsChartRequest(GslidesAPIRequest):
     chartId: int = Field(description="The ID of the specific chart in the spreadsheet")
 
 
-class ReplaceAllTextRequest(GslidesAPIRequest):
+class ReplaceAllTextRequest(GSlidesAPIRequest):
     """Replaces all instances of text matching some criteria with replace text.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replacealltextrequest
@@ -445,7 +445,7 @@ class ReplaceAllTextRequest(GslidesAPIRequest):
     )
 
 
-class UpdatePageElementTransformRequest(GslidesAPIRequest):
+class UpdatePageElementTransformRequest(GSlidesAPIRequest):
     """Updates the transform of a page element.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatepageelementtransformrequest
@@ -458,7 +458,7 @@ class UpdatePageElementTransformRequest(GslidesAPIRequest):
     applyMode: str = Field(description="The apply mode of the transform update")
 
 
-class RefreshSheetsChartRequest(GslidesAPIRequest):
+class RefreshSheetsChartRequest(GSlidesAPIRequest):
     """Refreshes an embedded Google Sheets chart by replacing it with the latest version of the chart from Google Sheets.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#refreshsheetschartrequest
@@ -467,7 +467,7 @@ class RefreshSheetsChartRequest(GslidesAPIRequest):
     objectId: str = Field(description="The object ID of the chart to refresh")
 
 
-class ReplaceAllShapesWithImageRequest(GslidesAPIRequest):
+class ReplaceAllShapesWithImageRequest(GSlidesAPIRequest):
     """Replaces all shapes that match the given criteria with the provided image.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replaceallshapeswithimagerequest
@@ -484,7 +484,7 @@ class ReplaceAllShapesWithImageRequest(GslidesAPIRequest):
     )
 
 
-class ReplaceAllShapesWithSheetsChartRequest(GslidesAPIRequest):
+class ReplaceAllShapesWithSheetsChartRequest(GSlidesAPIRequest):
     """Replaces all shapes that match the given criteria with the provided Google Sheets chart.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replaceallshapeswithsheetschartrequest
@@ -509,7 +509,7 @@ class ReplaceAllShapesWithSheetsChartRequest(GslidesAPIRequest):
     )
 
 
-class DeleteParagraphBulletsRequest(GslidesAPIRequest):
+class DeleteParagraphBulletsRequest(GSlidesAPIRequest):
     """Deletes bullets from all of the paragraphs that overlap with the given text index range.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#deleteparagraphbulletsrequest
@@ -525,7 +525,7 @@ class DeleteParagraphBulletsRequest(GslidesAPIRequest):
     textRange: Dict[str, Any] = Field(description="The range of text to delete bullets from")
 
 
-class UpdateParagraphStyleRequest(GslidesAPIRequest):
+class UpdateParagraphStyleRequest(GSlidesAPIRequest):
     """Updates the styling for all of the paragraphs within a Shape or Table that overlap with the given text index range.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updateparagraphstylerequest
@@ -545,7 +545,7 @@ class UpdateParagraphStyleRequest(GslidesAPIRequest):
     fields: str = Field(description="The fields that should be updated")
 
 
-class GroupObjectsRequest(GslidesAPIRequest):
+class GroupObjectsRequest(GSlidesAPIRequest):
     """Groups objects to create an object group.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#groupobjectsrequest
@@ -557,7 +557,7 @@ class GroupObjectsRequest(GslidesAPIRequest):
     childrenObjectIds: List[str] = Field(description="The object IDs of the objects to group")
 
 
-class UngroupObjectsRequest(GslidesAPIRequest):
+class UngroupObjectsRequest(GSlidesAPIRequest):
     """Ungroups objects, such as groups.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#ungroupobjectsrequest
@@ -566,7 +566,7 @@ class UngroupObjectsRequest(GslidesAPIRequest):
     objectIds: List[str] = Field(description="The object IDs of the objects to ungroup")
 
 
-class UpdatePageElementsZOrderRequest(GslidesAPIRequest):
+class UpdatePageElementsZOrderRequest(GSlidesAPIRequest):
     """Updates the Z-order of page elements.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatepageelementsZorderrequest
@@ -578,7 +578,7 @@ class UpdatePageElementsZOrderRequest(GslidesAPIRequest):
     operation: str = Field(description="The Z-order operation to apply on the page elements")
 
 
-class UpdateLineCategoryRequest(GslidesAPIRequest):
+class UpdateLineCategoryRequest(GSlidesAPIRequest):
     """Updates the category of a line.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatelinecategoryrequest
@@ -588,7 +588,7 @@ class UpdateLineCategoryRequest(GslidesAPIRequest):
     lineCategory: str = Field(description="The line category to update to")
 
 
-class RerouteLineRequest(GslidesAPIRequest):
+class RerouteLineRequest(GSlidesAPIRequest):
     """Reroutes a line such that it's connected at the two closest connection sites on the connected page elements.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#reroutelinerequest

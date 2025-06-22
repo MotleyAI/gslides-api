@@ -8,7 +8,7 @@ from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import api_client
 from gslides_api.markdown import markdown_to_text_elements, text_elements_to_markdown
 from gslides_api.request.request import (
-    GslidesAPIRequest,
+    GSlidesAPIRequest,
     InsertTextRequest,
     UpdateTextStyleRequest,
     CreateShapeRequest,
@@ -30,7 +30,7 @@ class ShapeElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.SHAPE
 
-    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
+    def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to a create request for the Google Slides API."""
         element_properties_dict = self.element_properties(parent_id)
         element_props = ElementProperties(
@@ -45,7 +45,7 @@ class ShapeElement(PageElementBase):
         )
         return [request]
 
-    def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
+    def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to an update request for the Google Slides API.
         :param element_id: The id of the element to update, if not the same as e objectId
         :type element_id: str, optional
@@ -154,11 +154,11 @@ class ShapeElement(PageElementBase):
 
 
 def text_elements_to_requests(
-    text_elements: List[TextElement | GslidesAPIRequest], objectId: str
-) -> List[GslidesAPIRequest]:
+    text_elements: List[TextElement | GSlidesAPIRequest], objectId: str
+) -> List[GSlidesAPIRequest]:
     requests = []
     for te in text_elements:
-        if isinstance(te, GslidesAPIRequest):
+        if isinstance(te, GSlidesAPIRequest):
             te.objectId = objectId
             requests.append(te)
             continue

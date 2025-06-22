@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 
 from gslides_api.domain import GSlidesBaseModel, Transform, Size
-from gslides_api.request.request import GslidesAPIRequest, UpdatePageElementAltTextRequest
+from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
 from gslides_api.client import api_client
 
 
@@ -66,7 +66,7 @@ class PageElementBase(GSlidesBaseModel):
 
     def alt_text_update_request(
         self, element_id: str, title: str | None = None, description: str | None = None
-    ) -> List[GslidesAPIRequest]:
+    ) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to an update request for the Google Slides API.
         :param element_id: The id of the element to update, if not the same as e objectId
         :type element_id: str, optional
@@ -86,7 +86,7 @@ class PageElementBase(GSlidesBaseModel):
         else:
             return []
 
-    def create_request(self, parent_id: str) -> List[GslidesAPIRequest]:
+    def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to a create request for the Google Slides API.
 
         This method should be overridden by subclasses.
@@ -109,7 +109,7 @@ class PageElementBase(GSlidesBaseModel):
         else:
             return {}
 
-    def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
+    def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to an update request for the Google Slides API.
 
         This method should be overridden by subclasses.

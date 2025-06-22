@@ -10,7 +10,7 @@ from googleapiclient.discovery import Resource, build
 from googleapiclient.http import MediaFileUpload
 
 from gslides_api.request.request import (
-    GslidesAPIRequest,
+    GSlidesAPIRequest,
     DuplicateObjectRequest,
     DeleteObjectRequest,
 )
@@ -89,7 +89,7 @@ class GoogleAPIClient:
         if not len(requests):
             return {}
 
-        assert all(isinstance(r, GslidesAPIRequest) for r in requests)
+        assert all(isinstance(r, GSlidesAPIRequest) for r in requests)
         re_requests = [r.to_request() for r in requests]
 
         try:

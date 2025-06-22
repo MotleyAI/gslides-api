@@ -2,10 +2,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from gslides_api.request.request import GslidesAPIRequest
+from gslides_api.request.request import GSlidesAPIRequest
 
 
-class CreateTableRequest(GslidesAPIRequest):
+class CreateTableRequest(GSlidesAPIRequest):
     """Creates a new table.
 
     This request creates a new table on the specified page with the given number of rows and columns.
@@ -18,7 +18,7 @@ class CreateTableRequest(GslidesAPIRequest):
     columns: int = Field(description="Number of columns in the table")
 
 
-class InsertTableRowsRequest(GslidesAPIRequest):
+class InsertTableRowsRequest(GSlidesAPIRequest):
     """Inserts rows into a table.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#inserttablerowsrequest
@@ -35,7 +35,7 @@ class InsertTableRowsRequest(GslidesAPIRequest):
     number: int = Field(description="The number of rows to be inserted")
 
 
-class InsertTableColumnsRequest(GslidesAPIRequest):
+class InsertTableColumnsRequest(GSlidesAPIRequest):
     """Inserts columns into a table.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#inserttablecolumnsrequest
@@ -53,7 +53,7 @@ class InsertTableColumnsRequest(GslidesAPIRequest):
     number: int = Field(description="The number of columns to be inserted")
 
 
-class DeleteTableRowRequest(GslidesAPIRequest):
+class DeleteTableRowRequest(GSlidesAPIRequest):
     """Deletes a row from a table.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#deletetablerowrequest
@@ -65,7 +65,7 @@ class DeleteTableRowRequest(GslidesAPIRequest):
     )
 
 
-class DeleteTableColumnRequest(GslidesAPIRequest):
+class DeleteTableColumnRequest(GSlidesAPIRequest):
     """Deletes a column from a table.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#deletetablecolumnrequest
@@ -77,7 +77,7 @@ class DeleteTableColumnRequest(GslidesAPIRequest):
     )
 
 
-class UpdateTableCellPropertiesRequest(GslidesAPIRequest):
+class UpdateTableCellPropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a TableCell.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatetablecellpropertiesrequest
@@ -91,7 +91,7 @@ class UpdateTableCellPropertiesRequest(GslidesAPIRequest):
     fields: str = Field(description="The fields that should be updated")
 
 
-class UpdateTableBorderPropertiesRequest(GslidesAPIRequest):
+class UpdateTableBorderPropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of the table borders in a Table.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatetableborderpropertiesrequest
@@ -112,7 +112,7 @@ class UpdateTableBorderPropertiesRequest(GslidesAPIRequest):
     fields: str = Field(description="The fields that should be updated")
 
 
-class UpdateTableColumnPropertiesRequest(GslidesAPIRequest):
+class UpdateTableColumnPropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a Table column.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatetablecolumnpropertiesrequest
@@ -129,7 +129,7 @@ class UpdateTableColumnPropertiesRequest(GslidesAPIRequest):
     fields: str = Field(description="The fields that should be updated")
 
 
-class UpdateTableRowPropertiesRequest(GslidesAPIRequest):
+class UpdateTableRowPropertiesRequest(GSlidesAPIRequest):
     """Updates the properties of a Table row.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatetablerowpropertiesrequest
@@ -143,7 +143,7 @@ class UpdateTableRowPropertiesRequest(GslidesAPIRequest):
     fields: str = Field(description="The fields that should be updated")
 
 
-class MergeTableCellsRequest(GslidesAPIRequest):
+class MergeTableCellsRequest(GSlidesAPIRequest):
     """Merges cells in a Table.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#mergetablecellsrequest
@@ -155,7 +155,7 @@ class MergeTableCellsRequest(GslidesAPIRequest):
     )
 
 
-class UnmergeTableCellsRequest(GslidesAPIRequest):
+class UnmergeTableCellsRequest(GSlidesAPIRequest):
     """Unmerges cells in a Table.
 
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#unmergetablecellsrequest
