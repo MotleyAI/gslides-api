@@ -22,6 +22,9 @@ from gslides_api.request.request import (
     UpdateImagePropertiesRequest,
     ReplaceImageRequest,
     GslidesAPIRequest,
+    UpdateVideoPropertiesRequest,
+    UpdateLinePropertiesRequest,
+    UpdateSheetsChartPropertiesRequest,
 )
 
 
@@ -230,20 +233,12 @@ class VideoElement(PageElementBase):
 
         if hasattr(self.video, "videoProperties") and self.video.videoProperties is not None:
             video_properties = self.video.videoProperties.to_api_format()
-            # Note: UpdateVideoPropertiesRequest would need to be implemented
-            # For now, keeping the manual dictionary approach
-            video_requests = [
-                {
-                    "updateVideoProperties": {
-                        "objectId": element_id,
-                        "videoProperties": video_properties,
-                        "fields": ",".join(dict_to_dot_separated_field_list(video_properties)),
-                    }
-                }
-            ]
-            # This is a temporary workaround - we'd need to create UpdateVideoPropertiesRequest
-            # For now, this will cause a type error but maintains functionality
-            requests.extend(video_requests)
+            video_request = UpdateVideoPropertiesRequest(
+                objectId=element_id,
+                videoProperties=video_properties,
+                fields=",".join(dict_to_dot_separated_field_list(video_properties)),
+            )
+            requests.append(video_request)
 
         return requests
 
@@ -279,20 +274,12 @@ class LineElement(PageElementBase):
 
         if hasattr(self.line, "lineProperties") and self.line.lineProperties is not None:
             line_properties = self.line.lineProperties.to_api_format()
-            # Note: UpdateLinePropertiesRequest would need to be implemented
-            # For now, keeping the manual dictionary approach
-            line_requests = [
-                {
-                    "updateLineProperties": {
-                        "objectId": element_id,
-                        "lineProperties": line_properties,
-                        "fields": ",".join(dict_to_dot_separated_field_list(line_properties)),
-                    }
-                }
-            ]
-            # This is a temporary workaround - we'd need to create UpdateLinePropertiesRequest
-            # For now, this will cause a type error but maintains functionality
-            requests.extend(line_requests)
+            line_request = UpdateLinePropertiesRequest(
+                objectId=element_id,
+                lineProperties=line_properties,
+                fields=",".join(dict_to_dot_separated_field_list(line_properties)),
+            )
+            requests.append(line_request)
 
         return requests
 
@@ -371,20 +358,12 @@ class SheetsChartElement(PageElementBase):
             and self.sheetsChart.sheetsChartProperties is not None
         ):
             chart_properties = self.sheetsChart.sheetsChartProperties.to_api_format()
-            # Note: UpdateSheetsChartPropertiesRequest would need to be implemented
-            # For now, keeping the manual dictionary approach
-            chart_requests = [
-                {
-                    "updateSheetsChartProperties": {
-                        "objectId": element_id,
-                        "sheetsChartProperties": chart_properties,
-                        "fields": ",".join(dict_to_dot_separated_field_list(chart_properties)),
-                    }
-                }
-            ]
-            # This is a temporary workaround - we'd need to create UpdateSheetsChartPropertiesRequest
-            # For now, this will cause a type error but maintains functionality
-            requests.extend(chart_requests)
+            chart_request = UpdateSheetsChartPropertiesRequest(
+                objectId=element_id,
+                sheetsChartProperties=chart_properties,
+                fields=",".join(dict_to_dot_separated_field_list(chart_properties)),
+            )
+            requests.append(chart_request)
 
         return requests
 

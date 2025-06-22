@@ -86,8 +86,12 @@ class GoogleAPIClient:
             raise RuntimeError("Must run set_credentials before executing method")
 
     def batch_update(self, requests: list, presentation_id: str) -> Dict[str, Any]:
+        if not len(requests):
+            return {}
 
+        assert all(isinstance(r, GslidesAPIRequest) for r in requests)
         re_requests = [r.to_request() if isinstance(r, GslidesAPIRequest) else r for r in requests]
+
         try:
             return (
                 self.slide_service.presentations()

@@ -317,3 +317,48 @@ class UpdatePageElementAltTextRequest(GslidesAPIRequest):
         default=None,
         description="The updated alt text description of the page element. If unset the existing value will be maintained. The description is exposed to screen readers and other accessibility interfaces. Only use human readable values related to the content of the page element.",
     )
+
+
+class UpdateVideoPropertiesRequest(GslidesAPIRequest):
+    """Updates the properties of a Video.
+
+    This request updates the video properties for the specified video.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatevideopropertiesrequest
+    """
+
+    objectId: str = Field(description="The object ID of the video to update")
+    videoProperties: Dict[str, Any] = Field(description="The video properties to update")
+    fields: str = Field(
+        description="The fields that should be updated. At least one field must be specified. The root 'videoProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
+    )
+
+
+class UpdateLinePropertiesRequest(GslidesAPIRequest):
+    """Updates the properties of a Line.
+
+    This request updates the line properties for the specified line.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatelinepropertiesrequest
+    """
+
+    objectId: str = Field(description="The object ID of the line to update")
+    lineProperties: Dict[str, Any] = Field(description="The line properties to update")
+    fields: str = Field(
+        description="The fields that should be updated. At least one field must be specified. The root 'lineProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
+    )
+
+
+class UpdateSheetsChartPropertiesRequest(GslidesAPIRequest):
+    """Updates the properties of a SheetsChart.
+
+    This request updates the sheets chart properties for the specified chart.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatesheetschartpropertiesrequest
+    """
+
+    objectId: str = Field(description="The object ID of the sheets chart to update")
+    sheetsChartProperties: Dict[str, Any] = Field(description="The sheets chart properties to update")
+    fields: str = Field(
+        description="The fields that should be updated. At least one field must be specified. The root 'sheetsChartProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
+    )

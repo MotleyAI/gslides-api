@@ -104,11 +104,7 @@ class PageElementBase(GSlidesBaseModel):
 
         request_objects = self.element_to_update_request(element_id)
         if len(request_objects):
-            # Convert request objects to dictionaries
-            requests = []
-            for req in request_objects:
-                requests.extend(req.to_request())
-            out = api_client.batch_update(requests, presentation_id)
+            out = api_client.batch_update(request_objects, presentation_id)
             return out
         else:
             return {}

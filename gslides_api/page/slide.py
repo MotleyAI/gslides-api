@@ -12,7 +12,7 @@ from gslides_api.request.request import (
     UpdateSlidesPositionRequest,
     UpdatePagePropertiesRequest,
     UpdateSlidePropertiesRequest,
-    CreateSlideRequest
+    CreateSlideRequest,
 )
 from gslides_api.utils import dict_to_dot_separated_field_list
 
@@ -85,8 +85,7 @@ class Slide(BasePage):
             insertion_index: The index to insert the slide at.
         """
         request = UpdateSlidesPositionRequest(
-            slideObjectIds=[self.objectId],
-            insertionIndex=insertion_index
+            slideObjectIds=[self.objectId], insertionIndex=insertion_index
         )
         api_client.batch_update([request], self.presentation_id)
 
@@ -121,7 +120,7 @@ class Slide(BasePage):
             request = UpdatePagePropertiesRequest(
                 objectId=slide_id,
                 pageProperties=page_properties,
-                fields=",".join(dict_to_dot_separated_field_list(page_properties))
+                fields=",".join(dict_to_dot_separated_field_list(page_properties)),
             )
             api_client.batch_update([request], presentation_id)
         except Exception as e:
@@ -136,7 +135,7 @@ class Slide(BasePage):
         request = UpdateSlidePropertiesRequest(
             objectId=slide_id,
             slideProperties=slide_properties,
-            fields=",".join(dict_to_dot_separated_field_list(slide_properties))
+            fields=",".join(dict_to_dot_separated_field_list(slide_properties)),
         )
         api_client.batch_update([request], presentation_id)
 
@@ -173,8 +172,7 @@ class Slide(BasePage):
         """
 
         request = CreateSlideRequest(
-            insertionIndex=insertion_index,
-            slideLayoutReference=slide_layout_reference
+            insertionIndex=insertion_index, slideLayoutReference=slide_layout_reference
         )
         out = api_client.batch_update([request], presentation_id)
         new_slide_id = out["replies"][0]["createSlide"]["objectId"]
@@ -196,7 +194,7 @@ class Slide(BasePage):
             insertionIndex=0,
         )
 
-        api_client.batch_update(req.to_request(), self.presentation_id)
+        api_client.batch_update([req], self.presentation_id)
 
         # Now it should exist
         for e in self.slideProperties.notesPage.pageElements:
