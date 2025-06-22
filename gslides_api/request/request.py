@@ -294,3 +294,26 @@ class UpdateImagePropertiesRequest(GslidesAPIRequest):
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'imageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
+
+
+class UpdatePageElementAltTextRequest(GslidesAPIRequest):
+    """Updates the alt text title and/or description of a page element.
+
+    This request updates the alternative text (alt text) for accessibility purposes
+    on page elements like images, shapes, and other visual elements. The alt text
+    is exposed to screen readers and other accessibility interfaces.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#UpdatePageElementAltTextRequest
+    """
+
+    objectId: str = Field(
+        description="The object ID of the page element the updates are applied to"
+    )
+    title: Optional[str] = Field(
+        default=None,
+        description="The updated alt text title of the page element. If unset the existing value will be maintained. The title is exposed to screen readers and other accessibility interfaces. Only use human readable values related to the content of the page element.",
+    )
+    description: Optional[str] = Field(
+        default=None,
+        description="The updated alt text description of the page element. If unset the existing value will be maintained. The description is exposed to screen readers and other accessibility interfaces. Only use human readable values related to the content of the page element.",
+    )

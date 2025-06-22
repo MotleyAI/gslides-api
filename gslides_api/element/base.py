@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 
 from gslides_api.domain import GSlidesBaseModel, Transform, Size
+from gslides_api.request.request import GslidesAPIRequest, UpdatePageElementAltTextRequest
 from gslides_api.client import api_client
 
 
@@ -63,7 +64,9 @@ class PageElementBase(GSlidesBaseModel):
 
         return element_properties
 
-    def get_base_update_requests(self, element_id: str) -> List[Dict[str, Any]]:
+    def alt_text_update_request(
+        self, element_id: str, title: str | None = None, description: str | None = None
+    ) -> List[GslidesAPIRequest]:
         """Convert a PageElement to an update request for the Google Slides API.
         :param element_id: The id of the element to update, if not the same as e objectId
         :type element_id: str, optional
@@ -72,28 +75,16 @@ class PageElementBase(GSlidesBaseModel):
 
         """
 
-        # Update title and description if provided, they're both alt text properties
-        requests = []
         if self.title is not None or self.description is not None:
-            properties = {}
-
-            if self.title is not None:
-                properties["title"] = self.title
-
-            if self.description is not None:
-                properties["description"] = self.description
-
-            # TODO: add all the allowed fields!
-            if properties:
-                requests.append(
-                    {
-                        "updatePageElementAltText": {
-                            "objectId": element_id,
-                            **properties,
-                        }
-                    }
+            return [
+                UpdatePageElementAltTextRequest(
+                    objectId=element_id,
+                    title=title or self.title,
+                    description=description or self.description,
                 )
-        return requests
+            ]
+        else:
+            return []
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a PageElement to a create request for the Google Slides API.
@@ -111,14 +102,18 @@ class PageElementBase(GSlidesBaseModel):
         if presentation_id is None:
             presentation_id = self.presentation_id
 
-        requests = self.element_to_update_request(element_id)
-        if len(requests):
+        request_objects = self.element_to_update_request(element_id)
+        if len(request_objects):
+            # Convert request objects to dictionaries
+            requests = []
+            for req in request_objects:
+                requests.extend(req.to_request())
             out = api_client.batch_update(requests, presentation_id)
             return out
         else:
             return {}
 
-    def element_to_update_request(self, element_id: str) -> List[Dict[str, Any]]:
+    def element_to_update_request(self, element_id: str) -> List[GslidesAPIRequest]:
         """Convert a PageElement to an update request for the Google Slides API.
 
         This method should be overridden by subclasses.
@@ -131,3 +126,11 @@ class PageElementBase(GSlidesBaseModel):
         This method should be overridden by subclasses.
         """
         raise NotImplementedError("Subclasses must implement to_markdown method")
+
+    def set_alt_text(self, title: str, description: str):
+        api_client.batch_update(
+            self.alt_text_update_request(
+                title=title, description=description, element_id=self.objectId
+            ),
+            self.presentation_id,
+        )

@@ -148,16 +148,23 @@ def test_update_request_with_title_description():
         shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
-    request = element.element_to_update_request("element_id")
-    assert len(request) >= 1
+    request_objects = element.element_to_update_request("element_id")
+    assert len(request_objects) >= 1
+
+    # Convert request objects to dictionaries to test the final format
+    requests = []
+    for req_obj in request_objects:
+        requests.extend(req_obj.to_request())
+
     # Find the update request for page element alt text (title and description)
     update_request = None
-    for req in request:
+    for req in requests:
         if "updatePageElementAltText" in req:
             update_request = req
             break
 
     assert update_request is not None
+    assert update_request["updatePageElementAltText"]["objectId"] == "element_id"
     assert update_request["updatePageElementAltText"]["title"] == "Updated Title"
     assert update_request["updatePageElementAltText"]["description"] == "Updated Description"
 
