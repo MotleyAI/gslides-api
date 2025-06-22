@@ -5,9 +5,32 @@ Tests for the requests module, specifically CreateParagraphBulletsRequest and re
 import pytest
 from pydantic import ValidationError
 
-from gslides_api.request.domain import Range, RangeType, TableCellLocation
-from gslides_api.request.request import CreateParagraphBulletsRequest, InsertTextRequest, UpdateTextStyleRequest
-from gslides_api.domain import BulletGlyphPreset, TextStyle
+from gslides_api.request.domain import Range, RangeType, TableCellLocation, ElementProperties
+from gslides_api.request.request import (
+    CreateParagraphBulletsRequest,
+    InsertTextRequest,
+    UpdateTextStyleRequest,
+    DeleteTextRequest,
+    CreateShapeRequest,
+    UpdateShapePropertiesRequest,
+    ReplaceImageRequest,
+    CreateSlideRequest,
+    UpdateSlidePropertiesRequest,
+    UpdateSlidesPositionRequest,
+    UpdatePagePropertiesRequest,
+    DeleteObjectRequest,
+    DuplicateObjectRequest,
+)
+from gslides_api.domain import (
+    BulletGlyphPreset,
+    TextStyle,
+    ShapeType,
+    LayoutReference,
+    PredefinedLayout,
+    ShapeProperties,
+    Size,
+    Transform
+)
 
 
 class TestRange:
@@ -376,3 +399,303 @@ class TestUpdateTextStyleRequest:
             fields="*",
         )
         assert request.fields == "*"
+
+
+class TestDeleteTextRequest:
+    """Test cases for the DeleteTextRequest class."""
+
+    def test_shape_request_valid(self):
+        """Test that request for shape (without cell location) works correctly."""
+        request = DeleteTextRequest(
+            objectId="shape_123",
+            textRange=Range(type=RangeType.ALL),
+        )
+        assert request.objectId == "shape_123"
+        assert request.textRange.type == RangeType.ALL
+        assert request.cellLocation is None
+
+    def test_table_request_valid(self):
+        """Test that request for table (with cell location) works correctly."""
+        request = DeleteTextRequest(
+            objectId="table_456",
+            textRange=Range(type=RangeType.FIXED_RANGE, startIndex=0, endIndex=10),
+            cellLocation=TableCellLocation(rowIndex=1, columnIndex=2),
+        )
+        assert request.objectId == "table_456"
+        assert request.textRange.type == RangeType.FIXED_RANGE
+        assert request.textRange.startIndex == 0
+        assert request.textRange.endIndex == 10
+        assert request.cellLocation.rowIndex == 1
+        assert request.cellLocation.columnIndex == 2
+
+    def test_api_format_conversion(self):
+        """Test that to_api_format() works correctly."""
+        request = DeleteTextRequest(
+            objectId="shape_123",
+            textRange=Range(type=RangeType.ALL),
+        )
+        api_format = request.to_api_format()
+
+        expected = {
+            "objectId": "shape_123",
+            "textRange": {"type": "ALL"},
+        }
+        assert api_format == expected
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        request = DeleteTextRequest(
+            objectId="shape_123",
+            textRange=Range(type=RangeType.ALL),
+        )
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "deleteText": {
+                    "objectId": "shape_123",
+                    "textRange": {"type": "ALL"},
+                }
+            }
+        ]
+        assert request_format == expected
+
+
+class TestCreateShapeRequest:
+    """Test cases for the CreateShapeRequest class."""
+
+    def test_basic_shape_request_valid(self):
+        """Test that basic shape request works correctly."""
+        element_props = ElementProperties(
+            pageObjectId="slide_123",
+            size={"width": {"magnitude": 100, "unit": "PT"}, "height": {"magnitude": 50, "unit": "PT"}},
+            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"}
+        )
+        request = CreateShapeRequest(
+            elementProperties=element_props,
+            shapeType=ShapeType.TEXT_BOX,
+        )
+        assert request.elementProperties.pageObjectId == "slide_123"
+        assert request.shapeType == ShapeType.TEXT_BOX
+        assert request.objectId is None
+
+    def test_shape_request_with_object_id(self):
+        """Test that shape request with custom object ID works correctly."""
+        element_props = ElementProperties(
+            pageObjectId="slide_123",
+            size={"width": {"magnitude": 100, "unit": "PT"}, "height": {"magnitude": 50, "unit": "PT"}},
+            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"}
+        )
+        request = CreateShapeRequest(
+            objectId="custom_shape_id",
+            elementProperties=element_props,
+            shapeType=ShapeType.RECTANGLE,
+        )
+        assert request.objectId == "custom_shape_id"
+        assert request.shapeType == ShapeType.RECTANGLE
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        element_props = ElementProperties(
+            pageObjectId="slide_123",
+            size={"width": {"magnitude": 100, "unit": "PT"}, "height": {"magnitude": 50, "unit": "PT"}},
+            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"}
+        )
+        request = CreateShapeRequest(
+            objectId="shape_456",
+            elementProperties=element_props,
+            shapeType=ShapeType.ELLIPSE,
+        )
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "createShape": {
+                    "objectId": "shape_456",
+                    "elementProperties": {
+                        "pageObjectId": "slide_123",
+                        "size": {"width": {"magnitude": 100, "unit": "PT"}, "height": {"magnitude": 50, "unit": "PT"}},
+                        "transform": {"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"}
+                    },
+                    "shapeType": "ELLIPSE",
+                }
+            }
+        ]
+        assert request_format == expected
+
+
+class TestReplaceImageRequest:
+    """Test cases for the ReplaceImageRequest class."""
+
+    def test_basic_replace_image_request(self):
+        """Test that basic replace image request works correctly."""
+        request = ReplaceImageRequest(
+            imageObjectId="image_123",
+            url="https://example.com/image.jpg",
+        )
+        assert request.imageObjectId == "image_123"
+        assert request.url == "https://example.com/image.jpg"
+        assert request.imageReplaceMethod == "CENTER_INSIDE"
+
+    def test_replace_image_with_custom_method(self):
+        """Test that replace image request with custom method works correctly."""
+        request = ReplaceImageRequest(
+            imageObjectId="image_456",
+            url="https://example.com/image.png",
+            imageReplaceMethod="CENTER_CROP",
+        )
+        assert request.imageObjectId == "image_456"
+        assert request.url == "https://example.com/image.png"
+        assert request.imageReplaceMethod == "CENTER_CROP"
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        request = ReplaceImageRequest(
+            imageObjectId="image_789",
+            url="https://example.com/image.gif",
+        )
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "replaceImage": {
+                    "imageObjectId": "image_789",
+                    "url": "https://example.com/image.gif",
+                    "imageReplaceMethod": "CENTER_INSIDE",
+                }
+            }
+        ]
+        assert request_format == expected
+
+
+class TestCreateSlideRequest:
+    """Test cases for the CreateSlideRequest class."""
+
+    def test_basic_slide_request(self):
+        """Test that basic slide request works correctly."""
+        request = CreateSlideRequest()
+        assert request.objectId is None
+        assert request.insertionIndex is None
+        assert request.slideLayoutReference is None
+        assert request.placeholderIdMappings is None
+
+    def test_slide_request_with_layout_reference(self):
+        """Test that slide request with layout reference works correctly."""
+        layout_ref = LayoutReference(predefinedLayout=PredefinedLayout.TITLE_AND_BODY)
+        request = CreateSlideRequest(
+            objectId="slide_123",
+            insertionIndex=2,
+            slideLayoutReference=layout_ref,
+        )
+        assert request.objectId == "slide_123"
+        assert request.insertionIndex == 2
+        assert request.slideLayoutReference.predefinedLayout == PredefinedLayout.TITLE_AND_BODY
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        layout_ref = LayoutReference(predefinedLayout=PredefinedLayout.BLANK)
+        request = CreateSlideRequest(
+            objectId="slide_456",
+            insertionIndex=0,
+            slideLayoutReference=layout_ref,
+        )
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "createSlide": {
+                    "objectId": "slide_456",
+                    "insertionIndex": 0,
+                    "slideLayoutReference": {"predefinedLayout": "BLANK"},
+                }
+            }
+        ]
+        assert request_format == expected
+
+
+class TestUpdateSlidesPositionRequest:
+    """Test cases for the UpdateSlidesPositionRequest class."""
+
+    def test_basic_position_update_request(self):
+        """Test that basic position update request works correctly."""
+        request = UpdateSlidesPositionRequest(
+            slideObjectIds=["slide_1", "slide_2"],
+            insertionIndex=3,
+        )
+        assert request.slideObjectIds == ["slide_1", "slide_2"]
+        assert request.insertionIndex == 3
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        request = UpdateSlidesPositionRequest(
+            slideObjectIds=["slide_a", "slide_b", "slide_c"],
+            insertionIndex=1,
+        )
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "updateSlidesPosition": {
+                    "slideObjectIds": ["slide_a", "slide_b", "slide_c"],
+                    "insertionIndex": 1,
+                }
+            }
+        ]
+        assert request_format == expected
+
+
+class TestDeleteObjectRequest:
+    """Test cases for the DeleteObjectRequest class."""
+
+    def test_basic_delete_request(self):
+        """Test that basic delete request works correctly."""
+        request = DeleteObjectRequest(objectId="object_123")
+        assert request.objectId == "object_123"
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        request = DeleteObjectRequest(objectId="slide_456")
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "deleteObject": {
+                    "objectId": "slide_456",
+                }
+            }
+        ]
+        assert request_format == expected
+
+
+class TestDuplicateObjectRequest:
+    """Test cases for the DuplicateObjectRequest class."""
+
+    def test_basic_duplicate_request(self):
+        """Test that basic duplicate request works correctly."""
+        request = DuplicateObjectRequest(objectId="object_123")
+        assert request.objectId == "object_123"
+        assert request.objectIds is None
+
+    def test_duplicate_request_with_id_mapping(self):
+        """Test that duplicate request with ID mapping works correctly."""
+        id_mapping = {"old_id_1": "new_id_1", "old_id_2": "new_id_2"}
+        request = DuplicateObjectRequest(
+            objectId="slide_456",
+            objectIds=id_mapping,
+        )
+        assert request.objectId == "slide_456"
+        assert request.objectIds == id_mapping
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        request = DuplicateObjectRequest(objectId="slide_789")
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "duplicateObject": {
+                    "objectId": "slide_789",
+                }
+            }
+        ]
+        assert request_format == expected

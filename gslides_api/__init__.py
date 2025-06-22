@@ -55,3 +55,19 @@ from .page import Notes, NotesProperties, Slide, SlideProperties
 from .page.base import BasePage, PageProperties, PageType
 from .element.base import ElementKind
 from .client import initialize_credentials
+from .request.request import (
+    CreateParagraphBulletsRequest,
+    InsertTextRequest,
+    UpdateTextStyleRequest,
+    DeleteTextRequest,
+    CreateShapeRequest,
+    UpdateShapePropertiesRequest,
+    ReplaceImageRequest,
+    CreateSlideRequest,
+    UpdateSlidePropertiesRequest,
+    UpdateSlidesPositionRequest,
+    UpdatePagePropertiesRequest,
+    DeleteObjectRequest,
+    DuplicateObjectRequest,
+)
+from .request.domain import Range, RangeType, TableCellLocation, ElementProperties

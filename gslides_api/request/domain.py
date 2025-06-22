@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Dict, Any, List
 
 from pydantic import Field, model_validator
 
@@ -75,3 +75,30 @@ class TableCellLocation(GSlidesBaseModel):
         if self.columnIndex < 0:
             raise ValueError("columnIndex must be non-negative")
         return self
+
+
+class ElementProperties(GSlidesBaseModel):
+    """Represents common properties for creating page elements.
+
+    Used when creating new elements like shapes, images, etc.
+    """
+
+    pageObjectId: str = Field(description="The object ID of the page where the element will be created")
+    size: Optional[Dict[str, Any]] = Field(default=None, description="The size of the element")
+    transform: Optional[Dict[str, Any]] = Field(default=None, description="The transform to apply to the element")
+    title: Optional[str] = Field(default=None, description="The title of the element")
+    description: Optional[str] = Field(default=None, description="The description of the element")
+
+
+class PlaceholderIdMapping(GSlidesBaseModel):
+    """Represents a mapping of placeholder IDs for slide creation."""
+
+    layoutPlaceholder: Dict[str, Any] = Field(description="The placeholder on the layout")
+    layoutPlaceholderObjectId: str = Field(description="The object ID of the layout placeholder")
+    objectId: str = Field(description="The object ID to assign to the placeholder")
+
+
+class ObjectIdMapping(GSlidesBaseModel):
+    """Represents a mapping of object IDs for duplication operations."""
+
+    objectIds: Dict[str, str] = Field(description="A map of object IDs to their new IDs")
