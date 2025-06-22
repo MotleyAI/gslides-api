@@ -69,8 +69,9 @@ def test_shape_element():
     # Create request should generate a valid request
     request = element.create_request("page_id")
     assert len(request) == 1
-    assert "createShape" in request[0]
-    assert request[0]["createShape"]["shapeType"] == "RECTANGLE"
+    # Now returns a domain object instead of a dictionary
+    assert hasattr(request[0], 'shapeType')
+    assert request[0].shapeType == ShapeType.RECTANGLE
 
 
 def test_line_element():

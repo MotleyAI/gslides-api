@@ -9,10 +9,17 @@ from gslides_api.domain import (
     ShapeType,
     LayoutReference,
     ShapeProperties,
+    ImageProperties,
     Size,
-    Transform
+    Transform,
 )
-from gslides_api.request.domain import Range, TableCellLocation, ElementProperties, PlaceholderIdMapping, ObjectIdMapping
+from gslides_api.request.domain import (
+    Range,
+    TableCellLocation,
+    ElementProperties,
+    PlaceholderIdMapping,
+    ObjectIdMapping,
+)
 
 
 class GslidesAPIRequest(GSlidesBaseModel):
@@ -70,7 +77,7 @@ class InsertTextRequest(GslidesAPIRequest):
         description="The optional table cell location if the text is to be inserted into a table cell. If present, the objectId must refer to a table.",
     )
     text: str = Field(description="The text to insert")
-    insertionIndex: int = Field(
+    insertionIndex: Optional[int] = Field(
         description="The index where the text will be inserted, in Unicode code units. Text is inserted before the character currently at this index. An insertion index of 0 will insert the text at the beginning of the text."
     )
 
@@ -134,14 +141,10 @@ class CreateShapeRequest(GslidesAPIRequest):
 
     objectId: Optional[str] = Field(
         default=None,
-        description="A user-supplied object ID. If specified, the ID must be unique among all pages and page elements in the presentation."
+        description="A user-supplied object ID. If specified, the ID must be unique among all pages and page elements in the presentation.",
     )
-    elementProperties: ElementProperties = Field(
-        description="The element properties for the shape"
-    )
-    shapeType: ShapeType = Field(
-        description="The shape type"
-    )
+    elementProperties: ElementProperties = Field(description="The element properties for the shape")
+    shapeType: ShapeType = Field(description="The shape type")
 
 
 class UpdateShapePropertiesRequest(GslidesAPIRequest):
@@ -152,12 +155,8 @@ class UpdateShapePropertiesRequest(GslidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updateshapepropertiesrequest
     """
 
-    objectId: str = Field(
-        description="The object ID of the shape to update"
-    )
-    shapeProperties: ShapeProperties = Field(
-        description="The shape properties to update"
-    )
+    objectId: str = Field(description="The object ID of the shape to update")
+    shapeProperties: ShapeProperties = Field(description="The shape properties to update")
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'shapeProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -171,15 +170,13 @@ class ReplaceImageRequest(GslidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replaceimagerequest
     """
 
-    imageObjectId: str = Field(
-        description="The ID of the existing image that will be replaced"
-    )
+    imageObjectId: str = Field(description="The ID of the existing image that will be replaced")
     url: str = Field(
         description="The image URL. The image is fetched once at insertion time and a copy is stored for display inside the presentation. Images must be less than 50MB in size, cannot exceed 25 megapixels, and must be in one of PNG, JPEG, or GIF format."
     )
     imageReplaceMethod: Optional[str] = Field(
         default="CENTER_INSIDE",
-        description="The image replace method. This field is optional and defaults to CENTER_INSIDE."
+        description="The image replace method. This field is optional and defaults to CENTER_INSIDE.",
     )
 
 
@@ -194,19 +191,19 @@ class CreateSlideRequest(GslidesAPIRequest):
 
     objectId: Optional[str] = Field(
         default=None,
-        description="A user-supplied object ID. If specified, the ID must be unique among all pages and page elements in the presentation."
+        description="A user-supplied object ID. If specified, the ID must be unique among all pages and page elements in the presentation.",
     )
     insertionIndex: Optional[int] = Field(
         default=None,
-        description="The optional zero-based index indicating where to insert the slides. If you don't specify an index, the new slide is created at the end."
+        description="The optional zero-based index indicating where to insert the slides. If you don't specify an index, the new slide is created at the end.",
     )
     slideLayoutReference: Optional[LayoutReference] = Field(
         default=None,
-        description="Layout reference of the slide to be inserted, based on the current master, which is one of the following: - The master of the previous slide index. - The master of the first slide, if the insertion_index is zero. - The first master in the presentation, if there are no slides."
+        description="Layout reference of the slide to be inserted, based on the current master, which is one of the following: - The master of the previous slide index. - The master of the first slide, if the insertion_index is zero. - The first master in the presentation, if there are no slides.",
     )
     placeholderIdMappings: Optional[List[PlaceholderIdMapping]] = Field(
         default=None,
-        description="An optional list of object ID mappings from the placeholder(s) on the layout to the placeholder(s) that will be created on the new slide from that specified layout. Can only be used when slideLayoutReference is specified."
+        description="An optional list of object ID mappings from the placeholder(s) on the layout to the placeholder(s) that will be created on the new slide from that specified layout. Can only be used when slideLayoutReference is specified.",
     )
 
 
@@ -218,12 +215,8 @@ class UpdateSlidePropertiesRequest(GslidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updateslidepropertiesrequest
     """
 
-    objectId: str = Field(
-        description="The object ID of the slide to update"
-    )
-    slideProperties: Dict[str, Any] = Field(
-        description="The slide properties to update"
-    )
+    objectId: str = Field(description="The object ID of the slide to update")
+    slideProperties: Dict[str, Any] = Field(description="The slide properties to update")
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'slideProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -253,12 +246,8 @@ class UpdatePagePropertiesRequest(GslidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatepagepropertiesrequest
     """
 
-    objectId: str = Field(
-        description="The object ID of the page to update"
-    )
-    pageProperties: Dict[str, Any] = Field(
-        description="The page properties to update"
-    )
+    objectId: str = Field(description="The object ID of the page to update")
+    pageProperties: Dict[str, Any] = Field(description="The page properties to update")
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'pageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -273,9 +262,7 @@ class DeleteObjectRequest(GslidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#deleteobjectrequest
     """
 
-    objectId: str = Field(
-        description="The object ID of the page or page element to delete"
-    )
+    objectId: str = Field(description="The object ID of the page or page element to delete")
 
 
 class DuplicateObjectRequest(GslidesAPIRequest):
@@ -287,10 +274,23 @@ class DuplicateObjectRequest(GslidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#duplicateobjectrequest
     """
 
-    objectId: str = Field(
-        description="The ID of the object to duplicate"
-    )
+    objectId: str = Field(description="The ID of the object to duplicate")
     objectIds: Optional[Dict[str, str]] = Field(
         default=None,
-        description="The object being duplicated may contain other objects, for example when duplicating a slide or a group page element. This map defines how the IDs of duplicated objects are generated: the keys are the IDs of the original objects and its values are the IDs that will be assigned to the corresponding duplicate object."
+        description="The object being duplicated may contain other objects, for example when duplicating a slide or a group page element. This map defines how the IDs of duplicated objects are generated: the keys are the IDs of the original objects and its values are the IDs that will be assigned to the corresponding duplicate object.",
+    )
+
+
+class UpdateImagePropertiesRequest(GslidesAPIRequest):
+    """Updates the properties of an Image.
+
+    This request updates the image properties for the specified image.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updateimagepropertiesrequest
+    """
+
+    objectId: str = Field(description="The object ID of the image to update")
+    imageProperties: ImageProperties = Field(description="The image properties to update")
+    fields: str = Field(
+        description="The fields that should be updated. At least one field must be specified. The root 'imageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )

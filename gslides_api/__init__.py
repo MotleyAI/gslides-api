@@ -62,6 +62,7 @@ from .request.request import (
     DeleteTextRequest,
     CreateShapeRequest,
     UpdateShapePropertiesRequest,
+    UpdateImagePropertiesRequest,
     ReplaceImageRequest,
     CreateSlideRequest,
     UpdateSlidePropertiesRequest,

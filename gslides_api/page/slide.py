@@ -7,7 +7,13 @@ from gslides_api.element.shape import ShapeElement
 from gslides_api.page.base import BasePage, ElementKind, PageType
 from gslides_api.domain import GSlidesBaseModel, LayoutReference
 from gslides_api.client import api_client
-from gslides_api.request.request import InsertTextRequest
+from gslides_api.request.request import (
+    InsertTextRequest,
+    UpdateSlidesPositionRequest,
+    UpdatePagePropertiesRequest,
+    UpdateSlidePropertiesRequest,
+    CreateSlideRequest
+)
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 
@@ -78,15 +84,11 @@ class Slide(BasePage):
         Args:
             insertion_index: The index to insert the slide at.
         """
-        request = [
-            {
-                "updateSlidesPosition": {
-                    "slideObjectIds": [self.objectId],
-                    "insertionIndex": insertion_index,
-                }
-            }
-        ]
-        api_client.batch_update(request, self.presentation_id)
+        request = UpdateSlidesPositionRequest(
+            slideObjectIds=[self.objectId],
+            insertionIndex=insertion_index
+        )
+        api_client.batch_update([request], self.presentation_id)
 
     def write_copy(
         self,
@@ -116,16 +118,12 @@ class Slide(BasePage):
         try:
             # TODO: this raises an InternalError sometimes, need to debug
             page_properties = self.pageProperties.to_api_format()
-            request = [
-                {
-                    "updatePageProperties": {
-                        "objectId": slide_id,
-                        "pageProperties": page_properties,
-                        "fields": ",".join(dict_to_dot_separated_field_list(page_properties)),
-                    }
-                }
-            ]
-            api_client.batch_update(request, presentation_id)
+            request = UpdatePagePropertiesRequest(
+                objectId=slide_id,
+                pageProperties=page_properties,
+                fields=",".join(dict_to_dot_separated_field_list(page_properties))
+            )
+            api_client.batch_update([request], presentation_id)
         except Exception as e:
             logger.error(f"Error writing page properties: {e}")
 
@@ -135,16 +133,12 @@ class Slide(BasePage):
         slide_properties.pop("masterObjectId", None)
         # This has already been set when creating the slide
         slide_properties.pop("layoutObjectId", None)
-        request = [
-            {
-                "updateSlideProperties": {
-                    "objectId": slide_id,
-                    "slideProperties": slide_properties,
-                    "fields": ",".join(dict_to_dot_separated_field_list(slide_properties)),
-                }
-            }
-        ]
-        api_client.batch_update(request, presentation_id)
+        request = UpdateSlidePropertiesRequest(
+            objectId=slide_id,
+            slideProperties=slide_properties,
+            fields=",".join(dict_to_dot_separated_field_list(slide_properties))
+        )
+        api_client.batch_update([request], presentation_id)
 
         if self.pageElements is not None:
             # Some elements came from layout, some were created manually
@@ -178,12 +172,11 @@ class Slide(BasePage):
             layoout_placeholder_id_mapping: The mapping of placeholder IDs to use for the slide.
         """
 
-        # https://developers.google.com/slides/api/reference/rest/v1/presentations/request#CreateSlideRequest
-        base = {} if insertion_index is None else {"insertionIndex": insertion_index}
-        if slide_layout_reference is not None:
-            base["slideLayoutReference"] = slide_layout_reference.to_api_format()
-
-        out = api_client.batch_update([{"createSlide": base}], presentation_id)
+        request = CreateSlideRequest(
+            insertionIndex=insertion_index,
+            slideLayoutReference=slide_layout_reference
+        )
+        out = api_client.batch_update([request], presentation_id)
         new_slide_id = out["replies"][0]["createSlide"]["objectId"]
 
         return cls.from_ids(presentation_id, new_slide_id)

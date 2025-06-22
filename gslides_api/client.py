@@ -9,7 +9,11 @@ from googleapiclient.discovery import Resource, build
 
 from googleapiclient.http import MediaFileUpload
 
-from gslides_api.request.request import GslidesAPIRequest
+from gslides_api.request.request import (
+    GslidesAPIRequest,
+    DuplicateObjectRequest,
+    DeleteObjectRequest,
+)
 
 
 # The functions in this file are the only interaction with the raw gslides API in this library
@@ -84,6 +88,16 @@ class GoogleAPIClient:
     def batch_update(self, requests: list, presentation_id: str) -> Dict[str, Any]:
 
         re_requests = [r.to_request() if isinstance(r, GslidesAPIRequest) else r for r in requests]
+        try:
+            return (
+                self.slide_service.presentations()
+                .batchUpdate(presentationId=presentation_id, body={"requests": re_requests})
+                .execute()
+            )
+        except Exception as e:
+            logger.error(f"Failed to execute batch update: {e}")
+            raise e
+
         return (
             self.slide_service.presentations()
             .batchUpdate(presentationId=presentation_id, body={"requests": re_requests})
@@ -138,11 +152,7 @@ class GoogleAPIClient:
         Returns:
             The ID of the duplicated object.
         """
-        # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#DuplicateObjectRequest
-
-        request = {"duplicateObject": {"objectId": object_id}}
-        if id_map:
-            request["duplicateObject"]["objectIds"] = id_map
+        request = DuplicateObjectRequest(objectId=object_id, objectIds=id_map)
         out = self.batch_update([request], presentation_id)
         new_object_id = out["replies"][0]["duplicateObject"]["objectId"]
         return new_object_id
@@ -154,7 +164,7 @@ class GoogleAPIClient:
             object_id: The ID of the object to delete.
             presentation_id: The ID of the presentation containing the object.
         """
-        request = {"deleteObject": {"objectId": object_id}}
+        request = DeleteObjectRequest(objectId=object_id)
         self.batch_update([request], presentation_id)
 
     def upload_image_to_drive(self, image_path) -> str:

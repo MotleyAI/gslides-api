@@ -18,6 +18,7 @@ from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import api_client
 from gslides_api.element.shape import ShapeElement
 from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
+from gslides_api.request.request import UpdateImagePropertiesRequest, ReplaceImageRequest
 
 
 def element_discriminator(v: Any) -> str:
@@ -130,16 +131,12 @@ class ImageElement(PageElementBase):
         if hasattr(self.image, "imageProperties") and self.image.imageProperties is not None:
             image_properties = self.image.imageProperties.to_api_format()
             # "fields": "*" causes an error
-            image_requests = [
-                {
-                    "updateImageProperties": {
-                        "objectId": element_id,
-                        "imageProperties": image_properties,
-                        "fields": ",".join(dict_to_dot_separated_field_list(image_properties)),
-                    }
-                }
-            ]
-            return requests + image_requests
+            request = UpdateImagePropertiesRequest(
+                objectId=element_id,
+                imageProperties=self.image.imageProperties,
+                fields=",".join(dict_to_dot_separated_field_list(image_properties))
+            )
+            return requests + [request]
 
         return requests
 
@@ -168,9 +165,11 @@ class ImageElement(PageElementBase):
         if not image_url_is_valid(new_url):
             raise ValueError(f"Image URL is not accessible or invalid: {new_url}")
 
-        request = {"replaceImage": {"imageObjectId": self.objectId, "url": new_url}}
-        if method is not None:
-            request["replaceImage"]["imageReplaceMethod"] = method.value
+        request = ReplaceImageRequest(
+            imageObjectId=self.objectId,
+            url=new_url,
+            imageReplaceMethod=method.value if method is not None else None
+        )
         return [request]
 
     def replace_image(

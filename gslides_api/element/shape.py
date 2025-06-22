@@ -7,8 +7,14 @@ from gslides_api.domain import Shape, TextElement, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import api_client
 from gslides_api.markdown import markdown_to_text_elements
-from gslides_api.request.request import GslidesAPIRequest, InsertTextRequest, UpdateTextStyleRequest
-from gslides_api.request.domain import Range, RangeType
+from gslides_api.request.request import (
+    GslidesAPIRequest,
+    InsertTextRequest,
+    UpdateTextStyleRequest,
+    CreateShapeRequest,
+    DeleteTextRequest
+)
+from gslides_api.request.domain import Range, RangeType, ElementProperties
 
 
 class ShapeElement(PageElementBase):
@@ -26,15 +32,19 @@ class ShapeElement(PageElementBase):
 
     def create_request(self, parent_id: str) -> List[Dict[str, Any]]:
         """Convert a PageElement to a create request for the Google Slides API."""
-        element_properties = self.element_properties(parent_id)
-        return [
-            {
-                "createShape": {
-                    "elementProperties": element_properties,
-                    "shapeType": self.shape.shapeType.value,
-                }
-            }
-        ]
+        element_properties_dict = self.element_properties(parent_id)
+        element_props = ElementProperties(
+            pageObjectId=element_properties_dict["pageObjectId"],
+            size=element_properties_dict.get("size"),
+            transform=element_properties_dict.get("transform"),
+            title=element_properties_dict.get("title"),
+            description=element_properties_dict.get("description")
+        )
+        request = CreateShapeRequest(
+            elementProperties=element_props,
+            shapeType=self.shape.shapeType
+        )
+        return [request]
 
     def element_to_update_request(self, element_id: str) -> List[Dict[str, Any]]:
         """Convert a PageElement to an update request for the Google Slides API.
@@ -66,7 +76,10 @@ class ShapeElement(PageElementBase):
         return requests
 
     def _delete_text_request(self):
-        return [{"deleteText": {"objectId": self.objectId, "textRange": {"type": "ALL"}}}]
+        return [DeleteTextRequest(
+            objectId=self.objectId,
+            textRange=Range(type=RangeType.ALL)
+        )]
 
     def delete_text(self):
         return api_client.batch_update(self._delete_text_request(), self.presentation_id)

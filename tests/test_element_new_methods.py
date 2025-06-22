@@ -155,15 +155,11 @@ class TestImageElementReplaceImageRequests:
         result = image_element._replace_image_requests("https://example.com/new_image.jpg")
 
         mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
-        expected_request = [
-            {
-                "replaceImage": {
-                    "imageObjectId": "test_image",
-                    "url": "https://example.com/new_image.jpg",
-                }
-            }
-        ]
-        assert result == expected_request
+        # Now returns a domain object instead of a dictionary
+        assert len(result) == 1
+        assert hasattr(result[0], 'imageObjectId')
+        assert result[0].imageObjectId == "test_image"
+        assert result[0].url == "https://example.com/new_image.jpg"
 
     def test_replace_image_requests_invalid_url_protocol(self):
         """Test _replace_image_requests with invalid URL protocol."""
@@ -209,16 +205,12 @@ class TestImageElementReplaceImageRequests:
         )
 
         mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
-        expected_request = [
-            {
-                "replaceImage": {
-                    "imageObjectId": "test_image",
-                    "url": "https://example.com/new_image.jpg",
-                    "imageReplaceMethod": "CENTER_CROP",
-                }
-            }
-        ]
-        assert result == expected_request
+        # Now returns a domain object instead of a dictionary
+        assert len(result) == 1
+        assert hasattr(result[0], 'imageObjectId')
+        assert result[0].imageObjectId == "test_image"
+        assert result[0].url == "https://example.com/new_image.jpg"
+        assert result[0].imageReplaceMethod == "CENTER_CROP"
 
 
 class TestElementsFromPresentationData:
