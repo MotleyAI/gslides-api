@@ -6,8 +6,8 @@ import pytest
 from pydantic import ValidationError
 
 from gslides_api.request.domain import Range, RangeType, TableCellLocation
-from gslides_api.request.request import CreateParagraphBulletsRequest
-from gslides_api.domain import BulletGlyphPreset
+from gslides_api.request.request import CreateParagraphBulletsRequest, InsertTextRequest, UpdateTextStyleRequest
+from gslides_api.domain import BulletGlyphPreset, TextStyle
 
 
 class TestRange:
@@ -178,3 +178,201 @@ class TestCreateParagraphBulletsRequest:
                 objectId="test_shape", textRange=Range(type=RangeType.ALL), bulletPreset=preset
             )
             assert request.bulletPreset == preset
+
+
+class TestInsertTextRequest:
+    """Test cases for the InsertTextRequest class."""
+
+    def test_shape_request_valid(self):
+        """Test that request for shape (without cell location) works correctly."""
+        request = InsertTextRequest(
+            objectId="shape_123",
+            text="Hello, World!",
+            insertionIndex=0,
+        )
+        assert request.objectId == "shape_123"
+        assert request.text == "Hello, World!"
+        assert request.insertionIndex == 0
+        assert request.cellLocation is None
+
+    def test_table_request_valid(self):
+        """Test that request for table (with cell location) works correctly."""
+        request = InsertTextRequest(
+            objectId="table_456",
+            text="Cell text",
+            insertionIndex=5,
+            cellLocation=TableCellLocation(rowIndex=1, columnIndex=2),
+        )
+        assert request.objectId == "table_456"
+        assert request.text == "Cell text"
+        assert request.insertionIndex == 5
+        assert request.cellLocation.rowIndex == 1
+        assert request.cellLocation.columnIndex == 2
+
+    def test_api_format_conversion(self):
+        """Test that to_api_format() works correctly."""
+        request = InsertTextRequest(
+            objectId="shape_123",
+            text="Test text",
+            insertionIndex=10,
+        )
+        api_format = request.to_api_format()
+
+        expected = {
+            "objectId": "shape_123",
+            "text": "Test text",
+            "insertionIndex": 10,
+        }
+        assert api_format == expected
+
+    def test_api_format_with_cell_location(self):
+        """Test that to_api_format() includes cellLocation when present."""
+        request = InsertTextRequest(
+            objectId="table_456",
+            text="Table cell text",
+            insertionIndex=0,
+            cellLocation=TableCellLocation(rowIndex=0, columnIndex=1),
+        )
+        api_format = request.to_api_format()
+
+        expected = {
+            "objectId": "table_456",
+            "text": "Table cell text",
+            "insertionIndex": 0,
+            "cellLocation": {"rowIndex": 0, "columnIndex": 1},
+        }
+        assert api_format == expected
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        request = InsertTextRequest(
+            objectId="shape_123",
+            text="Test",
+            insertionIndex=0,
+        )
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "insertText": {
+                    "objectId": "shape_123",
+                    "text": "Test",
+                    "insertionIndex": 0,
+                }
+            }
+        ]
+        assert request_format == expected
+
+
+class TestUpdateTextStyleRequest:
+    """Test cases for the UpdateTextStyleRequest class."""
+
+    def test_shape_request_valid(self):
+        """Test that request for shape (without cell location) works correctly."""
+        style = TextStyle(bold=True, italic=False)
+        request = UpdateTextStyleRequest(
+            objectId="shape_123",
+            style=style,
+            textRange=Range(type=RangeType.ALL),
+            fields="bold,italic",
+        )
+        assert request.objectId == "shape_123"
+        assert request.style.bold is True
+        assert request.style.italic is False
+        assert request.textRange.type == RangeType.ALL
+        assert request.fields == "bold,italic"
+        assert request.cellLocation is None
+
+    def test_table_request_valid(self):
+        """Test that request for table (with cell location) works correctly."""
+        style = TextStyle(underline=True, fontFamily="Arial")
+        request = UpdateTextStyleRequest(
+            objectId="table_456",
+            style=style,
+            textRange=Range(type=RangeType.FIXED_RANGE, startIndex=0, endIndex=10),
+            fields="underline,fontFamily",
+            cellLocation=TableCellLocation(rowIndex=1, columnIndex=2),
+        )
+        assert request.objectId == "table_456"
+        assert request.style.underline is True
+        assert request.style.fontFamily == "Arial"
+        assert request.textRange.type == RangeType.FIXED_RANGE
+        assert request.textRange.startIndex == 0
+        assert request.textRange.endIndex == 10
+        assert request.fields == "underline,fontFamily"
+        assert request.cellLocation.rowIndex == 1
+        assert request.cellLocation.columnIndex == 2
+
+    def test_api_format_conversion(self):
+        """Test that to_api_format() works correctly."""
+        style = TextStyle(bold=True)
+        request = UpdateTextStyleRequest(
+            objectId="shape_123",
+            style=style,
+            textRange=Range(type=RangeType.ALL),
+            fields="bold",
+        )
+        api_format = request.to_api_format()
+
+        expected = {
+            "objectId": "shape_123",
+            "style": {"bold": True},
+            "textRange": {"type": "ALL"},
+            "fields": "bold",
+        }
+        assert api_format == expected
+
+    def test_api_format_with_cell_location(self):
+        """Test that to_api_format() includes cellLocation when present."""
+        style = TextStyle(italic=True, strikethrough=False)
+        request = UpdateTextStyleRequest(
+            objectId="table_456",
+            style=style,
+            textRange=Range(type=RangeType.FIXED_RANGE, startIndex=5, endIndex=15),
+            fields="italic,strikethrough",
+            cellLocation=TableCellLocation(rowIndex=0, columnIndex=1),
+        )
+        api_format = request.to_api_format()
+
+        expected = {
+            "objectId": "table_456",
+            "style": {"italic": True, "strikethrough": False},
+            "textRange": {"type": "FIXED_RANGE", "startIndex": 5, "endIndex": 15},
+            "fields": "italic,strikethrough",
+            "cellLocation": {"rowIndex": 0, "columnIndex": 1},
+        }
+        assert api_format == expected
+
+    def test_to_request_format(self):
+        """Test that to_request() returns correct format."""
+        style = TextStyle(bold=True)
+        request = UpdateTextStyleRequest(
+            objectId="shape_123",
+            style=style,
+            textRange=Range(type=RangeType.ALL),
+            fields="bold",
+        )
+        request_format = request.to_request()
+
+        expected = [
+            {
+                "updateTextStyle": {
+                    "objectId": "shape_123",
+                    "style": {"bold": True},
+                    "textRange": {"type": "ALL"},
+                    "fields": "bold",
+                }
+            }
+        ]
+        assert request_format == expected
+
+    def test_wildcard_fields(self):
+        """Test that wildcard fields work correctly."""
+        style = TextStyle(bold=True, italic=True, underline=True)
+        request = UpdateTextStyleRequest(
+            objectId="shape_123",
+            style=style,
+            textRange=Range(type=RangeType.ALL),
+            fields="*",
+        )
+        assert request.fields == "*"
