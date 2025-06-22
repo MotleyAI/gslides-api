@@ -15,8 +15,8 @@ class TestUploadImageToDrive:
 
             # Setup mocks
             mock_basename.return_value = "test_image.png"
-            mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
-            mock_drive_service.permissions().create().client.return_value = {}
+            mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+            mock_drive_service.permissions().create().execute.return_value = {}
 
             # Test PNG format
             result = api_client.upload_image_to_drive("test_image.png")
@@ -48,8 +48,8 @@ class TestUploadImageToDrive:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
-                mock_drive_service.permissions().create().client.return_value = {}
+                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+                mock_drive_service.permissions().create().execute.return_value = {}
 
                 # Test the format
                 result = api_client.upload_image_to_drive(image_path)
@@ -70,8 +70,8 @@ class TestUploadImageToDrive:
 
             # Setup mocks
             mock_basename.return_value = "test_image.gif"
-            mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
-            mock_drive_service.permissions().create().client.return_value = {}
+            mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+            mock_drive_service.permissions().create().execute.return_value = {}
 
             # Test GIF format
             result = api_client.upload_image_to_drive("test_image.gif")
@@ -130,8 +130,8 @@ class TestUploadImageToDrive:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
-                mock_drive_service.permissions().create().client.return_value = {}
+                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+                mock_drive_service.permissions().create().execute.return_value = {}
 
                 # Should not raise an exception
                 result = api_client.upload_image_to_drive(image_path)
@@ -153,8 +153,8 @@ class TestUploadImageToDrive:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().client.return_value = {"id": "test_file_id"}
-                mock_drive_service.permissions().create().client.return_value = {}
+                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+                mock_drive_service.permissions().create().execute.return_value = {}
 
                 # Should not raise an exception
                 result = api_client.upload_image_to_drive(image_path)

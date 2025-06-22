@@ -7,7 +7,8 @@ from gslides_api.domain import Shape, TextElement, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import api_client
 from gslides_api.markdown import markdown_to_text_elements
-from gslides_api.request.request import GslidesAPIRequest
+from gslides_api.request.request import GslidesAPIRequest, InsertTextRequest, UpdateTextStyleRequest
+from gslides_api.request.domain import Range, RangeType
 
 
 class ShapeElement(PageElementBase):
@@ -284,15 +285,51 @@ class ShapeElement(PageElementBase):
                 continue
             return te.textRun.style
 
-    def write_text(self, text: str, as_markdown: bool = True, style: TextStyle | None = None):
+    @property
+    def has_text(self):
+        return (
+            self.shape.text is not None
+            and hasattr(self.shape.text, "textElements")
+            and len(self.shape.text.textElements) > 0
+            and self.shape.text.textElements[0].endIndex > 0
+        )
+
+    def write_text(
+        self,
+        text: str,
+        as_markdown: bool = True,
+        style: TextStyle | None = None,
+        append: bool = False,
+    ):
         style = style or self.style
-        requests = self._delete_text_request()
-        if as_markdown:
-            elements = markdown_to_text_elements(text, base_style=style)
-            requests += text_elements_to_requests(elements, self.objectId)
+        if self.has_text and not append:
+            requests = self._delete_text_request()
         else:
-            raise NotImplementedError("Plain text writing not implemented yet")
-        return api_client.batch_update(requests, self.presentation_id)
+            requests = []
+
+        elements = markdown_to_text_elements(text, base_style=style)
+        requests += text_elements_to_requests(elements, self.objectId)
+
+        if not as_markdown:
+            requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
+
+        if requests:
+            return api_client.batch_update(requests, self.presentation_id)
+
+    def read_text(self, as_markdown: bool = True):
+        if not self.has_text:
+            return ""
+        if as_markdown:
+            return self.to_markdown()
+        else:
+            out = []
+            for te in self.shape.text.textElements:
+                if te.textRun is not None:
+                    out.append(te.textRun.content)
+                elif te.paragraphMarker is not None:
+                    if len(out) > 0:
+                        out.append("\n")
+            return "".join(out)
 
 
 def text_elements_to_requests(text_elements: List[TextElement | GslidesAPIRequest], objectId: str):
@@ -311,28 +348,27 @@ def text_elements_to_requests(text_elements: List[TextElement | GslidesAPIReques
             # So we just ignore them when inserting text
             continue
 
-        style = te.textRun.style.to_api_format()
-        requests += [
-            {
-                "insertText": {
-                    "objectId": objectId,
-                    "text": te.textRun.content,
-                    "insertionIndex": te.startIndex,
-                }
-            },
-            {
-                "updateTextStyle": {
-                    "objectId": objectId,
-                    "textRange": {
-                        "startIndex": te.startIndex or 0,
-                        "endIndex": te.endIndex,
-                        "type": "FIXED_RANGE",
-                    },
-                    "style": style,
-                    "fields": "*",
-                }
-            },
-        ]
+        # Create InsertTextRequest
+        insert_request = InsertTextRequest(
+            objectId=objectId,
+            text=te.textRun.content,
+            insertionIndex=te.startIndex,
+        )
+
+        # Create UpdateTextStyleRequest
+        text_range = Range(
+            type=RangeType.FIXED_RANGE,
+            startIndex=te.startIndex or 0,
+            endIndex=te.endIndex,
+        )
+        update_style_request = UpdateTextStyleRequest(
+            objectId=objectId,
+            textRange=text_range,
+            style=te.textRun.style,
+            fields="*",
+        )
+
+        requests += [insert_request, update_style_request]
     return requests
 
 

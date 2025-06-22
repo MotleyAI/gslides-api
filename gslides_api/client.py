@@ -9,6 +9,8 @@ from googleapiclient.discovery import Resource, build
 
 from googleapiclient.http import MediaFileUpload
 
+from gslides_api.request.request import GslidesAPIRequest
+
 
 # The functions in this file are the only interaction with the raw gslides API in this library
 class GoogleAPIClient:
@@ -80,15 +82,17 @@ class GoogleAPIClient:
             raise RuntimeError("Must run set_credentials before executing method")
 
     def batch_update(self, requests: list, presentation_id: str) -> Dict[str, Any]:
+
+        re_requests = [r.to_request() if isinstance(r, GslidesAPIRequest) else r for r in requests]
         return (
             self.slide_service.presentations()
-            .batchUpdate(presentationId=presentation_id, body={"requests": requests})
-            .client()
+            .batchUpdate(presentationId=presentation_id, body={"requests": re_requests})
+            .execute()
         )
 
     def create_presentation(self, config: dict) -> str:
         # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/create
-        out = self.slide_service.presentations().create(body=config).client()
+        out = self.slide_service.presentations().create(body=config).execute()
         return out["presentationId"]
 
     def get_slide_json(self, presentation_id: str, slide_id: str) -> Dict[str, Any]:
@@ -96,11 +100,11 @@ class GoogleAPIClient:
             self.slide_service.presentations()
             .pages()
             .get(presentationId=presentation_id, pageObjectId=slide_id)
-            .client()
+            .execute()
         )
 
     def get_presentation_json(self, presentation_id: str) -> Dict[str, Any]:
-        return self.slide_service.presentations().get(presentationId=presentation_id).client()
+        return self.slide_service.presentations().get(presentationId=presentation_id).execute()
 
     # TODO: test this out and adjust the credentials readme (Drive API scope, anything else?)
     # https://developers.google.com/workspace/slides/api/guides/presentations#python
@@ -115,7 +119,7 @@ class GoogleAPIClient:
         return (
             self.drive_service.files()
             .copy(fileId=presentation_id, body={"name": copy_title})
-            .client()
+            .execute()
         )
 
     def duplicate_object(
@@ -191,14 +195,14 @@ class GoogleAPIClient:
         uploaded = (
             self.drive_service.files()
             .create(body=file_metadata, media_body=media, fields="id")
-            .client()
+            .execute()
         )
 
         self.drive_service.permissions().create(
             fileId=uploaded["id"],
             # TODO: do we need "anyone"?
             body={"type": "anyone", "role": "reader"},
-        ).client()
+        ).execute()
 
         return f"https://drive.google.com/uc?id={uploaded['id']}"
 

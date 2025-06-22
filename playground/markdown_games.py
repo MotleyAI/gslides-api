@@ -1,6 +1,5 @@
+import json
 import os
-
-import marko
 
 from gslides_api import Presentation, Slide, initialize_credentials
 
@@ -35,11 +34,6 @@ Ordered list example:
 Mixed content with [links](https://example.com) and ~~crossed out~~ text.
 """
 
-out = marko.parse(md)
-print(out)
-print("Markdown converted to elements!")
-
-
 # Setup, choose presentation
 presentation_id = (
     "1bW53VB1GqljfLEt8qS3ZaFiq47lgF9iMpossptwuato"  # "1bj3qEcf1P6NhShY8YC0UyEwpc_bFdrxxtijqz8hBbXM"
@@ -49,11 +43,14 @@ source_presentation = Presentation.from_id(presentation_id)
 s = source_presentation.slides[8]
 new_slide = s.write_copy(9)
 new_slide.pageElements[3].write_text(md, as_markdown=True)
-new_slide = Slide.from_ids(presentation_id, new_slide.objectId)
+new_slide.speaker_notes.write_text("yay!", as_markdown=True)
+new_slide.refresh()
+new_slide.speaker_notes.write_text(json.dumps({"metadata": "blah"}), as_markdown=False)
+new_slide.refresh()
+sn2 = new_slide.speaker_notes.read_text()
+test = json.loads(sn2)
+print("Yay!")
 
-# Save the API response for testing
-import json
-import os
 
 api_response = json.loads(
     new_slide.pageElements[3].model_dump_json()

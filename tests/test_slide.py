@@ -258,3 +258,100 @@ def test_presentation_id_propagation_when_adding_elements_later():
 
     # Verify that the newly added element gets the correct presentation_id
     assert element.presentation_id == "test-presentation-later"
+
+
+def test_presentation_id_propagation_to_notes_page():
+    """Test that presentation_id is propagated to notes page when it exists."""
+    from gslides_api.page.slide import Notes, NotesProperties
+
+    # Create a notes page
+    notes_page = Notes(
+        objectId="notes-page-id",
+        notesProperties=NotesProperties(speakerNotesObjectId="speaker-notes-id"),
+        pageElements=[],
+    )
+
+    # Create a slide with notes page
+    slide = Slide(
+        objectId="slide-with-notes",
+        slideProperties=SlideProperties(
+            layoutObjectId="test-layout-id",
+            masterObjectId="test-master-id",
+            notesPage=notes_page,
+        ),
+        presentation_id="test-presentation-with-notes",
+    )
+
+    # Verify that presentation_id was propagated to the notes page
+    assert slide.presentation_id == "test-presentation-with-notes"
+    assert slide.slideProperties.notesPage.presentation_id == "test-presentation-with-notes"
+
+
+def test_presentation_id_propagation_to_notes_page_on_modification():
+    """Test that presentation_id is propagated to notes page when modified."""
+    from gslides_api.page.slide import Notes, NotesProperties
+
+    # Create a notes page
+    notes_page = Notes(
+        objectId="notes-page-id",
+        notesProperties=NotesProperties(speakerNotesObjectId="speaker-notes-id"),
+        pageElements=[],
+    )
+
+    # Create a slide with notes page
+    slide = Slide(
+        objectId="slide-with-notes",
+        slideProperties=SlideProperties(
+            layoutObjectId="test-layout-id",
+            masterObjectId="test-master-id",
+            notesPage=notes_page,
+        ),
+        presentation_id="initial-presentation-id",
+    )
+
+    # Verify initial state
+    assert slide.presentation_id == "initial-presentation-id"
+    assert slide.slideProperties.notesPage.presentation_id == "initial-presentation-id"
+
+    # Modify presentation_id
+    slide.presentation_id = "modified-presentation-id"
+
+    # Verify that presentation_id was propagated to the notes page
+    assert slide.presentation_id == "modified-presentation-id"
+    assert slide.slideProperties.notesPage.presentation_id == "modified-presentation-id"
+
+
+def test_presentation_id_propagation_to_notes_page_elements():
+    """Test that presentation_id is propagated to elements within the notes page."""
+    from gslides_api.page.slide import Notes, NotesProperties
+
+    # Create some mock page elements for the notes page
+    notes_element = ShapeElement(
+        objectId="notes-element",
+        size=Size(width=100, height=50),
+        transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0, translateY=0),
+        shape=Shape(shapeType=ShapeType.TEXT_BOX, shapeProperties=ShapeProperties()),
+    )
+
+    # Create a notes page with elements
+    notes_page = Notes(
+        objectId="notes-page-id",
+        notesProperties=NotesProperties(speakerNotesObjectId="speaker-notes-id"),
+        pageElements=[notes_element],
+    )
+
+    # Create a slide with notes page
+    slide = Slide(
+        objectId="slide-with-notes",
+        slideProperties=SlideProperties(
+            layoutObjectId="test-layout-id",
+            masterObjectId="test-master-id",
+            notesPage=notes_page,
+        ),
+        presentation_id="test-presentation-notes-elements",
+    )
+
+    # Verify that presentation_id was propagated to the notes page and its elements
+    assert slide.presentation_id == "test-presentation-notes-elements"
+    assert slide.slideProperties.notesPage.presentation_id == "test-presentation-notes-elements"
+    assert notes_element.presentation_id == "test-presentation-notes-elements"

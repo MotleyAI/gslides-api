@@ -3,9 +3,11 @@ import logging
 
 from pydantic import Field, field_validator
 
+from gslides_api.element.shape import ShapeElement
 from gslides_api.page.base import BasePage, ElementKind, PageType
 from gslides_api.domain import GSlidesBaseModel, LayoutReference
 from gslides_api.client import api_client
+from gslides_api.request.request import InsertTextRequest
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 
@@ -187,22 +189,30 @@ class Slide(BasePage):
         return cls.from_ids(presentation_id, new_slide_id)
 
     @property
-    def speaker_notes_element_id(self):
-        return self.slideProperties.notesPage.notesProperties.speakerNotesObjectId
+    def speaker_notes(self) -> ShapeElement:
+        id = self.slideProperties.notesPage.notesProperties.speakerNotesObjectId
 
-    def read_speaker_notes(self) -> str | None:
-        """Read the speaker notes for the slide."""
-        # Apparently the API guarantees this will always be set
-        for e in self.notes_page.pageElements:
+        for e in self.slideProperties.notesPage.pageElements:
+            if e.objectId == id:
+                return e
+
+        # Apparently even if the notes element doesn't exist, the API creates it upon the first insertTextRequest
+        req = InsertTextRequest(
+            objectId=id,
+            text="...",
+            insertionIndex=0,
+        )
+
+        api_client.batch_update(req.to_request(), self.presentation_id)
+
+        # Now it should exist
+        for e in self.slideProperties.notesPage.pageElements:
             if e.objectId == self.speaker_notes_element_id:
-                return e.to_markdown()
-        return None
+                break
 
-    def write_speaker_notes(self, text: str):
-        """Write speaker notes for the slide."""
-        # make sure notes page exists
+        e.delete_text()
+        return e
 
-        for e in self.notes_page.pageElements:
-            if e.objectId == self.speaker_notes_element_id:
-                e.write_text(text, as_markdown=False)
-                return
+    def refresh(self):
+        new_state = Slide.from_ids(self.presentation_id, self.objectId)
+        self.__dict__ = new_state.__dict__

@@ -61,8 +61,9 @@ class InsertTextRequest(GslidesAPIRequest):
         description="The optional table cell location if the text is to be inserted into a table cell. If present, the objectId must refer to a table.",
     )
     text: str = Field(description="The text to insert")
-    insertionIndex: int = Field(
-        description="The index where the text will be inserted, in Unicode code units. Text is inserted before the character currently at this index. An insertion index of 0 will insert the text at the beginning of the text."
+    insertionIndex: Optional[int] = Field(
+        default=None,
+        description="The index where the text will be inserted, in Unicode code units. Text is inserted before the character currently at this index. An insertion index of 0 will insert the text at the beginning of the text.",
     )
 
 

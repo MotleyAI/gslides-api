@@ -48,6 +48,9 @@ class BasePage(GSlidesBaseModel):
             for element in self.pageElements:
                 element.presentation_id = target_id
 
+        if hasattr(self, "slideProperties") and self.slideProperties.notesPage is not None:
+            self.slideProperties.notesPage.presentation_id = target_id
+
     @model_validator(mode="after")
     def set_presentation_id_on_elements(self) -> "BasePage":
         """Automatically set presentation_id on all pageElements after model creation."""
