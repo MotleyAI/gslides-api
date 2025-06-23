@@ -88,6 +88,14 @@ class BasePage(GSlidesBaseModel):
             return None
         return next((e for e in self.pageElements if e.objectId == element_id), None)
 
+    def get_element_by_alt_title(self, title: str) -> PageElement:
+        if self.pageElements is None:
+            return None
+        return next(
+            (e for e in self.pageElements if isinstance(e.title, str) and e.title.strip() == title),
+            None,
+        )
+
 
 # Rebuild models to resolve forward references
 BasePage.model_rebuild()

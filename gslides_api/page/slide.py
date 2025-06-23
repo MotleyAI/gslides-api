@@ -204,6 +204,6 @@ class Slide(BasePage):
         e.delete_text()
         return e
 
-    def refresh(self):
+    def sync_from_cloud(self):
         new_state = Slide.from_ids(self.presentation_id, self.objectId)
         self.__dict__ = new_state.__dict__
