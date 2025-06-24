@@ -1,5 +1,6 @@
-google-api-python-client==2.169.0
-google-auth==2.40.1
-google-auth-httplib2==0.2.0
-google-auth-oauthlib==1.2.2
-# gslides==0.1.1
+google_api_python_client==2.169.0
+google_auth_oauthlib==1.2.2
+marko==2.1.4
+protobuf==6.31.1
+pydantic==2.11.7
+pytest==8.3.4
