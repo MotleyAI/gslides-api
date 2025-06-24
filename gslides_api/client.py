@@ -9,11 +9,13 @@ from googleapiclient.discovery import Resource, build
 
 from googleapiclient.http import MediaFileUpload
 
+from gslides_api.domain import ThumbnailProperties
 from gslides_api.request.request import (
     GSlidesAPIRequest,
     DuplicateObjectRequest,
     DeleteObjectRequest,
 )
+from gslides_api.response import ImageThumbnail
 
 
 # The functions in this file are the only interaction with the raw gslides API in this library
@@ -219,6 +221,37 @@ class GoogleAPIClient:
         ).execute()
 
         return f"https://drive.google.com/uc?id={uploaded['id']}"
+
+    def slide_thumbnail(
+        self, presentation_id: str, slide_id: str, properties: ThumbnailProperties
+    ) -> ImageThumbnail:
+        """Gets a thumbnail of the specified slide by calling
+        https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/getThumbnail
+        :param presentation_id: The ID of the presentation containing the slide
+        :type presentation_id: str
+        :param slide_id: The ID of the slide to get thumbnail for
+        :type slide_id: str
+        :param properties: Properties controlling thumbnail generation
+        :type properties: ThumbnailProperties
+        :return: Image response with thumbnail URL and dimensions
+        :rtype: ImageResponse
+        """
+        img_info = (
+            self.slide_service.presentations()
+            .pages()
+            .getThumbnail(
+                presentationId=presentation_id,
+                pageObjectId=slide_id,
+                thumbnailProperties_mimeType=(
+                    properties.mimeType.value if properties.mimeType else None
+                ),
+                thumbnailProperties_thumbnailSize=(
+                    properties.thumbnailSize.value if properties.thumbnailSize else None
+                ),
+            )
+            .execute()
+        )
+        return ImageThumbnail.model_validate(img_info)
 
 
 api_client = GoogleAPIClient()

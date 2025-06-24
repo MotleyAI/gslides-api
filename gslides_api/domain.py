@@ -3,8 +3,6 @@ from enum import Enum
 from pydantic import BaseModel, Field, model_validator
 from pydantic.json import pydantic_encoder
 
-# from gslides_api.notes import NotesPage
-
 
 class GSlidesBaseModel(BaseModel):
     """Base class for all models in the Google Slides API."""
@@ -722,3 +720,54 @@ class LayoutReference(GSlidesBaseModel):
         ):
             raise ValueError("Exactly one of layoutId or predefinedLayout must be set")
         return self
+
+
+class MimeType(Enum):
+    """The MIME type of the thumbnail image.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/getThumbnail#MimeType
+    """
+
+    PNG = "PNG"
+    """The default MIME type and apparently the only one supported by the API."""
+
+
+class ThumbnailSize(Enum):
+    """The predefined thumbnail image sizes.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/getThumbnail#ThumbnailSize
+    """
+
+    THUMBNAIL_SIZE_UNSPECIFIED = "THUMBNAIL_SIZE_UNSPECIFIED"
+    """The default thumbnail image size.
+
+    The unspecified thumbnail size implies that the server chooses the size of the image in a way that might vary in the future.
+    """
+
+    LARGE = "LARGE"
+    """The thumbnail image width is 1,600 px."""
+
+    MEDIUM = "MEDIUM"
+    """The thumbnail image width is 800 px."""
+
+    SMALL = "SMALL"
+    """The thumbnail image width is 200 px."""
+
+
+class ThumbnailProperties(GSlidesBaseModel):
+    """Provides control over the creation of page thumbnails.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/getThumbnail#ThumbnailProperties
+    """
+
+    mimeType: Optional[MimeType] = None
+    """The optional MIME type of the thumbnail image.
+
+    If you don't specify the MIME type, the default is PNG.
+    """
+
+    thumbnailSize: Optional[ThumbnailSize] = None
+    """The optional size of the thumbnail image.
+
+    If you don't specify the size, the server chooses a default size for the image.
+    """

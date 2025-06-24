@@ -4,3 +4,4 @@ marko==2.1.4
 protobuf==6.31.1
 pydantic==2.11.7
 pytest==8.3.4
+Requests==2.32.4

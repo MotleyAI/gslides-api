@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 
 from gslides_api.element.shape import ShapeElement
 from gslides_api.page.base import BasePage, ElementKind, PageType
-from gslides_api.domain import GSlidesBaseModel, LayoutReference
+from gslides_api.domain import GSlidesBaseModel, LayoutReference, ThumbnailProperties, ThumbnailSize
 from gslides_api.client import api_client
 from gslides_api.request.request import (
     InsertTextRequest,
@@ -14,6 +14,7 @@ from gslides_api.request.request import (
     UpdateSlidePropertiesRequest,
     CreateSlideRequest,
 )
+from gslides_api.response import ImageThumbnail
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 
@@ -207,3 +208,7 @@ class Slide(BasePage):
     def sync_from_cloud(self):
         new_state = Slide.from_ids(self.presentation_id, self.objectId)
         self.__dict__ = new_state.__dict__
+
+    def thumbnail(self, size: Optional[ThumbnailSize] = None) -> ImageThumbnail:
+        props = ThumbnailProperties(thumbnailSize=size)
+        return api_client.slide_thumbnail(self.presentation_id, self.objectId, props)
