@@ -1,88 +1,25 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "gslides-api"
-version = "0.1.0"
+version = "0.1.2"
 description = "A Python library for working with Google Slides API using Pydantic domain objects"
-readme = "README.md"
+authors = ["motley.ai <info@motley.ai>"]
 license = "MIT"
-authors = [
-    {name = "James", email = "james@example.com"}
-]
-maintainers = [
-    {name = "James", email = "james@example.com"}
-]
-keywords = ["google", "slides", "api", "pydantic", "presentation"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Office/Business :: Office Suites",
-    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
-]
-requires-python = ">=3.8"
-dependencies = [
-    "google-api-python-client>=2.169.0",
-    "google-auth-oauthlib>=1.2.2",
-    "marko>=2.1.4",
-    "protobuf>=6.31.1",
-    "pydantic>=2.11.7",
-]
+readme = "README.md"
+packages = [{include = "gslides_api"}]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.3.4",
-    "pytest-cov",
-    "black",
-    "isort",
-    "flake8",
-    "mypy",
-]
-test = [
-    "pytest>=8.3.4",
-    "pytest-cov",
-]
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.11.7"
+google-auth = "^2.0.0"
+google-api-python-client = "^2.169.0"
+google-auth-oauthlib = "^1.2.2"
+marko = "^2.1.4"
+protobuf = "^6.31.1"
+requests = "^2.32.4"
 
-[project.urls]
-Homepage = "https://github.com/yourusername/gslides-api"
-Documentation = "https://github.com/yourusername/gslides-api#readme"
-Repository = "https://github.com/yourusername/gslides-api.git"
-"Bug Tracker" = "https://github.com/yourusername/gslides-api/issues"
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
 
-[tool.setuptools]
-package-dir = {"" = "."}
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["gslides_api*"]
-exclude = ["tests*", "playground*", "sketches*"]
-
-[tool.setuptools.package-data]
-gslides_api = ["py.typed"]
-
-[tool.black]
-line-length = 88
-target-version = ['py38']
-include = '\.pyi?$'
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-known_first_party = ["gslides_api"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v --tb=short"
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
