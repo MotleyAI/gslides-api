@@ -5,12 +5,11 @@ from pydantic import Field
 from gslides_api.domain import (
     BulletGlyphPreset,
     GSlidesBaseModel,
-    TextStyle,
-    ShapeType,
     LayoutReference,
-    ShapeProperties,
     ImageProperties,
 )
+from gslides_api import ShapeProperties
+from gslides_api.text import ShapeType, TextStyle
 from gslides_api.request.domain import (
     Range,
     TableCellLocation,

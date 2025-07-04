@@ -1,7 +1,6 @@
 from .domain import (
     Size,
     Dimension,
-    TextElement,
     Video,
     VideoProperties,
     VideoSourceType,
@@ -19,7 +18,6 @@ from .domain import (
     Shadow,
     ShadowType,
     RectanglePosition,
-    ShapeProperties,
     CropProperties,
     ColorStop,
     RecolorName,
@@ -28,8 +26,6 @@ from .domain import (
     PropertyState,
     StretchedPictureFill,
     PageBackgroundFill,
-    AutoText,
-    AutoTextType,
     PredefinedLayout,
     ColorScheme,
     ThemeColorPair,
@@ -42,6 +38,7 @@ from .domain import (
     SpeakerSpotlightProperties,
     Group,
 )
+from .text import AutoText, AutoTextType, ShapeProperties, TextElement
 from .presentation import Presentation
 from .page.page import (
     Layout,

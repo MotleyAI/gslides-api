@@ -11,9 +11,6 @@ from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import (
     Size,
     Transform,
-    Shape,
-    ShapeProperties,
-    ShapeType,
     Line,
     LineProperties,
     WordArt,
@@ -28,6 +25,8 @@ from gslides_api.domain import (
     ImageProperties,
     Table,
 )
+from gslides_api import ShapeProperties
+from gslides_api.text import Shape, ShapeType
 
 
 def test_page_element_base_fields():
@@ -70,7 +69,7 @@ def test_shape_element():
     request = element.create_request("page_id")
     assert len(request) == 1
     # Now returns a domain object instead of a dictionary
-    assert hasattr(request[0], 'shapeType')
+    assert hasattr(request[0], "shapeType")
     assert request[0].shapeType == ShapeType.RECTANGLE
 
 

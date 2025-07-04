@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Optional
 
 from pydantic import Field, field_validator
 
-
-from gslides_api.domain import Shape, TextElement, TextStyle
+from gslides_api import TextElement
+from gslides_api.text import Shape, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import api_client, GoogleAPIClient
 from gslides_api.markdown import markdown_to_text_elements, text_elements_to_markdown
@@ -79,19 +79,22 @@ class ShapeElement(PageElementBase):
         return [DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL))]
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
-        client = api_client or globals()['api_client']
+        client = api_client or globals()["api_client"]
         return client.batch_update(self.delete_text_request(), self.presentation_id)
 
     @property
-    def style(self):
+    def styles(self):
         if not hasattr(self.shape, "text") or self.shape.text is None:
             return None
         if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
             return None
+        styles = []
         for te in self.shape.text.textElements:
             if te.textRun is None:
                 continue
-            return te.textRun.style
+            if te.textRun.style not in styles:
+                styles.append(te.textRun.style)
+        return sorted(styles, key=lambda x: x.fontSize["magnitude"])
 
     def to_markdown(self) -> str | None:
         """Convert the shape's text content back to markdown format.
@@ -137,7 +140,7 @@ class ShapeElement(PageElementBase):
             requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
 
         if requests:
-            client = api_client or globals()['api_client']
+            client = api_client or globals()["api_client"]
             return client.batch_update(requests, self.presentation_id)
 
     def read_text(self, as_markdown: bool = True):
