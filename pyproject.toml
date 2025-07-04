@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gslides-api"
-version = "0.1.2"
+version = "0.1.3"
 description = "A Python library for working with Google Slides API using Pydantic domain objects"
 authors = ["motley.ai <info@motley.ai>"]
 license = "MIT"
