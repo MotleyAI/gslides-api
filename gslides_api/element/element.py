@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Union, Annotated
+from typing import Dict, Any, List, Union, Annotated, Optional
 
 from pydantic import Field, Discriminator, Tag, field_validator
 
@@ -15,7 +15,7 @@ from gslides_api.domain import (
     ImageReplaceMethod,
 )
 from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.client import api_client
+from gslides_api.client import api_client, GoogleAPIClient
 from gslides_api.element.shape import ShapeElement
 from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 from gslides_api.request.request import (
@@ -184,17 +184,19 @@ class ImageElement(PageElementBase):
         url: str | None = None,
         file: str | None = None,
         method: ImageReplaceMethod | None = None,
+        api_client: Optional[GoogleAPIClient] = None,
     ):
         if url is None and file is None:
             raise ValueError("Must specify either url or file")
         if url is not None and file is not None:
             raise ValueError("Must specify either url or file, not both")
 
+        client = api_client or globals()['api_client']
         if file is not None:
-            url = api_client.upload_image_to_drive(file)
+            url = client.upload_image_to_drive(file)
 
         requests = self._replace_image_requests(url, method)
-        return api_client.batch_update(requests, self.presentation_id)
+        return client.batch_update(requests, self.presentation_id)
 
 
 class VideoElement(PageElementBase):

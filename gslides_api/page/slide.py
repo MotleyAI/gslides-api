@@ -6,7 +6,7 @@ from pydantic import Field, field_validator
 from gslides_api.element.shape import ShapeElement
 from gslides_api.page.base import BasePage, ElementKind, PageType
 from gslides_api.domain import GSlidesBaseModel, LayoutReference, ThumbnailProperties, ThumbnailSize
-from gslides_api.client import api_client
+from gslides_api.client import api_client, GoogleAPIClient
 from gslides_api.request.request import (
     InsertTextRequest,
     UpdateSlidesPositionRequest,
@@ -59,7 +59,7 @@ class Slide(BasePage):
     def validate_page_type(cls, v):
         return PageType.SLIDE
 
-    def duplicate(self, id_map: Dict[str, str] = None) -> "Page":
+    def duplicate(self, id_map: Dict[str, str] = None, api_client: Optional[GoogleAPIClient] = None) -> "Page":
         """
         Duplicates the slide in the same presentation.
 
@@ -68,32 +68,36 @@ class Slide(BasePage):
         assert (
             self.presentation_id is not None
         ), "self.presentation_id must be set when calling duplicate()"
-        new_id = api_client.duplicate_object(self.objectId, self.presentation_id, id_map)
+        client = api_client or globals()['api_client']
+        new_id = client.duplicate_object(self.objectId, self.presentation_id, id_map)
         return self.from_ids(self.presentation_id, new_id)
 
-    def delete(self) -> None:
+    def delete(self, api_client: Optional[GoogleAPIClient] = None) -> None:
         assert (
             self.presentation_id is not None
         ), "self.presentation_id must be set when calling delete()"
 
-        return api_client.delete_object(self.objectId, self.presentation_id)
+        client = api_client or globals()['api_client']
+        return client.delete_object(self.objectId, self.presentation_id)
 
-    def move(self, insertion_index: int) -> None:
+    def move(self, insertion_index: int, api_client: Optional[GoogleAPIClient] = None) -> None:
         """
         Move the slide to a new position in the presentation.
 
         Args:
             insertion_index: The index to insert the slide at.
         """
+        client = api_client or globals()['api_client']
         request = UpdateSlidesPositionRequest(
             slideObjectIds=[self.objectId], insertionIndex=insertion_index
         )
-        api_client.batch_update([request], self.presentation_id)
+        client.batch_update([request], self.presentation_id)
 
     def write_copy(
         self,
         insertion_index: Optional[int] = None,
         presentation_id: Optional[str] = None,
+        api_client: Optional[GoogleAPIClient] = None,
     ) -> "BasePage":
         """Write the slide to a Google Slides presentation.
 
@@ -101,6 +105,7 @@ class Slide(BasePage):
             presentation_id: The ID of the presentation to write to.
             insertion_index: The index to insert the slide at. If not provided, the slide will be added at the end.
         """
+        client = api_client or globals()['api_client']
         presentation_id = presentation_id or self.presentation_id
 
         # This method is primarily for slides, so we need to check if we have slide properties
@@ -111,6 +116,7 @@ class Slide(BasePage):
             presentation_id,
             insertion_index,
             slide_layout_reference=LayoutReference(layoutId=self.slideProperties.layoutObjectId),
+            api_client=api_client,
         )
         slide_id = new_slide.objectId
 
@@ -123,7 +129,7 @@ class Slide(BasePage):
                 pageProperties=page_properties,
                 fields=",".join(dict_to_dot_separated_field_list(page_properties)),
             )
-            api_client.batch_update([request], presentation_id)
+            client.batch_update([request], presentation_id)
         except Exception as e:
             logger.error(f"Error writing page properties: {e}")
 
@@ -138,7 +144,7 @@ class Slide(BasePage):
             slideProperties=slide_properties,
             fields=",".join(dict_to_dot_separated_field_list(slide_properties)),
         )
-        api_client.batch_update([request], presentation_id)
+        client.batch_update([request], presentation_id)
 
         if self.pageElements is not None:
             # Some elements came from layout, some were created manually
@@ -162,6 +168,7 @@ class Slide(BasePage):
         insertion_index: Optional[int] = None,
         slide_layout_reference: Optional[LayoutReference] = None,
         layoout_placeholder_id_mapping: Optional[dict] = None,
+        api_client: Optional[GoogleAPIClient] = None,
     ) -> "BasePage":
         """Create a blank slide in a Google Slides presentation.
 
@@ -172,10 +179,11 @@ class Slide(BasePage):
             layoout_placeholder_id_mapping: The mapping of placeholder IDs to use for the slide.
         """
 
+        client = api_client or globals()['api_client']
         request = CreateSlideRequest(
             insertionIndex=insertion_index, slideLayoutReference=slide_layout_reference
         )
-        out = api_client.batch_update([request], presentation_id)
+        out = client.batch_update([request], presentation_id)
         new_slide_id = out["replies"][0]["createSlide"]["objectId"]
 
         return cls.from_ids(presentation_id, new_slide_id)
@@ -195,7 +203,8 @@ class Slide(BasePage):
             insertionIndex=0,
         )
 
-        api_client.batch_update([req], self.presentation_id)
+        # Use the global api_client for this internal operation
+        globals()['api_client'].batch_update([req], self.presentation_id)
 
         # Now it should exist
         for e in self.slideProperties.notesPage.pageElements:
@@ -209,6 +218,7 @@ class Slide(BasePage):
         new_state = Slide.from_ids(self.presentation_id, self.objectId)
         self.__dict__ = new_state.__dict__
 
-    def thumbnail(self, size: Optional[ThumbnailSize] = None) -> ImageThumbnail:
+    def thumbnail(self, size: Optional[ThumbnailSize] = None, api_client: Optional[GoogleAPIClient] = None) -> ImageThumbnail:
+        client = api_client or globals()['api_client']
         props = ThumbnailProperties(thumbnailSize=size)
-        return api_client.slide_thumbnail(self.presentation_id, self.objectId, props)
+        return client.slide_thumbnail(self.presentation_id, self.objectId, props)

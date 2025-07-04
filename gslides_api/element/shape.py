@@ -1,11 +1,11 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Optional
 
 from pydantic import Field, field_validator
 
 
 from gslides_api.domain import Shape, TextElement, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.client import api_client
+from gslides_api.client import api_client, GoogleAPIClient
 from gslides_api.markdown import markdown_to_text_elements, text_elements_to_markdown
 from gslides_api.request.request import (
     GSlidesAPIRequest,
@@ -78,8 +78,9 @@ class ShapeElement(PageElementBase):
     def delete_text_request(self):
         return [DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL))]
 
-    def delete_text(self):
-        return api_client.batch_update(self.delete_text_request(), self.presentation_id)
+    def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
+        client = api_client or globals()['api_client']
+        return client.batch_update(self.delete_text_request(), self.presentation_id)
 
     @property
     def style(self):
@@ -121,6 +122,7 @@ class ShapeElement(PageElementBase):
         as_markdown: bool = True,
         style: TextStyle | None = None,
         append: bool = False,
+        api_client: Optional[GoogleAPIClient] = None,
     ):
         style = style or self.style
         if self.has_text and not append:
@@ -135,7 +137,8 @@ class ShapeElement(PageElementBase):
             requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
 
         if requests:
-            return api_client.batch_update(requests, self.presentation_id)
+            client = api_client or globals()['api_client']
+            return client.batch_update(requests, self.presentation_id)
 
     def read_text(self, as_markdown: bool = True):
         if not self.has_text:

@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 
 from gslides_api.page.page import Page
 from gslides_api.domain import Size
-from gslides_api.client import api_client
+from gslides_api.client import api_client, GoogleAPIClient
 from gslides_api.domain import GSlidesBaseModel
 from gslides_api.page.slide import Slide
 from gslides_api.page.page import Layout, Master, NotesMaster
@@ -26,10 +26,11 @@ class Presentation(GSlidesBaseModel):
     notesMaster: Optional[NotesMaster] = None
 
     @classmethod
-    def create_blank(cls, title: str = "New Presentation") -> "Presentation":
+    def create_blank(cls, title: str = "New Presentation", api_client: Optional[GoogleAPIClient] = None) -> "Presentation":
         """Create a blank presentation in Google Slides."""
-        new_id = api_client.create_presentation({"title": title})
-        return cls.from_id(new_id)
+        client = api_client or globals()['api_client']
+        new_id = client.create_presentation({"title": title})
+        return cls.from_id(new_id, api_client=api_client)
 
     @classmethod
     def from_json(cls, json_data: Dict[str, Any]) -> "Presentation":
@@ -53,25 +54,28 @@ class Presentation(GSlidesBaseModel):
         return out
 
     @classmethod
-    def from_id(cls, presentation_id: str) -> "Presentation":
-        presentation_json = api_client.get_presentation_json(presentation_id)
+    def from_id(cls, presentation_id: str, api_client: Optional[GoogleAPIClient] = None) -> "Presentation":
+        client = api_client or globals()['api_client']
+        presentation_json = client.get_presentation_json(presentation_id)
         return cls.from_json(presentation_json)
 
-    def copy_via_domain_objects(self) -> "Presentation":
+    def copy_via_domain_objects(self, api_client: Optional[GoogleAPIClient] = None) -> "Presentation":
         """Clone a presentation in Google Slides."""
+        client = api_client or globals()['api_client']
         config = self.to_api_format()
         config.pop("presentationId", None)
         config.pop("revisionId", None)
-        new_id = api_client.create_presentation(config)
-        return self.from_id(new_id)
+        new_id = client.create_presentation(config)
+        return self.from_id(new_id, api_client=api_client)
 
-    def copy_via_drive(self, copy_title: Optional[str] = None):
+    def copy_via_drive(self, copy_title: Optional[str] = None, api_client: Optional[GoogleAPIClient] = None):
+        client = api_client or globals()['api_client']
         copy_title = copy_title or f"Copy of {self.title}"
-        new = api_client.copy_presentation(self.presentationId, copy_title)
-        return self.from_id(new["id"])
+        new = client.copy_presentation(self.presentationId, copy_title)
+        return self.from_id(new["id"], api_client=api_client)
 
-    def sync_from_cloud(self):
-        re_p = Presentation.from_id(self.presentationId)
+    def sync_from_cloud(self, api_client: Optional[GoogleAPIClient] = None):
+        re_p = Presentation.from_id(self.presentationId, api_client=api_client)
         self.__dict__ = re_p.__dict__
 
     def slide_from_id(self, slide_id: str) -> Optional[Page]:
@@ -83,8 +87,9 @@ class Presentation(GSlidesBaseModel):
             return None
         return match[0]
 
-    def delete_slide(self, slide_id: str):
-        api_client.delete_object(slide_id, self.presentationId)
+    def delete_slide(self, slide_id: str, api_client: Optional[GoogleAPIClient] = None):
+        client = api_client or globals()['api_client']
+        client.delete_object(slide_id, self.presentationId)
 
     @property
     def url(self):
