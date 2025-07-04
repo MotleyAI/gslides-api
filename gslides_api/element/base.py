@@ -5,7 +5,7 @@ from pydantic import Field
 
 from gslides_api.domain import GSlidesBaseModel, Transform, Size
 from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
-from gslides_api.client import api_client
+from gslides_api.client import api_client, GoogleAPIClient
 
 
 class ElementKind(Enum):
@@ -37,9 +37,10 @@ class PageElementBase(GSlidesBaseModel):
     # Store the presentation ID for reference but exclude from model_dump
     presentation_id: Optional[str] = Field(default=None, exclude=True)
 
-    def create_copy(self, parent_id: str, presentation_id: str):
+    def create_copy(self, parent_id: str, presentation_id: str, api_client: Optional[GoogleAPIClient] = None):
+        client = api_client or globals()['api_client']
         request = self.create_request(parent_id)
-        out = api_client.batch_update(request, presentation_id)
+        out = client.batch_update(request, presentation_id)
         try:
             request_type = list(out["replies"][0].keys())[0]
             new_element_id = out["replies"][0][request_type]["objectId"]
@@ -94,7 +95,7 @@ class PageElementBase(GSlidesBaseModel):
         raise NotImplementedError("Subclasses must implement create_request method")
 
     def update(
-        self, element_id: Optional[str] = None, presentation_id: Optional[str] = None
+        self, element_id: Optional[str] = None, presentation_id: Optional[str] = None, api_client: Optional[GoogleAPIClient] = None
     ) -> Dict[str, Any]:
         if element_id is None:
             element_id = self.objectId
@@ -102,9 +103,10 @@ class PageElementBase(GSlidesBaseModel):
         if presentation_id is None:
             presentation_id = self.presentation_id
 
+        client = api_client or globals()['api_client']
         request_objects = self.element_to_update_request(element_id)
         if len(request_objects):
-            out = api_client.batch_update(request_objects, presentation_id)
+            out = client.batch_update(request_objects, presentation_id)
             return out
         else:
             return {}
@@ -123,8 +125,9 @@ class PageElementBase(GSlidesBaseModel):
         """
         raise NotImplementedError("Subclasses must implement to_markdown method")
 
-    def set_alt_text(self, title: str, description: str):
-        api_client.batch_update(
+    def set_alt_text(self, title: str, description: str, api_client: Optional[GoogleAPIClient] = None):
+        client = api_client or globals()['api_client']
+        client.batch_update(
             self.alt_text_update_request(
                 title=title, description=description, element_id=self.objectId
             ),

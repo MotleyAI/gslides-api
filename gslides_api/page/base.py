@@ -7,7 +7,7 @@ from gslides_api.domain import ColorScheme, PageBackgroundFill
 from gslides_api.domain import GSlidesBaseModel
 from gslides_api.element.element import PageElement
 from gslides_api.element.base import ElementKind
-from gslides_api.client import api_client
+from gslides_api.client import api_client, GoogleAPIClient
 
 
 class PageType(Enum):
@@ -65,9 +65,10 @@ class BasePage(GSlidesBaseModel):
             self._propagate_presentation_id(value)
 
     @classmethod
-    def from_ids(cls, presentation_id: str, slide_id: str) -> "BasePage":
+    def from_ids(cls, presentation_id: str, slide_id: str, api_client: Optional[GoogleAPIClient] = None) -> "BasePage":
         # To avoid circular imports
-        json = api_client.get_slide_json(presentation_id, slide_id)
+        client = api_client or globals()['api_client']
+        json = client.get_slide_json(presentation_id, slide_id)
         new_slide = cls.model_validate(json)
         new_slide.presentation_id = presentation_id
         return new_slide
@@ -87,6 +88,14 @@ class BasePage(GSlidesBaseModel):
         if self.pageElements is None:
             return None
         return next((e for e in self.pageElements if e.objectId == element_id), None)
+
+    def get_element_by_alt_title(self, title: str) -> PageElement:
+        if self.pageElements is None:
+            return None
+        return next(
+            (e for e in self.pageElements if isinstance(e.title, str) and e.title.strip() == title),
+            None,
+        )
 
 
 # Rebuild models to resolve forward references

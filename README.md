@@ -1,28 +1,121 @@
-# gslides-playground
+# gslides-api
 
-The general review of the Google Slides API is at https://developers.google.com/workspace/slides/api/guides/overview
+A Python library for working with Google Slides API using Pydantic domain objects.
 
-This repo contains Pydantic domain objects matching the JSON that the google slides API returns.
+## Overview
 
-It also contains methods to create Google Slide objects back from these domain objects. 
-The set of methods is unfortunately incomplete as the Google Slides REST API's structure
-is only partially aligned to the structure of the JSON returned by the API.
+This library provides a Pythonic interface to the Google Slides API with:
 
-Example of running it to first get complete data from a presentation as a domain object,
-then use that object to (almost successfully, so far :) ) clone a slide in it, is in
-`playground/replace.py`. 
+- **Pydantic domain objects** that match the JSON structure returned by the Google Slides API
+- **Type-safe operations** with full type hints support
+- **Easy-to-use methods** for creating, reading, and manipulating Google Slides presentations
+- **Comprehensive coverage** of Google Slides API features
 
-Instructions on how to create the right `credentials.json` are in [CREDENTIALS.md](CREDENTIALS.md)
+## Installation
 
-## Other Google Slides-related libraries, both Python and TS:
-https://github.com/daattali/gslides-betternotes-extension 
-The slide previews in the Speaker Notes window of Google Slides are tiny and unreadable. This extension fixes this in two ways: the slides are automatically enlarged when the Speaker Notes window is resized, and you can also drag the sidebar to manually select the perfect slides size.
+```bash
+pip install gslides-api
+```
 
-https://github.com/ShoggothAI/md2googleslides Typescript, create slides from markdown (this fork fixes auth and changes the online destination of local images, 
-both breaking bugs in the original).
+## Quick Start
 
-https://github.com/michael-gracie/gslides Python, Focuses on creating new slides with charts and tables
+### Authentication
 
-https://github.com/vilmacio/gslides-maker Generate Google Slides from Wikipedia content.
-The presentation content is adaptable to all kinds of Google Presentation Themes available.
-This beta version does not yet produce slides containing images. It only produces text content.
+First, set up your Google API credentials. See [CREDENTIALS.md](CREDENTIALS.md) for detailed instructions.
+
+```python
+from gslides_api import initialize_credentials
+
+# Initialize with your credentials directory
+initialize_credentials("/path/to/your/credentials/")
+```
+
+### Basic Usage
+
+```python
+from gslides_api import Presentation
+
+# Load an existing presentation
+presentation = Presentation.from_id("your-presentation-id")
+
+# Create a new blank presentation
+new_presentation = Presentation.create_blank("My New Presentation")
+
+# Access slides
+for slide in presentation.slides:
+    print(f"Slide ID: {slide.objectId}")
+    
+# Create a new slide
+new_slide = presentation.add_slide()
+```
+
+
+
+## Features
+
+- **Domain Objects**: Complete Pydantic models for all Google Slides API objects
+- **Presentations**: Create, load, copy, and manipulate presentations
+- **Slides**: Add, remove, duplicate, and reorder slides
+- **Elements**: Work with text boxes, shapes, images, and other slide elements
+- **Layouts**: Access and use slide layouts and masters
+- **Requests**: Type-safe request builders for batch operations
+- **Markdown Support**: Convert between Markdown and Google Slides content
+
+## API Coverage
+
+The library covers most Google Slides API functionality including:
+
+- Presentations and slides management
+- Text elements and formatting
+- Shapes and images
+- Tables and charts
+- Page layouts and masters
+- Batch update operations
+
+## Requirements
+
+- Python 3.8+
+- Google API credentials (OAuth2 or Service Account)
+
+## Dependencies
+
+- `google-api-python-client` - Google API client library
+- `google-auth-oauthlib` - OAuth2 authentication
+- `pydantic` - Data validation and serialization
+- `marko` - Markdown processing
+- `protobuf` - Protocol buffer support
+
+## Development
+
+### Running Tests
+
+```bash
+pip install -e ".[test]"
+pytest
+```
+
+### Code Formatting
+
+```bash
+pip install -e ".[dev]"
+black gslides_api/
+isort gslides_api/
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Related Projects
+
+- [md2googleslides](https://github.com/ShoggothAI/md2googleslides) - TypeScript library for creating slides from Markdown
+- [gslides](https://github.com/michael-gracie/gslides) - Python library focused on charts and tables
+- [gslides-maker](https://github.com/vilmacio/gslides-maker) - Generate slides from Wikipedia content
+
+## Acknowledgments
+
+This library is built on top of the excellent Google API Python client and leverages the power of Pydantic for type-safe data handling.

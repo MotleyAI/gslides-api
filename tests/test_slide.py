@@ -47,6 +47,7 @@ def test_write_sets_presentation_id(monkeypatch):
         insertion_index=None,
         slide_layout_reference=None,
         layoout_placeholder_id_mapping=None,
+        api_client=None,
     ):
         # Return a Slide object instead of just a string
         mock_slide = Slide(
@@ -63,7 +64,7 @@ def test_write_sets_presentation_id(monkeypatch):
         return {"replies": [{"createSlide": {"objectId": "new-slide-id"}}]}
 
     # Mock the from_ids method to avoid API calls
-    def mock_from_ids(cls, presentation_id, slide_id):
+    def mock_from_ids(cls, presentation_id, slide_id, api_client=None):
         return Slide(
             objectId=slide_id,
             slideProperties=SlideProperties(

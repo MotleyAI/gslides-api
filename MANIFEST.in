@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include CREDENTIALS.md
+include requirements.txt
+recursive-include gslides_api *.py
+recursive-exclude tests *
+recursive-exclude playground *
+recursive-exclude sketches *
+recursive-exclude __pycache__ *
+recursive-exclude *.pyc *
