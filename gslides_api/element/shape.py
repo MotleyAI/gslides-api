@@ -83,7 +83,7 @@ class ShapeElement(PageElementBase):
         return client.batch_update(self.delete_text_request(), self.presentation_id)
 
     @property
-    def styles(self):
+    def styles(self) -> List[TextStyle] | None:
         if not hasattr(self.shape, "text") or self.shape.text is None:
             return None
         if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
@@ -94,7 +94,7 @@ class ShapeElement(PageElementBase):
                 continue
             if te.textRun.style not in styles:
                 styles.append(te.textRun.style)
-        return sorted(styles, key=lambda x: x.fontSize["magnitude"])
+        return styles
 
     def to_markdown(self) -> str | None:
         """Convert the shape's text content back to markdown format.
@@ -123,17 +123,24 @@ class ShapeElement(PageElementBase):
         self,
         text: str,
         as_markdown: bool = True,
-        style: TextStyle | None = None,
+        styles: List[TextStyle] | None = None,
         append: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
     ):
-        style = style or self.style
+        styles = styles or self.styles
         if self.has_text and not append:
             requests = self.delete_text_request()
         else:
             requests = []
+        style_args = {}
+        if styles is not None:
+            if len(styles) == 1:
+                style_args["base_style"] = styles[0]
+            elif len(styles) > 1:
+                style_args["heading_style"] = styles[0]
+                style_args["base_style"] = styles[1]
 
-        elements = markdown_to_text_elements(text, base_style=style)
+        elements = markdown_to_text_elements(text, **style_args)
         requests += text_elements_to_requests(elements, self.objectId)
 
         if not as_markdown:

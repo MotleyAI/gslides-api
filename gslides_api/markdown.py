@@ -38,15 +38,23 @@ class NumberedListGroup(ItemList):
 def markdown_to_text_elements(
     markdown_text: str,
     base_style: Optional[TextStyle] = None,
+    heading_style: Optional[TextStyle] = None,
     start_index: int = 0,
     bullet_glyph_preset: Optional[BulletGlyphPreset] = BulletGlyphPreset.BULLET_DISC_CIRCLE_SQUARE,
     numbered_glyph_preset: Optional[
         BulletGlyphPreset
     ] = BulletGlyphPreset.NUMBERED_DIGIT_ALPHA_ROMAN,
 ) -> list[TextElement | CreateParagraphBulletsRequest]:
+
+    heading_style = heading_style or copy.deepcopy(base_style)
+    heading_style.bold = True
+    # TODO: handle heading levels properly, with font size bumps for heading levels?
+
     # Use GFM parser to support strikethrough and other GitHub Flavored Markdown features
     doc = gfm.parse(markdown_text)
-    elements_and_bullets = markdown_ast_to_text_elements(doc, base_style=base_style)
+    elements_and_bullets = markdown_ast_to_text_elements(
+        doc, base_style=base_style, heading_style=heading_style
+    )
     elements = [e for e in elements_and_bullets if isinstance(e, TextElement)]
     list_items = [b for b in elements_and_bullets if isinstance(b, ItemList)]
 
@@ -79,7 +87,10 @@ def markdown_to_text_elements(
 
 
 def markdown_ast_to_text_elements(
-    markdown_ast: Any, base_style: Optional[TextStyle] = None, list_depth: int = 0
+    markdown_ast: Any,
+    base_style: Optional[TextStyle] = None,
+    heading_style: Optional[TextStyle] = None,
+    list_depth: int = 0,
 ) -> list[TextElement | BulletPointGroup | NumberedListGroup]:
     style = base_style or TextStyle()
     line_break = TextElement(
@@ -96,6 +107,7 @@ def markdown_ast_to_text_elements(
         ]
     elif isinstance(markdown_ast, marko.block.BlankLine):
         out = [line_break]
+
     elif isinstance(markdown_ast, marko.inline.CodeSpan):
         style = copy.deepcopy(style)
         style.fontFamily = "Courier New"
@@ -153,12 +165,10 @@ def markdown_ast_to_text_elements(
             [],
         ) + [line_break]
     elif isinstance(markdown_ast, marko.block.Heading):
-        # TODO: handle heading levels properly, with font size bumps
-        style = copy.deepcopy(style)
-        style.bold = True
+
         out = sum(
             [
-                markdown_ast_to_text_elements(child, style, list_depth)
+                markdown_ast_to_text_elements(child, heading_style, list_depth)
                 for child in markdown_ast.children
             ],
             [],
