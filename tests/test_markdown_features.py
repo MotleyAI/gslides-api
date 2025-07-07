@@ -8,60 +8,52 @@ This file tests both currently supported features and new features we want to ad
 
 import pytest
 from gslides_api.markdown import markdown_to_text_elements
-from gslides_api.domain import TextStyle
+from gslides_api.text import TextStyle
 
 
 class TestMarkdownFeatureSupport:
     """Test that markdown_to_text_elements can handle various markdown features without exceptions."""
-    
+
     def test_currently_supported_features(self):
         """Test all currently supported markdown features."""
         markdown_samples = [
             # Bold text
             "This is **bold** text",
             "This is __also bold__ text",
-            
-            # Italic text  
+            # Italic text
             "This is *italic* text",
             "This is _also italic_ text",
-            
             # Combined bold and italic
             "This is ***bold and italic*** text",
             "This is ___also bold and italic___ text",
-            
             # Code spans
             "This has `inline code` in it",
             "Multiple `code` spans `here`",
-            
             # Headings
             "# Heading 1",
-            "## Heading 2", 
+            "## Heading 2",
             "### Heading 3",
             "#### Heading 4",
             "##### Heading 5",
             "###### Heading 6",
-            
             # Bullet lists
             "* First item\n* Second item\n* Third item",
             "- First item\n- Second item\n- Third item",
             "+ First item\n+ Second item\n+ Third item",
-            
             # Nested content in lists
             "* Item with **bold** text\n* Item with *italic* text\n* Item with `code`",
-            
             # Paragraphs with line breaks
             "First paragraph\n\nSecond paragraph",
-            
             # Mixed content
-            "# Title\n\nThis is a paragraph with **bold**, *italic*, and `code`.\n\n* List item 1\n* List item 2"
+            "# Title\n\nThis is a paragraph with **bold**, *italic*, and `code`.\n\n* List item 1\n* List item 2",
         ]
-        
+
         for markdown in markdown_samples:
             # Should not raise any exceptions
             result = markdown_to_text_elements(markdown)
             assert result is not None
             assert len(result) > 0
-    
+
     def test_new_features_to_support(self):
         """Test new markdown features we want to add support for."""
         markdown_samples = [
@@ -69,19 +61,16 @@ class TestMarkdownFeatureSupport:
             "[Google](https://google.com)",
             "Visit [our website](https://example.com) for more info",
             "Multiple [link1](https://example1.com) and [link2](https://example2.com)",
-            
             # Strikethrough (if supported by marko)
             "~~strikethrough text~~",
             "This is ~~crossed out~~ text",
-            
             # Ordered lists
             "1. First item\n2. Second item\n3. Third item",
             "1. Item with **bold**\n2. Item with *italic*\n3. Item with `code`",
-            
             # Mixed ordered and unordered lists
             "1. Ordered item\n2. Another ordered\n\n* Bullet item\n* Another bullet",
         ]
-        
+
         for markdown in markdown_samples:
             try:
                 # These might fail currently, but we want to track which ones do
@@ -92,7 +81,7 @@ class TestMarkdownFeatureSupport:
                 print(f"❌ Failed to parse: {markdown[:50]}... - Error: {e}")
                 # For now, we expect some of these to fail
                 # Once we implement support, we can change these to assert success
-                
+
     def test_complex_mixed_content(self):
         """Test complex markdown with multiple features combined."""
         complex_markdown = """# Main Title
@@ -119,7 +108,7 @@ Ordered list:
 
 That's all for now!
 """
-        
+
         try:
             result = markdown_to_text_elements(complex_markdown)
             print("✅ Successfully parsed complex markdown")
@@ -132,25 +121,22 @@ That's all for now!
 
 class TestMarkdownWithBaseStyle:
     """Test markdown parsing with different base styles."""
-    
+
     def test_with_custom_base_style(self):
         """Test that base styles are properly applied."""
         base_style = TextStyle(
-            fontFamily="Arial",
-            fontSize={"magnitude": 12, "unit": "PT"},
-            bold=False,
-            italic=False
+            fontFamily="Arial", fontSize={"magnitude": 12, "unit": "PT"}, bold=False, italic=False
         )
-        
+
         markdown = "This is **bold** and *italic* text"
         result = markdown_to_text_elements(markdown, base_style=base_style)
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         # Check that text elements have the base style applied
         for element in result:
-            if hasattr(element, 'textRun') and element.textRun:
+            if hasattr(element, "textRun") and element.textRun:
                 style = element.textRun.style
                 # Base font family should be preserved unless overridden
                 if not style.bold and not style.italic:
@@ -159,11 +145,11 @@ class TestMarkdownWithBaseStyle:
 
 class TestMarkdownEdgeCases:
     """Test edge cases and error conditions."""
-    
+
     def test_empty_markdown(self):
         """Test empty or whitespace-only markdown."""
         test_cases = ["", "   ", "\n", "\n\n\n", "\t\t"]
-        
+
         for markdown in test_cases:
             try:
                 result = markdown_to_text_elements(markdown)
@@ -171,19 +157,19 @@ class TestMarkdownEdgeCases:
                 assert result is not None
             except Exception as e:
                 pytest.fail(f"Should handle empty markdown gracefully, but got: {e}")
-    
+
     def test_malformed_markdown(self):
         """Test malformed or edge case markdown."""
         test_cases = [
             "**unclosed bold",
-            "*unclosed italic", 
+            "*unclosed italic",
             "`unclosed code",
             "# ",  # Empty heading
             "* ",  # Empty list item
             "[link with no url]",
             "[](empty link)",
         ]
-        
+
         for markdown in test_cases:
             try:
                 result = markdown_to_text_elements(markdown)

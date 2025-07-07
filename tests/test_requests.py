@@ -21,16 +21,9 @@ from gslides_api.request.request import (
     DeleteObjectRequest,
     DuplicateObjectRequest,
 )
-from gslides_api.domain import (
-    BulletGlyphPreset,
-    TextStyle,
-    ShapeType,
-    LayoutReference,
-    PredefinedLayout,
-    ShapeProperties,
-    Size,
-    Transform
-)
+from gslides_api.domain import BulletGlyphPreset, LayoutReference, PredefinedLayout, Size, Transform
+from gslides_api import ShapeProperties
+from gslides_api.text import ShapeType, TextStyle
 
 
 class TestRange:
@@ -468,8 +461,11 @@ class TestCreateShapeRequest:
         """Test that basic shape request works correctly."""
         element_props = ElementProperties(
             pageObjectId="slide_123",
-            size={"width": {"magnitude": 100, "unit": "PT"}, "height": {"magnitude": 50, "unit": "PT"}},
-            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"}
+            size={
+                "width": {"magnitude": 100, "unit": "PT"},
+                "height": {"magnitude": 50, "unit": "PT"},
+            },
+            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"},
         )
         request = CreateShapeRequest(
             elementProperties=element_props,
@@ -483,8 +479,11 @@ class TestCreateShapeRequest:
         """Test that shape request with custom object ID works correctly."""
         element_props = ElementProperties(
             pageObjectId="slide_123",
-            size={"width": {"magnitude": 100, "unit": "PT"}, "height": {"magnitude": 50, "unit": "PT"}},
-            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"}
+            size={
+                "width": {"magnitude": 100, "unit": "PT"},
+                "height": {"magnitude": 50, "unit": "PT"},
+            },
+            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"},
         )
         request = CreateShapeRequest(
             objectId="custom_shape_id",
@@ -498,8 +497,11 @@ class TestCreateShapeRequest:
         """Test that to_request() returns correct format."""
         element_props = ElementProperties(
             pageObjectId="slide_123",
-            size={"width": {"magnitude": 100, "unit": "PT"}, "height": {"magnitude": 50, "unit": "PT"}},
-            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"}
+            size={
+                "width": {"magnitude": 100, "unit": "PT"},
+                "height": {"magnitude": 50, "unit": "PT"},
+            },
+            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"},
         )
         request = CreateShapeRequest(
             objectId="shape_456",
@@ -514,8 +516,17 @@ class TestCreateShapeRequest:
                     "objectId": "shape_456",
                     "elementProperties": {
                         "pageObjectId": "slide_123",
-                        "size": {"width": {"magnitude": 100, "unit": "PT"}, "height": {"magnitude": 50, "unit": "PT"}},
-                        "transform": {"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"}
+                        "size": {
+                            "width": {"magnitude": 100, "unit": "PT"},
+                            "height": {"magnitude": 50, "unit": "PT"},
+                        },
+                        "transform": {
+                            "scaleX": 1,
+                            "scaleY": 1,
+                            "translateX": 10,
+                            "translateY": 20,
+                            "unit": "PT",
+                        },
                     },
                     "shapeType": "ELLIPSE",
                 }

@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional, Any, Union
 from enum import Enum
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, model_validator
 from pydantic.json import pydantic_encoder
 
 
@@ -34,135 +34,6 @@ class Transform(GSlidesBaseModel):
     scaleX: float = 1.0
     scaleY: float = 1.0
     unit: Optional[str] = None  # Make optional to preserve original JSON exactly
-
-
-class ShapeType(Enum):
-    """Enumeration of possible shape types."""
-
-    TEXT_BOX = "TEXT_BOX"
-    RECTANGLE = "RECTANGLE"
-    ROUND_RECTANGLE = "ROUND_RECTANGLE"
-    ELLIPSE = "ELLIPSE"
-    LINE = "LINE"
-    IMAGE = "IMAGE"
-    UNKNOWN = "UNKNOWN"
-    CUSTOM = "CUSTOM"
-    CHEVRON = "CHEVRON"
-
-
-class PlaceholderType(Enum):
-    """Enumeration of possible placeholder types."""
-
-    TITLE = "TITLE"
-    BODY = "BODY"
-    SUBTITLE = "SUBTITLE"
-    CENTERED_TITLE = "CENTERED_TITLE"
-    SLIDE_IMAGE = "SLIDE_IMAGE"
-    SLIDE_NUMBER = "SLIDE_NUMBER"
-    UNKNOWN = "UNKNOWN"
-
-
-class TextStyle(GSlidesBaseModel):
-    """Represents styling for text."""
-
-    # We'll use Optional for all fields and only include them in the output if they're present in the original
-    bold: Optional[bool] = None
-    italic: Optional[bool] = None
-    underline: Optional[bool] = None
-    strikethrough: Optional[bool] = None
-    fontFamily: Optional[str] = None
-    fontSize: Optional[Dict[str, Any]] = None  # Keep as dict to preserve original structure
-    foregroundColor: Optional[Dict[str, Any]] = None
-    backgroundColor: Optional[Dict[str, Any]] = None
-    link: Optional[Dict[str, str]] = None
-    weightedFontFamily: Optional[Dict[str, Any]] = None
-    baselineOffset: Optional[str] = None
-    smallCaps: Optional[bool] = None
-
-
-class ParagraphStyle(GSlidesBaseModel):
-    """Represents styling for paragraphs."""
-
-    direction: str = "LEFT_TO_RIGHT"
-    indentStart: Optional[Dict[str, Any]] = None
-    indentFirstLine: Optional[Dict[str, Any]] = None
-    indentEnd: Optional[Dict[str, Any]] = None
-    spacingMode: Optional[str] = None
-    lineSpacing: Optional[float] = None
-    spaceAbove: Optional[Dict[str, Any]] = None
-    spaceBelow: Optional[Dict[str, Any]] = None
-    alignment: Optional[str] = None
-
-
-class BulletStyle(GSlidesBaseModel):
-    """Represents styling for bullets in lists."""
-
-    glyph: Optional[str] = None
-    bold: bool = False
-    italic: bool = False
-    underline: bool = False
-    strikethrough: bool = False
-    fontFamily: Optional[str] = None
-
-
-class Bullet(GSlidesBaseModel):
-    """Represents a bullet point in a list.
-
-    Based on: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/text#Page.Bullet
-    """
-
-    listId: Optional[str] = None
-    nestingLevel: Optional[int] = None
-    glyph: Optional[str] = None
-    bulletStyle: Optional[TextStyle] = None
-
-
-class ParagraphMarker(GSlidesBaseModel):
-    """Represents a paragraph marker with styling."""
-
-    style: ParagraphStyle = Field(default_factory=ParagraphStyle)
-    bullet: Optional[Bullet] = None
-
-
-class TextRun(GSlidesBaseModel):
-    """Represents a run of text with consistent styling."""
-
-    content: str
-    style: TextStyle = Field(default_factory=TextStyle)
-
-
-class AutoTextType(Enum):
-    """Enumeration of possible auto text types."""
-
-    SLIDE_NUMBER = "SLIDE_NUMBER"
-    SLIDE_COUNT = "SLIDE_COUNT"
-    CURRENT_DATE = "CURRENT_DATE"
-    CURRENT_TIME = "CURRENT_TIME"
-
-
-class AutoText(GSlidesBaseModel):
-    """Represents auto text content that is generated automatically."""
-
-    type: AutoTextType
-    style: Optional[TextStyle] = Field(default_factory=TextStyle)
-    content: Optional[str] = None
-
-
-class TextElement(GSlidesBaseModel):
-    """Represents an element within text content."""
-
-    endIndex: int
-    startIndex: Optional[int] = None
-    paragraphMarker: Optional[ParagraphMarker] = None
-    textRun: Optional[TextRun] = None
-    autoText: Optional[AutoText] = None
-
-
-class Text(GSlidesBaseModel):
-    """Represents text content with its elements and lists."""
-
-    textElements: List[TextElement]
-    lists: Optional[Dict[str, Any]] = None
 
 
 class RgbColor(GSlidesBaseModel):
@@ -239,6 +110,12 @@ class Color(GSlidesBaseModel):
                 theme_color = data["themeColor"]
             return cls(themeColor=theme_color)
         return cls()
+
+
+class OptionalColor(GSlidesBaseModel):
+    """A color that can either be fully opaque or fully transparent."""
+
+    opaqueColor: Optional[Color] = None
 
 
 class SolidFill(GSlidesBaseModel):
@@ -357,33 +234,6 @@ class Shadow(GSlidesBaseModel):
     propertyState: Optional[str] = None
     type: Optional[ShadowType] = None
     alignment: Optional[RectanglePosition] = None
-
-
-class ShapeProperties(GSlidesBaseModel):
-    """Represents properties of a shape."""
-
-    shapeBackgroundFill: Optional[ShapeBackgroundFill] = None
-    outline: Optional[Outline] = None
-    shadow: Optional[Shadow] = None
-    autofit: Optional[Dict[str, Any]] = None
-    contentAlignment: Optional[str] = None
-
-
-class Placeholder(GSlidesBaseModel):
-    """Represents a placeholder in a slide."""
-
-    type: PlaceholderType
-    parentObjectId: Optional[str] = None
-    index: Optional[int] = None
-
-
-class Shape(GSlidesBaseModel):
-    """Represents a shape in a slide."""
-
-    shapeProperties: ShapeProperties
-    shapeType: Optional[ShapeType] = None  # Make optional to preserve original JSON exactly
-    text: Optional[Text] = None
-    placeholder: Optional[Placeholder] = None
 
 
 class Table(GSlidesBaseModel):

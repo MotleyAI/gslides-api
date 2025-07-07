@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Optional
 
 from pydantic import Field, field_validator
 
-
-from gslides_api.domain import Shape, TextElement, TextStyle
+from gslides_api import TextElement
+from gslides_api.text import Shape, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import api_client, GoogleAPIClient
 from gslides_api.markdown import markdown_to_text_elements, text_elements_to_markdown
@@ -79,19 +79,22 @@ class ShapeElement(PageElementBase):
         return [DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL))]
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
-        client = api_client or globals()['api_client']
+        client = api_client or globals()["api_client"]
         return client.batch_update(self.delete_text_request(), self.presentation_id)
 
     @property
-    def style(self):
+    def styles(self) -> List[TextStyle] | None:
         if not hasattr(self.shape, "text") or self.shape.text is None:
             return None
         if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
             return None
+        styles = []
         for te in self.shape.text.textElements:
             if te.textRun is None:
                 continue
-            return te.textRun.style
+            if te.textRun.style not in styles:
+                styles.append(te.textRun.style)
+        return styles
 
     def to_markdown(self) -> str | None:
         """Convert the shape's text content back to markdown format.
@@ -120,24 +123,31 @@ class ShapeElement(PageElementBase):
         self,
         text: str,
         as_markdown: bool = True,
-        style: TextStyle | None = None,
+        styles: List[TextStyle] | None = None,
         append: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
     ):
-        style = style or self.style
+        styles = styles or self.styles
         if self.has_text and not append:
             requests = self.delete_text_request()
         else:
             requests = []
+        style_args = {}
+        if styles is not None:
+            if len(styles) == 1:
+                style_args["base_style"] = styles[0]
+            elif len(styles) > 1:
+                style_args["heading_style"] = styles[0]
+                style_args["base_style"] = styles[1]
 
-        elements = markdown_to_text_elements(text, base_style=style)
+        elements = markdown_to_text_elements(text, **style_args)
         requests += text_elements_to_requests(elements, self.objectId)
 
         if not as_markdown:
             requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
 
         if requests:
-            client = api_client or globals()['api_client']
+            client = api_client or globals()["api_client"]
             return client.batch_update(requests, self.presentation_id)
 
     def read_text(self, as_markdown: bool = True):

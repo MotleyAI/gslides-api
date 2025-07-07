@@ -11,12 +11,11 @@ from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import (
     Size,
     Transform,
-    Shape,
     Image,
-    ShapeProperties,
-    ShapeType,
     ImageReplaceMethod,
 )
+from gslides_api import ShapeProperties
+from gslides_api.text import Shape, ShapeType, Text
 from gslides_api.presentation import Presentation
 
 
@@ -78,7 +77,6 @@ class TestShapeElementToMarkdown:
 
     def test_to_markdown_with_empty_text_elements(self):
         """Test to_markdown() with a shape that has text but no text elements."""
-        from gslides_api.domain import Text
 
         shape_element = ShapeElement(
             objectId="test_shape",
@@ -157,7 +155,7 @@ class TestImageElementReplaceImageRequests:
         mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
         # Now returns a domain object instead of a dictionary
         assert len(result) == 1
-        assert hasattr(result[0], 'imageObjectId')
+        assert hasattr(result[0], "imageObjectId")
         assert result[0].imageObjectId == "test_image"
         assert result[0].url == "https://example.com/new_image.jpg"
 
@@ -207,7 +205,7 @@ class TestImageElementReplaceImageRequests:
         mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
         # Now returns a domain object instead of a dictionary
         assert len(result) == 1
-        assert hasattr(result[0], 'imageObjectId')
+        assert hasattr(result[0], "imageObjectId")
         assert result[0].imageObjectId == "test_image"
         assert result[0].url == "https://example.com/new_image.jpg"
         assert result[0].imageReplaceMethod == "CENTER_CROP"
