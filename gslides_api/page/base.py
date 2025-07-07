@@ -65,9 +65,11 @@ class BasePage(GSlidesBaseModel):
             self._propagate_presentation_id(value)
 
     @classmethod
-    def from_ids(cls, presentation_id: str, slide_id: str, api_client: Optional[GoogleAPIClient] = None) -> "BasePage":
+    def from_ids(
+        cls, presentation_id: str, slide_id: str, api_client: Optional[GoogleAPIClient] = None
+    ) -> "BasePage":
         # To avoid circular imports
-        client = api_client or globals()['api_client']
+        client = api_client or globals()["api_client"]
         json = client.get_slide_json(presentation_id, slide_id)
         new_slide = cls.model_validate(json)
         new_slide.presentation_id = presentation_id
