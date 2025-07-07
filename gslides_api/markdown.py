@@ -47,6 +47,7 @@ def markdown_to_text_elements(
 ) -> list[TextElement | CreateParagraphBulletsRequest]:
 
     heading_style = heading_style or copy.deepcopy(base_style)
+    heading_style = heading_style or TextStyle()
     heading_style.bold = True
     # TODO: handle heading levels properly, with font size bumps for heading levels?
 

@@ -107,7 +107,7 @@ def test_duplicate_preserves_presentation_id(monkeypatch):
         return "new-slide-id"
 
     # Mock the from_ids method to avoid API calls
-    def mock_from_ids(cls, presentation_id, slide_id):
+    def mock_from_ids(cls, presentation_id, slide_id, api_client=None):
         return Slide(
             objectId=slide_id,
             slideProperties=SlideProperties(
