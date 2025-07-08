@@ -72,7 +72,7 @@ class GoogleAPIClient:
         :return: API connection
         :rtype: :class:`googleapiclient.discovery.Resource`
         """
-        if self.sht_srvc:
+        if self.sld_srvc:
             return self.sld_srvc
         else:
             raise RuntimeError("Must run set_credentials before executing method")
@@ -112,7 +112,7 @@ class GoogleAPIClient:
             raise e
 
     def batch_update(
-        self, requests: list, presentation_id: str, flush: bool = True
+        self, requests: list, presentation_id: str, flush: bool = False
     ) -> Dict[str, Any]:
         assert all(isinstance(r, GSlidesAPIRequest) for r in requests)
 
@@ -162,7 +162,7 @@ class GoogleAPIClient:
             presentation_id: The ID of the presentation containing the object.
         """
         request = DeleteObjectRequest(objectId=object_id)
-        self.batch_update([request], presentation_id)
+        self.batch_update([request], presentation_id, flush=False)
 
     # All methods that don't call batchUpdate under the hood must first flush any pending
     # batchUpdate calls, to preserve the correct order of operations
