@@ -23,12 +23,15 @@ class GoogleAPIClient:
     # Initial version from the gslides package
     """The credentials object to build the connections to the APIs"""
 
-    def __init__(self) -> None:
+    def __init__(self, auto_flush: bool = True) -> None:
         """Constructor method"""
         self.crdtls: Optional[Credentials] = None
         self.sht_srvc: Optional[Resource] = None
         self.sld_srvc: Optional[Resource] = None
         self.drive_srvc: Optional[Resource] = None
+        self.pending_batch_requests: list[GSlidesAPIRequest] = []
+        self.pending_presentation_id: Optional[str] = None
+        self.auto_flush = auto_flush
 
     def set_credentials(self, credentials: Optional[Credentials]) -> None:
         """Sets the credentials
@@ -87,63 +90,50 @@ class GoogleAPIClient:
         else:
             raise RuntimeError("Must run set_credentials before executing method")
 
-    def batch_update(self, requests: list, presentation_id: str) -> Dict[str, Any]:
-        if not len(requests):
+    def flush_batch_update(self) -> Dict[str, Any]:
+        if not len(self.pending_batch_requests):
             return {}
 
-        assert all(isinstance(r, GSlidesAPIRequest) for r in requests)
-        re_requests = [r.to_request() for r in requests]
+        re_requests = [r.to_request() for r in self.pending_batch_requests]
 
         try:
-            return (
+            out = (
                 self.slide_service.presentations()
-                .batchUpdate(presentationId=presentation_id, body={"requests": re_requests})
+                .batchUpdate(
+                    presentationId=self.pending_presentation_id, body={"requests": re_requests}
+                )
                 .execute()
             )
+            self.pending_batch_requests = []
+            self.pending_presentation_id = None
+            return out
         except Exception as e:
             logger.error(f"Failed to execute batch update: {e}")
             raise e
 
-        return (
-            self.slide_service.presentations()
-            .batchUpdate(presentationId=presentation_id, body={"requests": re_requests})
-            .execute()
-        )
+    def batch_update(
+        self, requests: list, presentation_id: str, flush: bool = True
+    ) -> Dict[str, Any]:
+        assert all(isinstance(r, GSlidesAPIRequest) for r in requests)
 
-    def create_presentation(self, config: dict) -> str:
-        # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/create
-        out = self.slide_service.presentations().create(body=config).execute()
-        return out["presentationId"]
+        if self.pending_presentation_id != presentation_id:
+            self.flush_batch_update()
+            self.pending_presentation_id = presentation_id
 
-    def get_slide_json(self, presentation_id: str, slide_id: str) -> Dict[str, Any]:
-        return (
-            self.slide_service.presentations()
-            .pages()
-            .get(presentationId=presentation_id, pageObjectId=slide_id)
-            .execute()
-        )
+        self.pending_batch_requests.extend(requests)
 
-    def get_presentation_json(self, presentation_id: str) -> Dict[str, Any]:
-        return self.slide_service.presentations().get(presentationId=presentation_id).execute()
+        if self.auto_flush or flush:
+            return self.flush_batch_update()
+        else:
+            return {}
 
-    # TODO: test this out and adjust the credentials readme (Drive API scope, anything else?)
-    # https://developers.google.com/workspace/slides/api/guides/presentations#python
-    def copy_presentation(self, presentation_id, copy_title):
-        """
-        Creates the copy Presentation the user has access to.
-        Load pre-authorized user credentials from the environment.
-        TODO(developer) - See https://developers.google.com/identity
-        for guides on implementing OAuth2 for the application.
-        """
-
-        return (
-            self.drive_service.files()
-            .copy(fileId=presentation_id, body={"name": copy_title})
-            .execute()
-        )
-
+    # methods that call batch_update under the hood
     def duplicate_object(
-        self, object_id: str, presentation_id: str, id_map: Dict[str, str] = None
+        self,
+        object_id: str,
+        presentation_id: str,
+        id_map: Dict[str, str] = None,
+        flush: bool = True,
     ) -> str:
         """Duplicates an object in a Google Slides presentation.
         When duplicating a slide, the duplicate slide will be created immediately following the specified slide.
@@ -159,7 +149,8 @@ class GoogleAPIClient:
             The ID of the duplicated object.
         """
         request = DuplicateObjectRequest(objectId=object_id, objectIds=id_map)
-        out = self.batch_update([request], presentation_id)
+        # Here we need to flush by default, as the caller needs the new object ID
+        out = self.batch_update([request], presentation_id, flush=flush)
         new_object_id = out["replies"][0]["duplicateObject"]["objectId"]
         return new_object_id
 
@@ -173,6 +164,44 @@ class GoogleAPIClient:
         request = DeleteObjectRequest(objectId=object_id)
         self.batch_update([request], presentation_id)
 
+    # All methods that don't call batchUpdate under the hood must first flush any pending
+    # batchUpdate calls, to preserve the correct order of operations
+
+    def create_presentation(self, config: dict) -> str:
+        self.flush_batch_update()
+        # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/create
+        out = self.slide_service.presentations().create(body=config).execute()
+        return out["presentationId"]
+
+    def get_slide_json(self, presentation_id: str, slide_id: str) -> Dict[str, Any]:
+        self.flush_batch_update()
+        return (
+            self.slide_service.presentations()
+            .pages()
+            .get(presentationId=presentation_id, pageObjectId=slide_id)
+            .execute()
+        )
+
+    def get_presentation_json(self, presentation_id: str) -> Dict[str, Any]:
+        self.flush_batch_update()
+        return self.slide_service.presentations().get(presentationId=presentation_id).execute()
+
+    # TODO: test this out and adjust the credentials readme (Drive API scope, anything else?)
+    # https://developers.google.com/workspace/slides/api/guides/presentations#python
+    def copy_presentation(self, presentation_id, copy_title):
+        """
+        Creates the copy Presentation the user has access to.
+        Load pre-authorized user credentials from the environment.
+        TODO(developer) - See https://developers.google.com/identity
+        for guides on implementing OAuth2 for the application.
+        """
+        self.flush_batch_update()
+        return (
+            self.drive_service.files()
+            .copy(fileId=presentation_id, body={"name": copy_title})
+            .execute()
+        )
+
     def upload_image_to_drive(self, image_path) -> str:
         """
         Uploads an image to Google Drive and returns the public URL.
@@ -184,6 +213,7 @@ class GoogleAPIClient:
         :return: Public URL of the uploaded image
         :raises ValueError: If the image format is not supported (not PNG, JPEG, or GIF)
         """
+        # Don't call flush_batch_update here, as image upload doesn't interact with the slide deck
         # Define supported image formats and their MIME types
         supported_formats = {
             ".png": "image/png",
@@ -236,6 +266,7 @@ class GoogleAPIClient:
         :return: Image response with thumbnail URL and dimensions
         :rtype: ImageResponse
         """
+        self.flush_batch_update()
         img_info = (
             self.slide_service.presentations()
             .pages()
