@@ -133,7 +133,6 @@ class GoogleAPIClient:
         object_id: str,
         presentation_id: str,
         id_map: Dict[str, str] = None,
-        flush: bool = True,
     ) -> str:
         """Duplicates an object in a Google Slides presentation.
         When duplicating a slide, the duplicate slide will be created immediately following the specified slide.
@@ -149,9 +148,10 @@ class GoogleAPIClient:
             The ID of the duplicated object.
         """
         request = DuplicateObjectRequest(objectId=object_id, objectIds=id_map)
-        # Here we need to flush by default, as the caller needs the new object ID
-        out = self.batch_update([request], presentation_id, flush=flush)
-        new_object_id = out["replies"][0]["duplicateObject"]["objectId"]
+        # Here we need to flush,
+        out = self.batch_update([request], presentation_id, flush=True)
+        # The new object ID is always the last one in the replies because we force-flushed
+        new_object_id = out["replies"][-1]["duplicateObject"]["objectId"]
         return new_object_id
 
     def delete_object(self, object_id: str, presentation_id: str) -> None:
