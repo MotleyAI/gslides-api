@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
@@ -140,3 +140,50 @@ class PageElementBase(GSlidesBaseModel):
             ),
             self.presentation_id,
         )
+
+    def absolute_size(self, units: str = "in") -> Tuple[float, float]:
+        """Calculate the absolute size of the element in the specified units.
+
+        Args:
+            units: The units to return the size in. Can be "cm" or "in".
+
+        Returns:
+            A tuple of (width, height) in the specified units.
+
+        Raises:
+            ValueError: If units is not "cm" or "in".
+            ValueError: If size is None.
+        """
+        if units not in ["cm", "in"]:
+            raise ValueError("Units must be 'cm' or 'in'")
+
+        if self.size is None:
+            raise ValueError("Element size is not available")
+
+        # Extract width and height from size
+        # Size can have width/height as either float or Dimension objects
+        if hasattr(self.size.width, "magnitude"):
+            width_emu = self.size.width.magnitude
+        else:
+            width_emu = self.size.width
+
+        if hasattr(self.size.height, "magnitude"):
+            height_emu = self.size.height.magnitude
+        else:
+            height_emu = self.size.height
+
+        # Apply transform scaling
+        actual_width_emu = width_emu * self.transform.scaleX
+        actual_height_emu = height_emu * self.transform.scaleY
+
+        # Convert from EMUs to the requested units
+        if units == "cm":
+            # 1 EMU = 1/360000 cm (as per the instructions)
+            width_result = actual_width_emu / 360000
+            height_result = actual_height_emu / 360000
+        else:  # units == "in"
+            # 1 inch = 914400 EMUs (as per the instructions)
+            width_result = actual_width_emu / 914400
+            height_result = actual_height_emu / 914400
+
+        return (width_result, height_result)
