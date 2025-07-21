@@ -437,7 +437,7 @@ class SpeakerSpotlight(GSlidesBaseModel):
 class Group(GSlidesBaseModel):
     """Represents a group of page elements."""
 
-    children: Optional[List[Any]] = None  # This will be a list of PageElement objects
+    children: List["PageElement"]  # This will be a list of PageElement objects
 
 
 class PropertyState(Enum):

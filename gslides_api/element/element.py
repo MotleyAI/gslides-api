@@ -191,7 +191,7 @@ class ImageElement(PageElementBase):
         if url is not None and file is not None:
             raise ValueError("Must specify either url or file, not both")
 
-        client = api_client or globals()['api_client']
+        client = api_client or globals()["api_client"]
         if file is not None:
             url = client.upload_image_to_drive(file)
 
@@ -425,3 +425,7 @@ PageElement = Annotated[
     ],
     Discriminator(element_discriminator),
 ]
+
+# Rebuild models to resolve forward references
+Group.model_rebuild()
+GroupElement.model_rebuild()
