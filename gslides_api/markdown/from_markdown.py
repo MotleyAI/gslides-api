@@ -105,53 +105,53 @@ def markdown_ast_to_text_elements(
     heading_style: Optional[TextStyle] = None,
     list_depth: int = 0,
 ) -> list[TextElement | BulletPointGroup | NumberedListGroup]:
-    style = base_style or TextStyle()
+    base_style = base_style or TextStyle()
     line_break = TextElement(
         endIndex=0,
-        textRun=TextRun(content="\n", style=style),
+        textRun=TextRun(content="\n", style=base_style),
     )
 
     if isinstance(markdown_ast, (marko.inline.RawText, marko.inline.LineBreak)):
         out = [
             TextElement(
                 endIndex=0,
-                textRun=TextRun(content=markdown_ast.children, style=style),
+                textRun=TextRun(content=markdown_ast.children, style=base_style),
             )
         ]
     elif isinstance(markdown_ast, marko.block.BlankLine):
         out = [line_break]
 
     elif isinstance(markdown_ast, marko.inline.CodeSpan):
-        style = copy.deepcopy(style)
-        style.fontFamily = "Courier New"
-        style.weightedFontFamily = None
-        style.foregroundColor = {
+        base_style = copy.deepcopy(base_style)
+        base_style.fontFamily = "Courier New"
+        base_style.weightedFontFamily = None
+        base_style.foregroundColor = {
             "opaqueColor": {"rgbColor": {"red": 0.8, "green": 0.2, "blue": 0.2}}
         }
         out = [
             TextElement(
                 endIndex=0,
-                textRun=TextRun(content=markdown_ast.children, style=style),
+                textRun=TextRun(content=markdown_ast.children, style=base_style),
             )
         ]
     elif isinstance(markdown_ast, marko.inline.Emphasis):
-        style = copy.deepcopy(style)
-        style.italic = not style.italic
+        base_style = copy.deepcopy(base_style)
+        base_style.italic = not base_style.italic
         out = markdown_ast_to_text_elements(
             markdown_ast.children[0], base_style, heading_style, list_depth=list_depth
         )
 
     elif isinstance(markdown_ast, marko.inline.StrongEmphasis):
-        style = copy.deepcopy(style)
-        style.bold = True
+        base_style = copy.deepcopy(base_style)
+        base_style.bold = True
         out = markdown_ast_to_text_elements(
             markdown_ast.children[0], base_style, heading_style, list_depth=list_depth
         )
 
     elif isinstance(markdown_ast, marko.inline.Link):
         # Handle hyperlinks by setting the link property in the style
-        style = copy.deepcopy(style)
-        style.link = {"url": markdown_ast.dest}
+        base_style = copy.deepcopy(base_style)
+        base_style.link = {"url": markdown_ast.dest}
         # Process the link text (children)
         out = sum(
             [
@@ -165,8 +165,8 @@ def markdown_ast_to_text_elements(
 
     elif isinstance(markdown_ast, Strikethrough):
         # Handle strikethrough text
-        style = copy.deepcopy(style)
-        style.strikethrough = True
+        base_style = copy.deepcopy(base_style)
+        base_style.strikethrough = True
         out = sum(
             [
                 markdown_ast_to_text_elements(
@@ -234,7 +234,7 @@ def markdown_ast_to_text_elements(
         # discarded as soon as the bullets are created. So we deal with it as best we can
         # TODO: handle nested lists
         out = [
-            TextElement(endIndex=0, textRun=TextRun(content="\t" * list_depth, style=style))
+            TextElement(endIndex=0, textRun=TextRun(content="\t" * list_depth, style=base_style))
         ] + sum(
             [
                 markdown_ast_to_text_elements(

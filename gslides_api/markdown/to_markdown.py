@@ -79,7 +79,7 @@ def text_elements_to_markdown(elements: List[TextElement]):
             if "\n" in content:
                 # Join current paragraph and add to result
                 paragraph_text = "".join(current_paragraph).rstrip()
-                if paragraph_text:
+                if True:  # paragraph_text:
                     result.append(paragraph_text)
                 current_paragraph = []
 
@@ -89,12 +89,12 @@ def text_elements_to_markdown(elements: List[TextElement]):
         if paragraph_text:
             result.append(paragraph_text)
 
-    return "\n".join(result) if result else None
+    return "\n".join(result).rstrip() if result else None
 
 
 def _apply_markdown_formatting(content: str, style) -> str:
     """Apply markdown formatting to content based on text style."""
-    if style is None:
+    if style is None or (len(set(content)) == 1 and next(iter(set(content))) == " "):
         return content
 
     # Handle hyperlinks first (they take precedence)
@@ -185,7 +185,7 @@ def _get_list_indentation(nesting_level: int | None) -> str:
         nesting_level = 0
 
     # Use 2 spaces per nesting level for markdown compatibility
-    return "  " * nesting_level
+    return "    " * nesting_level
 
 
 def _format_bullet_marker_with_nesting(glyph: str) -> str:
