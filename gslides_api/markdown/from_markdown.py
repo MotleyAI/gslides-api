@@ -47,6 +47,10 @@ class NumberedListGroup(ItemList):
     pass
 
 
+class LineBreakAfterParagraph(TextElement):
+    pass
+
+
 def markdown_to_text_elements(
     markdown_text: str,
     base_style: Optional[TextStyle] = None,
@@ -76,6 +80,12 @@ def markdown_to_text_elements(
         element.startIndex = start_index
         element.endIndex = start_index + len(element.textRun.content)
         start_index = element.endIndex
+
+    # If the final element is a line break after paragraph/heading, remove it
+    if elements and isinstance(elements[-1], LineBreakAfterParagraph):
+        last_break = elements.pop()
+        if list_items and list_items[-1].children[-1] == last_break:
+            list_items[-1].children.pop()
 
     # Sort bullets by start index, in reverse order so trimming the tabs doesn't mess others' indices
     list_items.sort(key=lambda b: b.start_index, reverse=True)
@@ -107,6 +117,11 @@ def markdown_ast_to_text_elements(
 ) -> list[TextElement | BulletPointGroup | NumberedListGroup]:
     base_style = base_style or TextStyle()
     line_break = TextElement(
+        endIndex=0,
+        textRun=TextRun(content="\n", style=base_style),
+    )
+
+    line_break_after_paragraph = LineBreakAfterParagraph(
         endIndex=0,
         textRun=TextRun(content="\n", style=base_style),
     )
@@ -186,7 +201,7 @@ def markdown_ast_to_text_elements(
                 for child in markdown_ast.children
             ],
             [],
-        ) + [line_break]
+        ) + [line_break_after_paragraph]
     elif isinstance(markdown_ast, marko.block.Heading):
         # Only pass heading style to children
         out = sum(
@@ -197,7 +212,7 @@ def markdown_ast_to_text_elements(
                 for child in markdown_ast.children
             ],
             [],
-        ) + [line_break]
+        ) + [line_break_after_paragraph]
 
     elif isinstance(markdown_ast, marko.block.List):
         # Handle lists - need to pass down whether this is ordered or not
