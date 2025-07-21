@@ -110,6 +110,8 @@ class ShapeElement(PageElementBase):
         for te in self.shape.text.textElements:
             if te.textRun is None:
                 continue
+            if te.textRun.content.strip() == "":
+                continue
             if te.textRun.style not in styles:
                 styles.append(te.textRun.style)
         return styles

@@ -170,10 +170,11 @@ Mixed content with [links](https://example.com) and ~~crossed out~~ text."""
 
     def test_header_style(self, test_slide):
         old_element = test_slide.get_element_by_alt_title("title_1")
+        old_style = old_element.shape.text.textElements[1].textRun.style
         old_element.write_text("New Title", as_markdown=True)
         test_slide.sync_from_cloud()
         new_element = test_slide.get_element_by_alt_title("title_1")
-        new_style = new_element.text_element.text_run.text_style
+        new_style = new_element.shape.text.textElements[1].textRun.style
         assert old_style == new_style
 
     @pytest.mark.skipif(
