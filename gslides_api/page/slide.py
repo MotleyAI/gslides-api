@@ -210,7 +210,7 @@ class Slide(BasePage):
 
         # Now it should exist
         for e in self.slideProperties.notesPage.pageElements:
-            if e.objectId == self.speaker_notes_element_id:
+            if e.objectId == id:
                 break
 
         e.delete_text()
