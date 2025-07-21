@@ -125,12 +125,16 @@ def markdown_ast_to_text_elements(
     elif isinstance(markdown_ast, marko.inline.Emphasis):
         style = copy.deepcopy(style)
         style.italic = not style.italic
-        out = markdown_ast_to_text_elements(markdown_ast.children[0], style, list_depth)
+        out = markdown_ast_to_text_elements(
+            markdown_ast.children[0], base_style, heading_style, list_depth=list_depth
+        )
 
     elif isinstance(markdown_ast, marko.inline.StrongEmphasis):
         style = copy.deepcopy(style)
         style.bold = True
-        out = markdown_ast_to_text_elements(markdown_ast.children[0], style, list_depth)
+        out = markdown_ast_to_text_elements(
+            markdown_ast.children[0], base_style, heading_style, list_depth=list_depth
+        )
 
     elif isinstance(markdown_ast, marko.inline.Link):
         # Handle hyperlinks by setting the link property in the style
@@ -139,7 +143,9 @@ def markdown_ast_to_text_elements(
         # Process the link text (children)
         out = sum(
             [
-                markdown_ast_to_text_elements(child, style, list_depth)
+                markdown_ast_to_text_elements(
+                    child, base_style, heading_style, list_depth=list_depth
+                )
                 for child in markdown_ast.children
             ],
             [],
@@ -151,7 +157,9 @@ def markdown_ast_to_text_elements(
         style.strikethrough = True
         out = sum(
             [
-                markdown_ast_to_text_elements(child, style, list_depth)
+                markdown_ast_to_text_elements(
+                    child, base_style, heading_style, list_depth=list_depth
+                )
                 for child in markdown_ast.children
             ],
             [],
@@ -160,16 +168,20 @@ def markdown_ast_to_text_elements(
     elif isinstance(markdown_ast, marko.block.Paragraph):
         out = sum(
             [
-                markdown_ast_to_text_elements(child, style, list_depth)
+                markdown_ast_to_text_elements(
+                    child, base_style, heading_style, list_depth=list_depth
+                )
                 for child in markdown_ast.children
             ],
             [],
         ) + [line_break]
     elif isinstance(markdown_ast, marko.block.Heading):
-
+        # Only pass heading style to children
         out = sum(
             [
-                markdown_ast_to_text_elements(child, heading_style, list_depth)
+                markdown_ast_to_text_elements(
+                    child, heading_style, heading_style, list_depth=list_depth
+                )
                 for child in markdown_ast.children
             ],
             [],
@@ -195,7 +207,9 @@ def markdown_ast_to_text_elements(
     elif isinstance(markdown_ast, marko.block.Document):
         out = sum(
             [
-                markdown_ast_to_text_elements(child, style, list_depth)
+                markdown_ast_to_text_elements(
+                    child, base_style, heading_style, list_depth=list_depth
+                )
                 for child in markdown_ast.children
             ],
             [],
@@ -206,11 +220,12 @@ def markdown_ast_to_text_elements(
         # discarded as soon as the bullets are created. So we deal with it as best we can
         # TODO: handle nested lists
         out = [
-            TextElement(endIndex=0, textRun=TextRun(content="\t", style=style))
-            for _ in range(list_depth)
+            TextElement(endIndex=0, textRun=TextRun(content="\t" * list_depth, style=style))
         ] + sum(
             [
-                markdown_ast_to_text_elements(child, style, list_depth)
+                markdown_ast_to_text_elements(
+                    child, base_style, heading_style, list_depth=list_depth
+                )
                 for child in markdown_ast.children
             ],
             [],
