@@ -24,6 +24,7 @@ from gslides_api.domain import (
     Image,
     ImageProperties,
     Table,
+    Dimension,
 )
 from gslides_api import ShapeProperties
 from gslides_api.text import Shape, ShapeType
@@ -204,3 +205,83 @@ def test_discriminated_union_with_type_adapter():
     element = page_element_adapter.validate_python(shape_data)
     assert isinstance(element, ShapeElement)
     assert element.shape.shapeType == ShapeType.RECTANGLE
+
+
+def test_absolute_size_with_dimension_objects():
+    """Test absolute_size method with Dimension objects for size."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(
+            width=Dimension(magnitude=3000000, unit="EMU"),
+            height=Dimension(magnitude=3000000, unit="EMU")
+        ),
+        transform=Transform(translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"),
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    # Test conversion to centimeters
+    width_cm, height_cm = element.absolute_size("cm")
+
+    # Expected calculation:
+    # actual_width_emu = 3000000 * 0.3 = 900000
+    # actual_height_emu = 3000000 * 0.12 = 360000
+    # width_cm = 900000 / 360000 = 2.5
+    # height_cm = 360000 / 360000 = 1.0
+    assert abs(width_cm - 2.5) < 0.001
+    assert abs(height_cm - 1.0) < 0.001
+
+    # Test conversion to inches
+    width_in, height_in = element.absolute_size("in")
+
+    # Expected calculation:
+    # width_in = 900000 / 914400 ≈ 0.984
+    # height_in = 360000 / 914400 ≈ 0.394
+    assert abs(width_in - 0.984375) < 0.001
+    assert abs(height_in - 0.39375) < 0.001
+
+
+def test_absolute_size_with_float_values():
+    """Test absolute_size method with float values for size."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=1000000, height=2000000),  # Direct float values in EMUs
+        transform=Transform(translateX=0, translateY=0, scaleX=2.0, scaleY=0.5),
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    # Test conversion to centimeters
+    width_cm, height_cm = element.absolute_size("cm")
+
+    # Expected calculation:
+    # actual_width_emu = 1000000 * 2.0 = 2000000
+    # actual_height_emu = 2000000 * 0.5 = 1000000
+    # width_cm = 2000000 / 360000 ≈ 5.556
+    # height_cm = 1000000 / 360000 ≈ 2.778
+    assert abs(width_cm - 5.555555555555555) < 0.001
+    assert abs(height_cm - 2.777777777777778) < 0.001
+
+
+def test_absolute_size_invalid_units():
+    """Test absolute_size method with invalid units."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    with pytest.raises(ValueError, match="Units must be 'cm' or 'in'"):
+        element.absolute_size("px")
+
+
+def test_absolute_size_no_size():
+    """Test absolute_size method when size is None."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=None,
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    with pytest.raises(ValueError, match="Element size is not available"):
+        element.absolute_size("cm")
