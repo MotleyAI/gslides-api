@@ -37,6 +37,8 @@ from .domain import (
     SpeakerSpotlight,
     SpeakerSpotlightProperties,
     Group,
+    Unit,
+    AffineTransform,
 )
 from .text import AutoText, AutoTextType, ShapeProperties, TextElement
 from .presentation import Presentation
@@ -48,7 +50,8 @@ from .page.page import (
     NotesMaster,
     Page,
 )
-from .page import Notes, NotesProperties, Slide, SlideProperties
+from .page.notes import Notes, NotesProperties
+from .page.slide_properties import SlideProperties
 from .page.base import BasePage, PageProperties, PageType
 from .element.base import ElementKind
 from .client import initialize_credentials, GoogleAPIClient
@@ -120,6 +123,8 @@ __all__ = [
     "SpeakerSpotlight",
     "SpeakerSpotlightProperties",
     "Group",
+    "Unit",
+    "AffineTransform",
     # Presentation
     "Presentation",
     # Pages

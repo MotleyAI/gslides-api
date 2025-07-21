@@ -1,5 +1,6 @@
 import pytest
-from gslides_api import ShapeProperties, Slide, SlideProperties
+from gslides_api.page.slide import Slide
+from gslides_api.page.slide_properties import SlideProperties
 from gslides_api.page.base import PageProperties
 from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import Size, Transform
@@ -264,7 +265,8 @@ def test_presentation_id_propagation_when_adding_elements_later():
 
 def test_presentation_id_propagation_to_notes_page():
     """Test that presentation_id is propagated to notes page when it exists."""
-    from gslides_api.page.slide import Notes, NotesProperties
+    from gslides_api.page.notes import Notes
+    from gslides_api.page.notes import NotesProperties
 
     # Create a notes page
     notes_page = Notes(
@@ -291,7 +293,8 @@ def test_presentation_id_propagation_to_notes_page():
 
 def test_presentation_id_propagation_to_notes_page_on_modification():
     """Test that presentation_id is propagated to notes page when modified."""
-    from gslides_api.page.slide import Notes, NotesProperties
+    from gslides_api.page.notes import Notes
+    from gslides_api.page.notes import NotesProperties
 
     # Create a notes page
     notes_page = Notes(
@@ -325,7 +328,8 @@ def test_presentation_id_propagation_to_notes_page_on_modification():
 
 def test_presentation_id_propagation_to_notes_page_elements():
     """Test that presentation_id is propagated to elements within the notes page."""
-    from gslides_api.page.slide import Notes, NotesProperties
+    from gslides_api.page.notes import Notes
+    from gslides_api.page.notes import NotesProperties
 
     # Create some mock page elements for the notes page
     notes_element = ShapeElement(

@@ -24,11 +24,11 @@ from gslides_api.request.request import (
     GSlidesAPIRequest,
     UpdateVideoPropertiesRequest,
     UpdateLinePropertiesRequest,
-    UpdateSheetsChartPropertiesRequest,
+    # UpdateSheetsChartPropertiesRequest,
     CreateImageRequest,
     CreateVideoRequest,
     CreateLineRequest,
-    CreateWordArtRequest,
+    # CreateWordArtRequest,
     CreateSheetsChartRequest,
 )
 from gslides_api.request.table import CreateTableRequest
@@ -293,18 +293,18 @@ class WordArtElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.WORD_ART
 
-    def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
-        """Convert a WordArtElement to a create request for the Google Slides API."""
-        element_properties = self.element_properties(parent_id)
-
-        if not self.wordArt.renderedText:
-            raise ValueError("Rendered text is required for Word Art")
-
-        request = CreateWordArtRequest(
-            elementProperties=element_properties,
-            renderedText=self.wordArt.renderedText,
-        )
-        return [request]
+    # def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
+    #     """Convert a WordArtElement to a create request for the Google Slides API."""
+    #     element_properties = self.element_properties(parent_id)
+    #
+    #     if not self.wordArt.renderedText:
+    #         raise ValueError("Rendered text is required for Word Art")
+    #
+    #     request = CreateWordArtRequest(
+    #         elementProperties=element_properties,
+    #         renderedText=self.wordArt.renderedText,
+    #     )
+    #     return [request]
 
     def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
         """Convert a WordArtElement to an update request for the Google Slides API."""
@@ -339,23 +339,23 @@ class SheetsChartElement(PageElementBase):
         )
         return [request]
 
-    def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
-        """Convert a SheetsChartElement to an update request for the Google Slides API."""
-        requests = self.alt_text_update_request(element_id)
-
-        if (
-            hasattr(self.sheetsChart, "sheetsChartProperties")
-            and self.sheetsChart.sheetsChartProperties is not None
-        ):
-            chart_properties = self.sheetsChart.sheetsChartProperties.to_api_format()
-            chart_request = UpdateSheetsChartPropertiesRequest(
-                objectId=element_id,
-                sheetsChartProperties=chart_properties,
-                fields=",".join(dict_to_dot_separated_field_list(chart_properties)),
-            )
-            requests.append(chart_request)
-
-        return requests
+    # def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
+    #     """Convert a SheetsChartElement to an update request for the Google Slides API."""
+    #     requests = self.alt_text_update_request(element_id)
+    #
+    #     if (
+    #         hasattr(self.sheetsChart, "sheetsChartProperties")
+    #         and self.sheetsChart.sheetsChartProperties is not None
+    #     ):
+    #         chart_properties = self.sheetsChart.sheetsChartProperties.to_api_format()
+    #         chart_request = UpdateSheetsChartPropertiesRequest(
+    #             objectId=element_id,
+    #             sheetsChartProperties=chart_properties,
+    #             fields=",".join(dict_to_dot_separated_field_list(chart_properties)),
+    #         )
+    #         requests.append(chart_request)
+    #
+    #     return requests
 
 
 class SpeakerSpotlightElement(PageElementBase):

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from pydantic import Field
 
@@ -7,15 +7,26 @@ from gslides_api.domain import (
     GSlidesBaseModel,
     LayoutReference,
     ImageProperties,
+    PageElementProperties,
+    VideoProperties,
+    LineProperties,
+    AffineTransform,
 )
 from gslides_api import ShapeProperties
-from gslides_api.text import ShapeType, TextStyle
+
+
+from gslides_api.text import ShapeType, TextStyle, ParagraphStyle
 from gslides_api.request.domain import (
     Range,
+    SubstringMatchCriteria,
     TableCellLocation,
     ElementProperties,
     PlaceholderIdMapping,
 )
+
+if TYPE_CHECKING:
+    from gslides_api.page.slide_properties import SlideProperties
+    from gslides_api.page.base import PageProperties
 
 
 class GSlidesAPIRequest(GSlidesBaseModel):
@@ -212,7 +223,7 @@ class UpdateSlidePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the slide to update")
-    slideProperties: Dict[str, Any] = Field(description="The slide properties to update")
+    slideProperties: "SlideProperties" = Field(description="The slide properties to update")
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'slideProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -243,7 +254,7 @@ class UpdatePagePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the page to update")
-    pageProperties: Dict[str, Any] = Field(description="The page properties to update")
+    pageProperties: "PageProperties" = Field(description="The page properties to update")
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'pageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -324,7 +335,7 @@ class UpdateVideoPropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the video to update")
-    videoProperties: Dict[str, Any] = Field(description="The video properties to update")
+    videoProperties: VideoProperties = Field(description="The video properties to update")
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'videoProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -339,27 +350,29 @@ class UpdateLinePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the line to update")
-    lineProperties: Dict[str, Any] = Field(description="The line properties to update")
+    lineProperties: LineProperties = Field(description="The line properties to update")
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'lineProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
 
 
-class UpdateSheetsChartPropertiesRequest(GSlidesAPIRequest):
-    """Updates the properties of a SheetsChart.
-
-    This request updates the sheets chart properties for the specified chart.
-
-    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatesheetschartpropertiesrequest
-    """
-
-    objectId: str = Field(description="The object ID of the sheets chart to update")
-    sheetsChartProperties: Dict[str, Any] = Field(
-        description="The sheets chart properties to update"
-    )
-    fields: str = Field(
-        description="The fields that should be updated. At least one field must be specified. The root 'sheetsChartProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
-    )
+#  This one appears to have been hallucinated, no trace of it in the actual docs
+# class UpdateSheetsChartPropertiesRequest(GSlidesAPIRequest):
+#     """Updates the properties of a SheetsChart.
+#
+#     This request updates the sheets chart properties for the specified chart.
+#
+#     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatesheetschartpropertiesrequest
+#     """
+#
+#     objectId: str = Field(description="The object ID of the sheets chart to update")
+#     sheetsChartProperties: Dict[str, Any] = Field(
+#         description="The sheets chart properties to update"
+#     )
+#     fields: str = Field(
+#         description="The fields that should be updated. At least one field must be specified. The root 'sheetsChartProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
+#     )
+#
 
 
 class CreateImageRequest(GSlidesAPIRequest):
@@ -370,7 +383,9 @@ class CreateImageRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createimagerequest
     """
 
-    elementProperties: Dict[str, Any] = Field(description="The element properties for the image")
+    elementProperties: PageElementProperties = Field(
+        description="The element properties for the image"
+    )
     url: str = Field(description="The image URL")
 
 
@@ -382,7 +397,9 @@ class CreateVideoRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createvideorequest
     """
 
-    elementProperties: Dict[str, Any] = Field(description="The element properties for the video")
+    elementProperties: PageElementProperties = Field(
+        description="The element properties for the video"
+    )
     source: str = Field(description="The video source type (e.g., 'YOUTUBE')")
     id: str = Field(description="The video ID")
 
@@ -395,20 +412,23 @@ class CreateLineRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createlinerequest
     """
 
-    elementProperties: Dict[str, Any] = Field(description="The element properties for the line")
+    elementProperties: PageElementProperties = Field(
+        description="The element properties for the line"
+    )
     lineCategory: str = Field(description="The line category (e.g., 'STRAIGHT')")
 
 
-class CreateWordArtRequest(GSlidesAPIRequest):
-    """Creates a new word art.
-
-    This request creates a new word art on the specified page.
-
-    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createwordartrequest
-    """
-
-    elementProperties: Dict[str, Any] = Field(description="The element properties for the word art")
-    renderedText: str = Field(description="The text to render as word art")
+# This seems to have been hallucinated
+# class CreateWordArtRequest(GSlidesAPIRequest):
+#     """Creates a new word art.
+#
+#     This request creates a new word art on the specified page.
+#
+#     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createwordartrequest
+#     """
+#
+#     elementProperties: Dict[str, Any] = Field(description="The element properties for the word art")
+#     renderedText: str = Field(description="The text to render as word art")
 
 
 class CreateSheetsChartRequest(GSlidesAPIRequest):
@@ -419,7 +439,7 @@ class CreateSheetsChartRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createsheetschartrequest
     """
 
-    elementProperties: Dict[str, Any] = Field(
+    elementProperties: PageElementProperties = Field(
         description="The element properties for the sheets chart"
     )
     spreadsheetId: str = Field(
@@ -434,7 +454,7 @@ class ReplaceAllTextRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replacealltextrequest
     """
 
-    containsText: Dict[str, Any] = Field(
+    containsText: SubstringMatchCriteria = Field(
         description="Finds all instances of text matching this substring"
     )
     replaceText: str = Field(description="The text that will replace the matched text")
@@ -451,7 +471,7 @@ class UpdatePageElementTransformRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the page element to update")
-    transform: Dict[str, Any] = Field(
+    transform: AffineTransform = Field(
         description="The input transform matrix used to update the page element"
     )
     applyMode: str = Field(description="The apply mode of the transform update")
@@ -472,7 +492,7 @@ class ReplaceAllShapesWithImageRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replaceallshapeswithimagerequest
     """
 
-    containsText: Dict[str, Any] = Field(
+    containsText: SubstringMatchCriteria = Field(
         description="If set, this request will replace all of the shapes that contain the given text"
     )
     imageUrl: Optional[str] = Field(default=None, description="The image URL")
@@ -489,7 +509,7 @@ class ReplaceAllShapesWithSheetsChartRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replaceallshapeswithsheetschartrequest
     """
 
-    containsText: Dict[str, Any] = Field(
+    containsText: SubstringMatchCriteria = Field(
         description="The criteria that the shapes must match in order to be replaced"
     )
     spreadsheetId: str = Field(
@@ -517,11 +537,11 @@ class DeleteParagraphBulletsRequest(GSlidesAPIRequest):
     objectId: str = Field(
         description="The object ID of the shape or table containing the text to delete bullets from"
     )
-    cellLocation: Optional[Dict[str, Any]] = Field(
+    cellLocation: Optional[TableCellLocation] = Field(
         default=None,
         description="The optional table cell location if the text to be modified is in a table cell",
     )
-    textRange: Dict[str, Any] = Field(description="The range of text to delete bullets from")
+    textRange: Range = Field(description="The range of text to delete bullets from")
 
 
 class UpdateParagraphStyleRequest(GSlidesAPIRequest):
@@ -533,14 +553,12 @@ class UpdateParagraphStyleRequest(GSlidesAPIRequest):
     objectId: str = Field(
         description="The object ID of the shape or table with the text to be styled"
     )
-    cellLocation: Optional[Dict[str, Any]] = Field(
+    cellLocation: Optional[TableCellLocation] = Field(
         default=None,
         description="The location of the cell in the table containing the paragraph(s) to style",
     )
-    style: Dict[str, Any] = Field(description="The paragraph's style")
-    textRange: Dict[str, Any] = Field(
-        description="The range of text containing the paragraph(s) to style"
-    )
+    style: ParagraphStyle = Field(description="The paragraph's style")
+    textRange: Range = Field(description="The range of text containing the paragraph(s) to style")
     fields: str = Field(description="The fields that should be updated")
 
 

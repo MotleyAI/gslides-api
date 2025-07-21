@@ -39,19 +39,18 @@ presentation_id = "1FHbC3ZXsEDUUNtQbxyyDQ3EFjwwt13_WovJAiYxhmOU"
 source_presentation = Presentation.from_id(presentation_id)
 
 s = source_presentation.slides[1]
-test_block = s.get_element_by_alt_title()
+# First test
+new_slide = s.duplicate()
+new_slide.get_element_by_alt_title("text_1").delete_text()
+
+new_slide.sync_from_cloud()
+re_md = new_slide.get_element_by_alt_title("text_1").read_text()
 
 
-new_slide = s.write_copy(9)
-new_slide.pageElements[3].write_text(md, as_markdown=True)
-new_slide.speaker_notes.write_text("yay!", as_markdown=True)
-new_slide.sync_from_cloud()
-new_slide.speaker_notes.write_text(json.dumps({"metadata": "blah"}), as_markdown=False)
-new_slide.sync_from_cloud()
-sn2 = new_slide.speaker_notes.read_text()
-test = json.loads(sn2)
 print("Yay!")
-
+# Basic markdown test
+md = "Oh what a text\n* Bullet points\n* And more\n1. Numbered items\n2. And more\n"
+test_block.write_text(md, as_markdown=True)
 
 api_response = json.loads(
     new_slide.pageElements[3].model_dump_json()

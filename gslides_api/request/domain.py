@@ -83,9 +83,13 @@ class ElementProperties(GSlidesBaseModel):
     Used when creating new elements like shapes, images, etc.
     """
 
-    pageObjectId: str = Field(description="The object ID of the page where the element will be created")
+    pageObjectId: str = Field(
+        description="The object ID of the page where the element will be created"
+    )
     size: Optional[Dict[str, Any]] = Field(default=None, description="The size of the element")
-    transform: Optional[Dict[str, Any]] = Field(default=None, description="The transform to apply to the element")
+    transform: Optional[Dict[str, Any]] = Field(
+        default=None, description="The transform to apply to the element"
+    )
     title: Optional[str] = Field(default=None, description="The title of the element")
     description: Optional[str] = Field(default=None, description="The description of the element")
 
@@ -102,3 +106,14 @@ class ObjectIdMapping(GSlidesBaseModel):
     """Represents a mapping of object IDs for duplication operations."""
 
     objectIds: Dict[str, str] = Field(description="A map of object IDs to their new IDs")
+
+
+class SubstringMatchCriteria(GSlidesBaseModel):
+    """Represents a criteria that can be used to match a substring within a text.
+
+    https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#SubstringMatchCriteria
+    """
+
+    text: Optional[str] = None
+    matchCase: Optional[bool] = None
+    searchByRegex: Optional[bool] = None

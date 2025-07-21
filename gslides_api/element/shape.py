@@ -8,6 +8,7 @@ from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import api_client, GoogleAPIClient
 from gslides_api.markdown import markdown_to_text_elements, text_elements_to_markdown
 from gslides_api.request.request import (
+    DeleteParagraphBulletsRequest,
     GSlidesAPIRequest,
     InsertTextRequest,
     UpdateTextStyleRequest,
@@ -76,7 +77,12 @@ class ShapeElement(PageElementBase):
         return requests
 
     def delete_text_request(self):
-        return [DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL))]
+        return [
+            DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL)),
+            DeleteParagraphBulletsRequest(
+                objectId=self.objectId, textRange=Range(type=RangeType.ALL)
+            ),
+        ]
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
         client = api_client or globals()["api_client"]

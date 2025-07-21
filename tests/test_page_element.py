@@ -102,30 +102,32 @@ def test_line_element():
     assert requests[0]["createLine"]["lineCategory"] == "STRAIGHT"
 
 
-def test_word_art_element():
-    """Test WordArtElement functionality."""
-    element = WordArtElement(
-        objectId="wordart_id",
-        size=Size(width=100, height=100),
-        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        wordArt=WordArt(renderedText="Test Word Art"),
-    )
-
-    assert element.wordArt is not None
-    assert element.wordArt.renderedText == "Test Word Art"
-
-    # Create request should generate a valid request
-    request_objects = element.create_request("page_id")
-    assert len(request_objects) == 1
-
-    # Convert request objects to dictionaries to test the final format
-    requests = []
-    for req_obj in request_objects:
-        requests.extend(req_obj.to_request())
-
-    assert len(requests) == 1
-    assert "createWordArt" in requests[0]
-    assert requests[0]["createWordArt"]["renderedText"] == "Test Word Art"
+# TODO: the correspoding API request seems to have been hallucinated.
+# Should clean this up when this is next needed
+# def test_word_art_element():
+#     """Test WordArtElement functionality."""
+#     element = WordArtElement(
+#         objectId="wordart_id",
+#         size=Size(width=100, height=100),
+#         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+#         wordArt=WordArt(renderedText="Test Word Art"),
+#     )
+#
+#     assert element.wordArt is not None
+#     assert element.wordArt.renderedText == "Test Word Art"
+#
+#     # Create request should generate a valid request
+#     request_objects = element.create_request("page_id")
+#     assert len(request_objects) == 1
+#
+#     # Convert request objects to dictionaries to test the final format
+#     requests = []
+#     for req_obj in request_objects:
+#         requests.extend(req_obj.to_request())
+#
+#     assert len(requests) == 1
+#     assert "createWordArt" in requests[0]
+#     assert requests[0]["createWordArt"]["renderedText"] == "Test Word Art"
 
 
 def test_sheets_chart_element():
@@ -215,7 +217,7 @@ def test_absolute_size_with_dimension_objects():
         objectId="test_id",
         size=Size(
             width=Dimension(magnitude=3000000, unit="EMU"),
-            height=Dimension(magnitude=3000000, unit="EMU")
+            height=Dimension(magnitude=3000000, unit="EMU"),
         ),
         transform=Transform(translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"),
         shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
@@ -297,7 +299,7 @@ def test_recursive_group_structure():
         "objectId": "image1",
         "size": {"width": 100, "height": 100},
         "transform": {"translateX": 0, "translateY": 0, "scaleX": 1, "scaleY": 1},
-        "image": {"contentUrl": "https://example.com/image.jpg"}
+        "image": {"contentUrl": "https://example.com/image.jpg"},
     }
 
     # Create a group element containing the image
@@ -305,9 +307,7 @@ def test_recursive_group_structure():
         "objectId": "group1",
         "size": {"width": 200, "height": 200},
         "transform": {"translateX": 10, "translateY": 10, "scaleX": 1, "scaleY": 1},
-        "elementGroup": {
-            "children": [image_data]
-        }
+        "elementGroup": {"children": [image_data]},
     }
 
     # Test creating PageElement from group data
@@ -332,7 +332,7 @@ def test_nested_group_structure():
         "objectId": "image1",
         "size": {"width": 100, "height": 100},
         "transform": {"translateX": 0, "translateY": 0, "scaleX": 1, "scaleY": 1},
-        "image": {"contentUrl": "https://example.com/image.jpg"}
+        "image": {"contentUrl": "https://example.com/image.jpg"},
     }
 
     # Create an inner group containing the image
@@ -340,9 +340,7 @@ def test_nested_group_structure():
         "objectId": "inner_group",
         "size": {"width": 150, "height": 150},
         "transform": {"translateX": 5, "translateY": 5, "scaleX": 1, "scaleY": 1},
-        "elementGroup": {
-            "children": [image_data]
-        }
+        "elementGroup": {"children": [image_data]},
     }
 
     # Create an outer group containing the inner group and another image
@@ -350,9 +348,7 @@ def test_nested_group_structure():
         "objectId": "outer_group",
         "size": {"width": 300, "height": 300},
         "transform": {"translateX": 20, "translateY": 20, "scaleX": 1, "scaleY": 1},
-        "elementGroup": {
-            "children": [inner_group_data, image_data]
-        }
+        "elementGroup": {"children": [inner_group_data, image_data]},
     }
 
     # Test creating PageElement from nested group data

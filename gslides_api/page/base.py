@@ -27,7 +27,7 @@ class PageProperties(GSlidesBaseModel):
     colorScheme: Optional[ColorScheme] = None
 
 
-def unroll_group_elements(elements: List[PageElement]):
+def unroll_group_elements(elements: List["PageElement"]):
     out = []
     for element in elements:
         if element.type == ElementKind.GROUP:
