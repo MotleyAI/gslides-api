@@ -18,7 +18,7 @@ from gslides_api.request.request import CreateParagraphBulletsRequest
 class ItemList(BaseModel):
     children: List[TextElement]
 
-    @field_validator('children', mode='before')
+    @field_validator("children", mode="before")
     @classmethod
     def flatten_children(cls, v: List[Union[TextElement, "ItemList"]]) -> List[TextElement]:
         """Flatten nested ItemLists by replacing them with their children."""
@@ -203,7 +203,9 @@ def markdown_ast_to_text_elements(
         # Handle lists - need to pass down whether this is ordered or not
         pre_out = sum(
             [
-                markdown_ast_to_text_elements(child, style, list_depth + 1)
+                markdown_ast_to_text_elements(
+                    child, base_style, heading_style, list_depth=list_depth + 1
+                )
                 for child in markdown_ast.children
             ],
             [],

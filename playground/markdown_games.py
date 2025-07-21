@@ -78,7 +78,16 @@ new_slide = s.duplicate()
 new_slide.get_element_by_alt_title("text_1").write_text(medium_md, as_markdown=True)
 new_slide.sync_from_cloud()
 re_md = new_slide.get_element_by_alt_title("text_1").read_text()
-assert re_md.strip() == complex_md.strip()
+# assert re_md == medium_md
+new_slide.delete()
+
+
+new_slide = s.duplicate()
+new_slide.get_element_by_alt_title("text_1").write_text(complex_md, as_markdown=True)
+new_slide.sync_from_cloud()
+re_md = new_slide.get_element_by_alt_title("text_1").read_text()
+assert re_md == complex_md
+new_slide.delete()
 
 api_response = json.loads(
     new_slide.pageElements[3].model_dump_json()
