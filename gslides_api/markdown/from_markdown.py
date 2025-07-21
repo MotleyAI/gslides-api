@@ -1,11 +1,11 @@
 import copy
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Union
 
 import marko
 from marko.ext.gfm import gfm
 from marko.ext.gfm.elements import Strikethrough
 from marko.inline import RawText
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 from gslides_api import TextElement
@@ -17,6 +17,18 @@ from gslides_api.request.request import CreateParagraphBulletsRequest
 
 class ItemList(BaseModel):
     children: List[TextElement]
+
+    @field_validator('children', mode='before')
+    @classmethod
+    def flatten_children(cls, v: List[Union[TextElement, "ItemList"]]) -> List[TextElement]:
+        """Flatten nested ItemLists by replacing them with their children."""
+        flattened = []
+        for item in v:
+            if isinstance(item, ItemList):
+                flattened.extend(item.children)
+            else:
+                flattened.append(item)
+        return flattened
 
     @property
     def start_index(self):
