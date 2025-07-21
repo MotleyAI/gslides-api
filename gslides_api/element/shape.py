@@ -6,7 +6,8 @@ from gslides_api import TextElement
 from gslides_api.text import Shape, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import api_client, GoogleAPIClient
-from gslides_api.markdown import markdown_to_text_elements, text_elements_to_markdown
+from gslides_api.markdown.to_markdown import text_elements_to_markdown
+from gslides_api.markdown.from_markdown import markdown_to_text_elements
 from gslides_api.request.request import (
     DeleteParagraphBulletsRequest,
     GSlidesAPIRequest,
