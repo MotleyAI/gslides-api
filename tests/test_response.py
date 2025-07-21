@@ -62,16 +62,12 @@ class TestImageThumbnail:
         mock_requests.assert_called_once()
 
     @patch('gslides_api.response.requests.get')
-    @patch('gslides_api.response.imghdr.what')
-    def test_mime_type_property(self, mock_imghdr, mock_requests):
+    def test_mime_type_property(self, mock_requests):
         """Test mime_type property."""
-        # Mock the response
+        # Mock the response with PNG header
         mock_response = MagicMock()
-        mock_response.content = b'fake_png_data'
+        mock_response.content = b'\x89PNG\r\n\x1a\n' + b'fake_png_data'
         mock_requests.return_value = mock_response
-
-        # Mock imghdr to return 'png'
-        mock_imghdr.return_value = 'png'
 
         thumbnail = ImageThumbnail(
             contentUrl="https://example.com/image.png",
@@ -82,15 +78,12 @@ class TestImageThumbnail:
         mime_type = thumbnail.mime_type
         assert mime_type == 'png'
 
-        # Verify imghdr.what was called with correct parameters
-        mock_imghdr.assert_called_with(None, h=b'fake_png_data')
-
     @patch('gslides_api.response.requests.get')
     def test_save_png_success(self, mock_requests):
         """Test successful save of PNG image."""
-        # Mock the response
+        # Mock the response with PNG header
         mock_response = MagicMock()
-        mock_response.content = b'fake_png_data'
+        mock_response.content = b'\x89PNG\r\n\x1a\n' + b'fake_png_data'
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
@@ -99,32 +92,30 @@ class TestImageThumbnail:
             height=600
         )
 
-        # Mock the mime_type property to return 'png'
-        with patch('gslides_api.response.imghdr.what', return_value='png'):
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
-                try:
-                    thumbnail.save(tmp_file.name)
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+            try:
+                thumbnail.save(tmp_file.name)
 
-                    # Verify the file was written
-                    assert os.path.exists(tmp_file.name)
-                    with open(tmp_file.name, 'rb') as f:
-                        content = f.read()
-                    assert content == b'fake_png_data'
+                # Verify the file was written
+                assert os.path.exists(tmp_file.name)
+                with open(tmp_file.name, 'rb') as f:
+                    content = f.read()
+                assert content == b'\x89PNG\r\n\x1a\n' + b'fake_png_data'
 
-                    # Verify requests.get was called (through payload property)
-                    mock_requests.assert_called_with("https://example.com/image.png")
+                # Verify requests.get was called (through payload property)
+                mock_requests.assert_called_with("https://example.com/image.png")
 
-                finally:
-                    # Clean up
-                    if os.path.exists(tmp_file.name):
-                        os.unlink(tmp_file.name)
+            finally:
+                # Clean up
+                if os.path.exists(tmp_file.name):
+                    os.unlink(tmp_file.name)
 
     @patch('gslides_api.response.requests.get')
     def test_save_jpeg_with_jpg_extension_success(self, mock_requests):
         """Test successful save of JPEG image with .jpg extension."""
-        # Mock the response
+        # Mock the response with JPEG header
         mock_response = MagicMock()
-        mock_response.content = b'fake_jpeg_data'
+        mock_response.content = b'\xff\xd8\xff' + b'fake_jpeg_data'
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
@@ -133,29 +124,27 @@ class TestImageThumbnail:
             height=600
         )
 
-        # Mock the mime_type property to return 'jpeg'
-        with patch('gslides_api.response.imghdr.what', return_value='jpeg'):
-            with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
-                try:
-                    thumbnail.save(tmp_file.name)
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
+            try:
+                thumbnail.save(tmp_file.name)
 
-                    # Verify the file was written
-                    assert os.path.exists(tmp_file.name)
-                    with open(tmp_file.name, 'rb') as f:
-                        content = f.read()
-                    assert content == b'fake_jpeg_data'
+                # Verify the file was written
+                assert os.path.exists(tmp_file.name)
+                with open(tmp_file.name, 'rb') as f:
+                    content = f.read()
+                assert content == b'\xff\xd8\xff' + b'fake_jpeg_data'
 
-                finally:
-                    # Clean up
-                    if os.path.exists(tmp_file.name):
-                        os.unlink(tmp_file.name)
+            finally:
+                # Clean up
+                if os.path.exists(tmp_file.name):
+                    os.unlink(tmp_file.name)
 
     @patch('gslides_api.response.requests.get')
     def test_save_jpeg_with_jpeg_extension_success(self, mock_requests):
         """Test successful save of JPEG image with .jpeg extension."""
-        # Mock the response
+        # Mock the response with JPEG header
         mock_response = MagicMock()
-        mock_response.content = b'fake_jpeg_data'
+        mock_response.content = b'\xff\xd8\xff' + b'fake_jpeg_data'
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
@@ -164,26 +153,24 @@ class TestImageThumbnail:
             height=600
         )
 
-        # Mock the mime_type property to return 'jpeg'
-        with patch('gslides_api.response.imghdr.what', return_value='jpeg'):
-            with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as tmp_file:
-                try:
-                    thumbnail.save(tmp_file.name)
+        with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as tmp_file:
+            try:
+                thumbnail.save(tmp_file.name)
 
-                    # Verify the file was written
-                    assert os.path.exists(tmp_file.name)
+                # Verify the file was written
+                assert os.path.exists(tmp_file.name)
 
-                finally:
-                    # Clean up
-                    if os.path.exists(tmp_file.name):
-                        os.unlink(tmp_file.name)
+            finally:
+                # Clean up
+                if os.path.exists(tmp_file.name):
+                    os.unlink(tmp_file.name)
 
     @patch('gslides_api.response.requests.get')
     def test_save_format_mismatch_error(self, mock_requests):
         """Test that format mismatch raises ValueError."""
-        # Mock the response
+        # Mock the response with JPEG header but .png extension
         mock_response = MagicMock()
-        mock_response.content = b'fake_jpeg_data'
+        mock_response.content = b'\xff\xd8\xff' + b'fake_jpeg_data'
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
@@ -192,26 +179,24 @@ class TestImageThumbnail:
             height=600
         )
 
-        # Mock the mime_type property to return 'jpeg' but file extension is .png
-        with patch('gslides_api.response.imghdr.what', return_value='jpeg'):
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
-                try:
-                    with pytest.raises(ValueError, match="Image format mismatch"):
-                        thumbnail.save(tmp_file.name)
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+            try:
+                with pytest.raises(ValueError, match="Image format mismatch"):
+                    thumbnail.save(tmp_file.name)
 
-                    # Verify the error message contains expected details
-                    with pytest.raises(ValueError) as exc_info:
-                        thumbnail.save(tmp_file.name)
+                # Verify the error message contains expected details
+                with pytest.raises(ValueError) as exc_info:
+                    thumbnail.save(tmp_file.name)
 
-                    error_msg = str(exc_info.value)
-                    assert "'.png'" in error_msg
-                    assert "'png'" in error_msg
-                    assert "'jpeg'" in error_msg
+                error_msg = str(exc_info.value)
+                assert "'.png'" in error_msg
+                assert "'png'" in error_msg
+                assert "'jpeg'" in error_msg
 
-                finally:
-                    # Clean up
-                    if os.path.exists(tmp_file.name):
-                        os.unlink(tmp_file.name)
+            finally:
+                # Clean up
+                if os.path.exists(tmp_file.name):
+                    os.unlink(tmp_file.name)
 
     @patch('gslides_api.response.requests.get')
     def test_save_no_extension_success(self, mock_requests):
@@ -242,9 +227,9 @@ class TestImageThumbnail:
     @patch('gslides_api.response.requests.get')
     def test_save_mime_type_returns_none(self, mock_requests):
         """Test save when mime_type returns None (unrecognized format)."""
-        # Mock the response
+        # Mock the response with unrecognized format (no known header)
         mock_response = MagicMock()
-        mock_response.content = b'fake_data'
+        mock_response.content = b'fake_data_unknown_format'
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
@@ -253,20 +238,18 @@ class TestImageThumbnail:
             height=600
         )
 
-        # Mock the mime_type property to return None (unrecognized format)
-        with patch('gslides_api.response.imghdr.what', return_value=None):
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
-                try:
-                    # Should not raise error when mime_type is None
-                    thumbnail.save(tmp_file.name)
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+            try:
+                # Should not raise error when mime_type is None
+                thumbnail.save(tmp_file.name)
 
-                    # Verify the file was written
-                    assert os.path.exists(tmp_file.name)
+                # Verify the file was written
+                assert os.path.exists(tmp_file.name)
 
-                finally:
-                    # Clean up
-                    if os.path.exists(tmp_file.name):
-                        os.unlink(tmp_file.name)
+            finally:
+                # Clean up
+                if os.path.exists(tmp_file.name):
+                    os.unlink(tmp_file.name)
 
     @patch('gslides_api.response.requests.get')
     def test_to_ipython_image(self, mock_requests):

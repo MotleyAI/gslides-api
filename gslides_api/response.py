@@ -1,6 +1,6 @@
 import os
 import requests
-import imghdr
+from io import BytesIO
 
 from gslides_api.domain import GSlidesBaseModel
 
@@ -23,7 +23,52 @@ class ImageThumbnail(GSlidesBaseModel):
 
     @property
     def mime_type(self):
-        return imghdr.what(None, h=self.payload)
+        """Detect the image format from the payload.
+
+        Uses Pillow (PIL) as the primary method, with a fallback to basic
+        header detection for common formats.
+        """
+        try:
+            from PIL import Image
+            with BytesIO(self.payload) as img_buffer:
+                with Image.open(img_buffer) as img:
+                    # PIL format names to standard format names
+                    format_mapping = {
+                        'JPEG': 'jpeg',
+                        'PNG': 'png',
+                        'GIF': 'gif',
+                        'BMP': 'bmp',
+                        'WEBP': 'webp',
+                        'TIFF': 'tiff'
+                    }
+                    return format_mapping.get(img.format, img.format.lower() if img.format else None)
+        except ImportError:
+            # Fallback: basic header detection for common formats
+            return self._detect_format_from_header()
+        except Exception:
+            # If PIL fails to open the image, try fallback
+            return self._detect_format_from_header()
+
+    def _detect_format_from_header(self):
+        """Fallback method to detect image format from file headers."""
+        if not self.payload:
+            return None
+
+        # Check common image format headers
+        if self.payload.startswith(b'\xff\xd8\xff'):
+            return 'jpeg'
+        elif self.payload.startswith(b'\x89PNG\r\n\x1a\n'):
+            return 'png'
+        elif self.payload.startswith(b'GIF87a') or self.payload.startswith(b'GIF89a'):
+            return 'gif'
+        elif self.payload.startswith(b'BM'):
+            return 'bmp'
+        elif self.payload.startswith(b'RIFF') and b'WEBP' in self.payload[:12]:
+            return 'webp'
+        elif self.payload.startswith(b'II*\x00') or self.payload.startswith(b'MM\x00*'):
+            return 'tiff'
+        else:
+            return None
 
     def save(self, file_path: str):
         # Get file extension and convert to expected format name
