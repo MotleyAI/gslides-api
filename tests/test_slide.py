@@ -4,7 +4,7 @@ from gslides_api.page.slide_properties import SlideProperties
 from gslides_api.page.base import PageProperties
 from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import Size, Transform
-from gslides_api.text import Shape, ShapeType
+from gslides_api.text import Shape, ShapeType, ShapeProperties
 
 
 def test_presentation_id_not_in_api_format():

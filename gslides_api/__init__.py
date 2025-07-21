@@ -165,3 +165,9 @@ __all__ = [
     "TableCellLocation",
     "ElementProperties",
 ]
+
+# Rebuild models to resolve forward references after all imports
+UpdateSlidePropertiesRequest.model_rebuild()
+UpdatePagePropertiesRequest.model_rebuild()
+UpdateShapePropertiesRequest.model_rebuild()
+UpdateImagePropertiesRequest.model_rebuild()

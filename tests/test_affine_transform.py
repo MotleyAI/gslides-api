@@ -165,6 +165,8 @@ class TestAffineTransform:
 
     def test_required_fields(self):
         """Test that all required fields must be provided."""
+        from pydantic import ValidationError
+
         # This should work
         AffineTransform(
             scaleX=1.0,
@@ -174,10 +176,10 @@ class TestAffineTransform:
             translateX=0.0,
             translateY=0.0
         )
-        
+
         # Missing required fields should raise validation error
-        with pytest.raises(TypeError):
+        with pytest.raises(ValidationError):
             AffineTransform()
-        
-        with pytest.raises(TypeError):
+
+        with pytest.raises(ValidationError):
             AffineTransform(scaleX=1.0)  # Missing other required fields
