@@ -12,11 +12,27 @@ class GSlidesBaseModel(BaseModel):
         return super().model_dump(exclude_none=True, mode="json")
 
 
+class Unit(Enum):
+    """Enumeration of possible units of measurement.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/Unit
+    """
+
+    UNIT_UNSPECIFIED = "UNIT_UNSPECIFIED"
+    """The units are unknown."""
+
+    EMU = "EMU"
+    """An English Metric Unit (EMU) is defined as 1/360,000 of a centimeter and thus there are 914,400 EMUs per inch, and 12,700 EMUs per point."""
+
+    PT = "PT"
+    """A point, 1/72 of an inch."""
+
+
 class Dimension(GSlidesBaseModel):
     """Represents a size dimension with magnitude and unit."""
 
     magnitude: float
-    unit: Optional[str] = None
+    unit: Unit
 
 
 class Size(GSlidesBaseModel):
@@ -34,6 +50,43 @@ class Transform(GSlidesBaseModel):
     scaleX: float = 1.0
     scaleY: float = 1.0
     unit: Optional[str] = None  # Make optional to preserve original JSON exactly
+
+
+class AffineTransform(GSlidesBaseModel):
+    """AffineTransform uses a 3x3 matrix with an implied last row of [ 0 0 1 ] to transform source coordinates (x,y) into destination coordinates (x', y').
+
+    The transformation follows:
+    [ x']   [  scaleX  shearX  translateX  ] [ x ]
+    [ y'] = [  shearY  scaleY  translateY  ] [ y ]
+    [ 1 ]   [      0       0         1     ] [ 1 ]
+
+    After transformation:
+    x' = scaleX * x + shearX * y + translateX;
+    y' = scaleY * y + shearY * x + translateY;
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/other#Page.AffineTransform
+    """
+
+    scaleX: float
+    """The X coordinate scaling element."""
+
+    scaleY: float
+    """The Y coordinate scaling element."""
+
+    shearX: float
+    """The X coordinate shearing element."""
+
+    shearY: float
+    """The Y coordinate shearing element."""
+
+    translateX: float
+    """The X coordinate translation element."""
+
+    translateY: float
+    """The Y coordinate translation element."""
+
+    unit: Optional[Unit] = None
+    """The units for translate elements."""
 
 
 class RgbColor(GSlidesBaseModel):
@@ -437,7 +490,7 @@ class SpeakerSpotlight(GSlidesBaseModel):
 class Group(GSlidesBaseModel):
     """Represents a group of page elements."""
 
-    children: Optional[List[Any]] = None  # This will be a list of PageElement objects
+    children: List["PageElement"]  # This will be a list of PageElement objects
 
 
 class PropertyState(Enum):
@@ -621,3 +674,13 @@ class ThumbnailProperties(GSlidesBaseModel):
 
     If you don't specify the size, the server chooses a default size for the image.
     """
+
+
+# https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#pageelementproperties
+# Note: When you initially create a PageElement, the API may modify the values of both size and transform, but the visual size will be unchanged.
+class PageElementProperties(GSlidesBaseModel):
+    """Represents properties of a page element."""
+
+    pageObjectId: Optional[str] = None
+    size: Optional[Size] = None
+    transform: Optional[Transform] = None

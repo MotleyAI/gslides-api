@@ -27,6 +27,16 @@ class PageProperties(GSlidesBaseModel):
     colorScheme: Optional[ColorScheme] = None
 
 
+def unroll_group_elements(elements: List["PageElement"]):
+    out = []
+    for element in elements:
+        if element.type == ElementKind.GROUP:
+            out.extend(unroll_group_elements(element.elementGroup.children))
+        else:
+            out.append(element)
+    return out
+
+
 class BasePage(GSlidesBaseModel):
     """Base class for all page types in a presentation."""
 
@@ -47,9 +57,18 @@ class BasePage(GSlidesBaseModel):
         if target_id is not None and self.pageElements is not None:
             for element in self.pageElements:
                 element.presentation_id = target_id
+            # This recurses into GroupElement children
+            for element in self.page_elements_flat:
+                element.presentation_id = target_id
 
         if hasattr(self, "slideProperties") and self.slideProperties.notesPage is not None:
             self.slideProperties.notesPage.presentation_id = target_id
+
+    @property
+    def page_elements_flat(self):
+        if self.pageElements is None:
+            return []
+        return unroll_group_elements(self.pageElements)
 
     @model_validator(mode="after")
     def set_presentation_id_on_elements(self) -> "BasePage":
@@ -78,24 +97,26 @@ class BasePage(GSlidesBaseModel):
     def select_elements(self, kind: ElementKind) -> List[PageElement]:
         if self.pageElements is None:
             return []
-        return [e for e in self.pageElements if e.type == kind]
+        return [e for e in self.page_elements_flat if e.type == kind]
 
     @property
     def image_elements(self):
-        if self.pageElements is None:
-            return []
-        return [e for e in self.pageElements if e.image is not None]
+        return self.select_elements(ElementKind.IMAGE)
 
-    def get_element_by_id(self, element_id: str) -> PageElement:
+    def get_element_by_id(self, element_id: str) -> PageElement | None:
         if self.pageElements is None:
             return None
-        return next((e for e in self.pageElements if e.objectId == element_id), None)
+        return next((e for e in self.page_elements_flat if e.objectId == element_id), None)
 
-    def get_element_by_alt_title(self, title: str) -> PageElement:
+    def get_element_by_alt_title(self, title: str) -> PageElement | None:
         if self.pageElements is None:
             return None
         return next(
-            (e for e in self.pageElements if isinstance(e.title, str) and e.title.strip() == title),
+            (
+                e
+                for e in self.page_elements_flat
+                if isinstance(e.title, str) and e.title.strip() == title
+            ),
             None,
         )
 

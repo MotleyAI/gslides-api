@@ -37,6 +37,8 @@ from .domain import (
     SpeakerSpotlight,
     SpeakerSpotlightProperties,
     Group,
+    Unit,
+    AffineTransform,
 )
 from .text import AutoText, AutoTextType, ShapeProperties, TextElement
 from .presentation import Presentation
@@ -48,7 +50,9 @@ from .page.page import (
     NotesMaster,
     Page,
 )
-from .page import Notes, NotesProperties, Slide, SlideProperties
+from .page.slide import Slide
+from .page.notes import Notes, NotesProperties
+from .page.slide_properties import SlideProperties
 from .page.base import BasePage, PageProperties, PageType
 from .element.base import ElementKind
 from .client import initialize_credentials, GoogleAPIClient
@@ -120,6 +124,8 @@ __all__ = [
     "SpeakerSpotlight",
     "SpeakerSpotlightProperties",
     "Group",
+    "Unit",
+    "AffineTransform",
     # Presentation
     "Presentation",
     # Pages
@@ -160,3 +166,9 @@ __all__ = [
     "TableCellLocation",
     "ElementProperties",
 ]
+
+# Rebuild models to resolve forward references after all imports
+UpdateSlidePropertiesRequest.model_rebuild()
+UpdatePagePropertiesRequest.model_rebuild()
+UpdateShapePropertiesRequest.model_rebuild()
+UpdateImagePropertiesRequest.model_rebuild()

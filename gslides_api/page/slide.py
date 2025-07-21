@@ -4,8 +4,9 @@ import logging
 from pydantic import Field, field_validator
 
 from gslides_api.element.shape import ShapeElement
+from gslides_api.page.slide_properties import SlideProperties
 from gslides_api.page.base import BasePage, ElementKind, PageType
-from gslides_api.domain import GSlidesBaseModel, LayoutReference, ThumbnailProperties, ThumbnailSize
+from gslides_api.domain import LayoutReference, ThumbnailProperties, ThumbnailSize
 from gslides_api.client import api_client, GoogleAPIClient
 from gslides_api.request.request import (
     InsertTextRequest,
@@ -19,33 +20,6 @@ from gslides_api.utils import dict_to_dot_separated_field_list
 
 
 logger = logging.getLogger(__name__)
-
-
-class NotesProperties(GSlidesBaseModel):
-    """Represents properties of notes."""
-
-    speakerNotesObjectId: str
-
-
-class Notes(BasePage):
-    """Represents a notes page in a presentation."""
-
-    notesProperties: NotesProperties
-    pageType: PageType = Field(default=PageType.NOTES, description="The type of page", exclude=True)
-
-    @field_validator("pageType")
-    @classmethod
-    def validate_page_type(cls, v):
-        return PageType.NOTES
-
-
-class SlideProperties(GSlidesBaseModel):
-    """Represents properties of a slide."""
-
-    layoutObjectId: Optional[str] = None
-    masterObjectId: Optional[str] = None
-    notesPage: Notes = None
-    isSkipped: Optional[bool] = None
 
 
 class Slide(BasePage):
@@ -210,7 +184,7 @@ class Slide(BasePage):
 
         # Now it should exist
         for e in self.slideProperties.notesPage.pageElements:
-            if e.objectId == self.speaker_notes_element_id:
+            if e.objectId == id:
                 break
 
         e.delete_text()

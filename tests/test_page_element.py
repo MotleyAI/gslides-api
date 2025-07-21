@@ -5,6 +5,8 @@ from gslides_api.element.element import (
     LineElement,
     WordArtElement,
     SheetsChartElement,
+    GroupElement,
+    ImageElement,
 )
 from gslides_api.element.base import PageElementBase
 from gslides_api.element.shape import ShapeElement
@@ -100,30 +102,32 @@ def test_line_element():
     assert requests[0]["createLine"]["lineCategory"] == "STRAIGHT"
 
 
-def test_word_art_element():
-    """Test WordArtElement functionality."""
-    element = WordArtElement(
-        objectId="wordart_id",
-        size=Size(width=100, height=100),
-        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        wordArt=WordArt(renderedText="Test Word Art"),
-    )
-
-    assert element.wordArt is not None
-    assert element.wordArt.renderedText == "Test Word Art"
-
-    # Create request should generate a valid request
-    request_objects = element.create_request("page_id")
-    assert len(request_objects) == 1
-
-    # Convert request objects to dictionaries to test the final format
-    requests = []
-    for req_obj in request_objects:
-        requests.extend(req_obj.to_request())
-
-    assert len(requests) == 1
-    assert "createWordArt" in requests[0]
-    assert requests[0]["createWordArt"]["renderedText"] == "Test Word Art"
+# TODO: the correspoding API request seems to have been hallucinated.
+# Should clean this up when this is next needed
+# def test_word_art_element():
+#     """Test WordArtElement functionality."""
+#     element = WordArtElement(
+#         objectId="wordart_id",
+#         size=Size(width=100, height=100),
+#         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+#         wordArt=WordArt(renderedText="Test Word Art"),
+#     )
+#
+#     assert element.wordArt is not None
+#     assert element.wordArt.renderedText == "Test Word Art"
+#
+#     # Create request should generate a valid request
+#     request_objects = element.create_request("page_id")
+#     assert len(request_objects) == 1
+#
+#     # Convert request objects to dictionaries to test the final format
+#     requests = []
+#     for req_obj in request_objects:
+#         requests.extend(req_obj.to_request())
+#
+#     assert len(requests) == 1
+#     assert "createWordArt" in requests[0]
+#     assert requests[0]["createWordArt"]["renderedText"] == "Test Word Art"
 
 
 def test_sheets_chart_element():
@@ -213,7 +217,7 @@ def test_absolute_size_with_dimension_objects():
         objectId="test_id",
         size=Size(
             width=Dimension(magnitude=3000000, unit="EMU"),
-            height=Dimension(magnitude=3000000, unit="EMU")
+            height=Dimension(magnitude=3000000, unit="EMU"),
         ),
         transform=Transform(translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"),
         shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
@@ -285,3 +289,81 @@ def test_absolute_size_no_size():
 
     with pytest.raises(ValueError, match="Element size is not available"):
         element.absolute_size("cm")
+
+
+def test_recursive_group_structure():
+    """Test that Group can contain PageElements and GroupElement works correctly."""
+
+    # Create a simple image element
+    image_data = {
+        "objectId": "image1",
+        "size": {"width": 100, "height": 100},
+        "transform": {"translateX": 0, "translateY": 0, "scaleX": 1, "scaleY": 1},
+        "image": {"contentUrl": "https://example.com/image.jpg"},
+    }
+
+    # Create a group element containing the image
+    group_data = {
+        "objectId": "group1",
+        "size": {"width": 200, "height": 200},
+        "transform": {"translateX": 10, "translateY": 10, "scaleX": 1, "scaleY": 1},
+        "elementGroup": {"children": [image_data]},
+    }
+
+    # Test creating PageElement from group data
+    page_element_adapter = TypeAdapter(PageElement)
+
+    # This should create a GroupElement
+    group_element = page_element_adapter.validate_python(group_data)
+    assert isinstance(group_element, GroupElement)
+    assert len(group_element.elementGroup.children) == 1
+
+    # Test that the child is properly typed as an ImageElement
+    child = group_element.elementGroup.children[0]
+    assert isinstance(child, ImageElement)
+    assert child.image.contentUrl == "https://example.com/image.jpg"
+
+
+def test_nested_group_structure():
+    """Test that Groups can contain other Groups (nested structure)."""
+
+    # Create a simple image element
+    image_data = {
+        "objectId": "image1",
+        "size": {"width": 100, "height": 100},
+        "transform": {"translateX": 0, "translateY": 0, "scaleX": 1, "scaleY": 1},
+        "image": {"contentUrl": "https://example.com/image.jpg"},
+    }
+
+    # Create an inner group containing the image
+    inner_group_data = {
+        "objectId": "inner_group",
+        "size": {"width": 150, "height": 150},
+        "transform": {"translateX": 5, "translateY": 5, "scaleX": 1, "scaleY": 1},
+        "elementGroup": {"children": [image_data]},
+    }
+
+    # Create an outer group containing the inner group and another image
+    outer_group_data = {
+        "objectId": "outer_group",
+        "size": {"width": 300, "height": 300},
+        "transform": {"translateX": 20, "translateY": 20, "scaleX": 1, "scaleY": 1},
+        "elementGroup": {"children": [inner_group_data, image_data]},
+    }
+
+    # Test creating PageElement from nested group data
+    page_element_adapter = TypeAdapter(PageElement)
+    outer_group = page_element_adapter.validate_python(outer_group_data)
+
+    assert isinstance(outer_group, GroupElement)
+    assert len(outer_group.elementGroup.children) == 2
+
+    # First child should be a GroupElement
+    inner_group = outer_group.elementGroup.children[0]
+    assert isinstance(inner_group, GroupElement)
+    assert len(inner_group.elementGroup.children) == 1
+    assert isinstance(inner_group.elementGroup.children[0], ImageElement)
+
+    # Second child should be an ImageElement
+    second_child = outer_group.elementGroup.children[1]
+    assert isinstance(second_child, ImageElement)
