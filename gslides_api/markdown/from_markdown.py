@@ -116,6 +116,10 @@ def markdown_ast_to_text_elements(
     list_depth: int = 0,
 ) -> list[TextElement | BulletPointGroup | NumberedListGroup]:
     base_style = base_style or TextStyle()
+    if heading_style is None:
+        heading_style = copy.deepcopy(base_style)
+        heading_style.bold = True
+
     line_break = TextElement(
         endIndex=0,
         textRun=TextRun(content="\n", style=base_style),

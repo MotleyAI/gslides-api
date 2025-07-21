@@ -7,8 +7,12 @@ environment variable is not set.
 """
 
 import os
+import logging
 import pytest
 from gslides_api import Presentation, Slide, initialize_credentials
+from gslides_api.text import TextStyle
+
+logger = logging.getLogger(__name__)
 
 
 class TestMarkdownIntegration:
@@ -32,10 +36,23 @@ class TestMarkdownIntegration:
         """Get the source slide for duplication."""
         return presentation.slides[1]
 
+    @pytest.fixture(scope="class")
+    def source_slide_2(self, presentation):
+        """Get the source slide for duplication."""
+        return presentation.slides[2]
+
     @pytest.fixture
     def test_slide(self, source_slide):
         """Create a test slide and ensure cleanup after test."""
         new_slide = source_slide.duplicate()
+        yield new_slide
+        # Cleanup: delete the slide after the test
+        new_slide.delete()
+
+    @pytest.fixture
+    def test_slide_2(self, source_slide_2):
+        """Create a test slide and ensure cleanup after test."""
+        new_slide = source_slide_2.duplicate()
         yield new_slide
         # Cleanup: delete the slide after the test
         new_slide.delete()
@@ -177,6 +194,20 @@ Mixed content with [links](https://example.com) and ~~crossed out~~ text."""
         new_style = new_element.shape.text.textElements[1].textRun.style
         assert old_style == new_style
 
+    def test_header_style_2(self, test_slide_2):
+        old_element = test_slide_2.get_element_by_alt_title("text")
+        old_style_1 = old_element.styles[0]
+        old_style_2 = old_element.styles[1]
+        old_element.write_text("# New Title\nNew text", as_markdown=True)
+        test_slide_2.sync_from_cloud()
+        new_element = test_slide_2.get_element_by_alt_title("text")
+        new_style_1 = new_element.styles[0]
+        new_style_2 = new_element.styles[1]
+        print("Testing header style...")
+        compare_styles(old_style_1, new_style_1)
+        print("Testing text style...")
+        compare_styles(old_style_2, new_style_2)
+
     @pytest.mark.skipif(
         not os.getenv("GSLIDES_CREDENTIALS_PATH"),
         reason="GSLIDES_CREDENTIALS_PATH environment variable not set",
@@ -298,3 +329,29 @@ def create_test_slide(source_slide):
 def cleanup_test_slide(test_slide):
     """Delete the test slide to clean up after testing."""
     test_slide.delete()
+
+
+def compare_styles(style1: TextStyle, style2: TextStyle):
+    """Print the values of every attribute which is not equal between style1 and style2."""
+
+    # Get all field names from the TextStyle model
+    field_names = style1.model_fields.keys()
+
+    differences_found = False
+    message = []
+    for field_name in field_names:
+        value1 = getattr(style1, field_name, None)
+        value2 = getattr(style2, field_name, None)
+
+        if value1 != value2:
+            if field_name == "weightedFontFamily":
+                logger.warning(
+                    f"{field_name}:\n  style1: {value1}\n  style2: {value2}, "
+                    f"not raising because mangling font weights is 'normal' GSlides API behavior"
+                )
+            else:
+                message.append(f"{field_name}:\n  style1: {value1}\n  style2: {value2}")
+
+    if len(message) > 0:
+        print("\n".join(message))
+        raise AssertionError("\n".join(message))
