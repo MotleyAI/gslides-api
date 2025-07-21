@@ -7,7 +7,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 credential_location = "/home/james/Dropbox/PyCharmProjects/gslides-playground/"
 initialize_credentials(credential_location)
 
-md = """This is a ***very*** *important* report with **bold** text.
+complex_md = """This is a ***very*** *important* report with **bold** text.
 
 * It illustrates **bullet points**
   * With nested sub-points
@@ -39,18 +39,41 @@ presentation_id = "1FHbC3ZXsEDUUNtQbxyyDQ3EFjwwt13_WovJAiYxhmOU"
 source_presentation = Presentation.from_id(presentation_id)
 
 s = source_presentation.slides[1]
-# First test
+# test delete text with bullets
 new_slide = s.duplicate()
 new_slide.get_element_by_alt_title("text_1").delete_text()
 
 new_slide.sync_from_cloud()
 re_md = new_slide.get_element_by_alt_title("text_1").read_text()
+assert re_md == ""
+new_slide.delete()
+
+# test delete text without bullets
+new_slide = s.duplicate()
+new_slide.get_element_by_alt_title("title_1").delete_text()
+
+new_slide.sync_from_cloud()
+re_md = new_slide.get_element_by_alt_title("title_1").read_text()
+assert re_md == ""
+new_slide.delete()
+
+# test write text with bullets
+new_slide = s.duplicate()
 
 
-print("Yay!")
-# Basic markdown test
-md = "Oh what a text\n* Bullet points\n* And more\n1. Numbered items\n2. And more\n"
-test_block.write_text(md, as_markdown=True)
+md = "Oh what a text\n* Bullet points\n* And more\n1. Numbered items\n2. And more"
+new_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+new_slide.sync_from_cloud()
+re_md = new_slide.get_element_by_alt_title("text_1").read_text()
+assert re_md.strip == md
+new_slide.delete()
+
+# Test write complicated markdown
+new_slide = s.duplicate()
+new_slide.get_element_by_alt_title("text_1").write_text(complex_md, as_markdown=True)
+new_slide.sync_from_cloud()
+re_md = new_slide.get_element_by_alt_title("text_1").read_text()
+assert re_md.strip() == complex_md.strip()
 
 api_response = json.loads(
     new_slide.pageElements[3].model_dump_json()

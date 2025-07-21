@@ -76,13 +76,24 @@ class ShapeElement(PageElementBase):
 
         return requests
 
-    def delete_text_request(self):
-        return [
-            DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL)),
-            DeleteParagraphBulletsRequest(
-                objectId=self.objectId, textRange=Range(type=RangeType.ALL)
-            ),
-        ]
+    def delete_text_request(self) -> List[GSlidesAPIRequest]:
+        if self.shape.text is None:
+            return []
+        # If there are any bullets, need to delete them first
+        if self.shape.text.lists is not None and len(self.shape.text.lists) > 0:
+            out = [
+                DeleteParagraphBulletsRequest(
+                    objectId=self.objectId, textRange=Range(type=RangeType.ALL)
+                ),
+            ]
+        else:
+            out = []
+
+        if (not self.shape.text.textElements) or self.shape.text.textElements[0].endIndex == 0:
+            return out
+
+        out.append(DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL)))
+        return out
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
         client = api_client or globals()["api_client"]

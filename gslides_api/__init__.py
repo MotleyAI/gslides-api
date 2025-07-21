@@ -50,6 +50,7 @@ from .page.page import (
     NotesMaster,
     Page,
 )
+from .page.slide import Slide
 from .page.notes import Notes, NotesProperties
 from .page.slide_properties import SlideProperties
 from .page.base import BasePage, PageProperties, PageType
