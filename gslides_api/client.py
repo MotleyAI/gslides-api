@@ -1,19 +1,18 @@
 import logging
-from typing import Dict, Any, Optional
 import os
+from typing import Any, Dict, Optional
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
-
 from googleapiclient.http import MediaFileUpload
 
 from gslides_api.domain import ThumbnailProperties
 from gslides_api.request.request import (
-    GSlidesAPIRequest,
-    DuplicateObjectRequest,
     DeleteObjectRequest,
+    DuplicateObjectRequest,
+    GSlidesAPIRequest,
 )
 from gslides_api.response import ImageThumbnail
 
@@ -188,19 +187,73 @@ class GoogleAPIClient:
 
     # TODO: test this out and adjust the credentials readme (Drive API scope, anything else?)
     # https://developers.google.com/workspace/slides/api/guides/presentations#python
-    def copy_presentation(self, presentation_id, copy_title):
+    def copy_presentation(self, presentation_id, copy_title, folder_id=None):
         """
         Creates the copy Presentation the user has access to.
         Load pre-authorized user credentials from the environment.
         TODO(developer) - See https://developers.google.com/identity
         for guides on implementing OAuth2 for the application.
+
+        :param presentation_id: The ID of the presentation to copy
+        :param copy_title: The title for the copied presentation
+        :param folder_id: Optional folder ID to place the copy in. If None, copies to the root directory.
+        :return: The response from the Drive API copy operation
         """
         self.flush_batch_update()
-        return (
-            self.drive_service.files()
-            .copy(fileId=presentation_id, body={"name": copy_title})
-            .execute()
-        )
+
+        body = {"name": copy_title}
+        if folder_id:
+            body["parents"] = [folder_id]
+
+        return self.drive_service.files().copy(fileId=presentation_id, body=body).execute()
+
+    def create_folder(self, folder_name, parent_folder_id=None, ignore_existing=False):
+        """
+        Creates a new folder in Google Drive.
+
+        :param folder_name: The name of the folder to create
+        :param parent_folder_id: Optional parent folder ID. If None, creates folder in the root directory.
+        :param ignore_existing: If True, returns existing folder if one with the same name exists in the parent directory
+        :return: The response from the Drive API create operation containing the new folder's ID
+        """
+        self.flush_batch_update()
+
+        if ignore_existing:
+            # Search for existing folder with the same name in the parent directory
+            query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            if parent_folder_id:
+                query += f" and '{parent_folder_id}' in parents"
+            else:
+                query += " and 'root' in parents"
+
+            existing_folders = (
+                self.drive_service.files().list(q=query, fields="files(id,name)").execute()
+            )
+
+            if existing_folders.get("files"):
+                # Return the first matching folder
+                return existing_folders["files"][0]
+
+        body = {"name": folder_name, "mimeType": "application/vnd.google-apps.folder"}
+        if parent_folder_id:
+            body["parents"] = [parent_folder_id]
+
+        return self.drive_service.files().create(body=body, fields="id,name").execute()
+
+    def delete_file(self, file_id):
+        """
+        Deletes a file from Google Drive.
+
+        This method can delete any type of file including presentations, folders, images, etc.
+        The file is moved to the trash and can be restored from there unless permanently deleted.
+
+        :param file_id: The ID of the file to delete
+        :return: Empty response if successful
+        :raises: Exception if the file doesn't exist or user doesn't have permission to delete
+        """
+        self.flush_batch_update()
+
+        return self.drive_service.files().delete(fileId=file_id).execute()
 
     def upload_image_to_drive(self, image_path) -> str:
         """
