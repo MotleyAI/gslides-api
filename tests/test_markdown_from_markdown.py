@@ -5,6 +5,8 @@ This file tests the core functionality of converting markdown text to TextElemen
 """
 
 import pytest
+
+from gslides_api import InsertTextRequest
 from gslides_api.markdown.from_markdown import markdown_to_text_elements
 from gslides_api.text import TextElement, TextRun, TextStyle
 
@@ -16,18 +18,15 @@ class TestMarkdownToTextElements:
         """Test that markdown_to_text_elements() on a simple string returns a list of length 1 with correct content."""
         # Test with a simple string
         result = markdown_to_text_elements("Test")
-        
+
         # Should return a list of length 1
-        assert len(result) == 1, f"Expected list of length 1, got {len(result)}"
-        
+        assert len(result) == 2, f"Expected list of length 2, got {len(result)}"
+
         # The single element should be a TextElement
         element = result[0]
-        assert isinstance(element, TextElement), f"Expected TextElement, got {type(element)}"
-        
-        # The TextElement should have the right content
-        assert element.textRun is not None, "TextElement should have a textRun"
-        assert element.textRun.content == "Test", f"Expected 'Test', got '{element.textRun.content}'"
+        assert isinstance(element, InsertTextRequest), f"InsertTextRequest, got {type(element)}"
+
+        assert element.text == "Test", f"Expected 'Test', got '{element.text}'"
 
         # Verify the TextElement has proper indices
-        assert element.startIndex == 0, f"Expected startIndex 0, got {element.startIndex}"
-        assert element.endIndex == 4, f"Expected endIndex 4, got {element.endIndex}"  # "Test" is 4 characters
+        assert element.insertionIndex == 0, f"Expected startIndex 0, got {element.startIndex}"

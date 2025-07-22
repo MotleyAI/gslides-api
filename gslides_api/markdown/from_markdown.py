@@ -8,15 +8,25 @@ from marko.inline import RawText
 from pydantic import BaseModel, field_validator
 
 
-from gslides_api import TextElement
+from gslides_api.request.request import InsertTextRequest, UpdateTextStyleRequest
+from gslides_api.text import TextElement
 from gslides_api.domain import BulletGlyphPreset
 from gslides_api.text import TextRun, TextStyle
 from gslides_api.request.domain import Range, RangeType
-from gslides_api.request.request import CreateParagraphBulletsRequest
+from gslides_api.request.request import CreateParagraphBulletsRequest, GSlidesAPIRequest
+
+
+class LineBreakAfterParagraph(TextElement):
+    pass
+
+
+class ListItemTab(TextElement):
+    pass
 
 
 class ItemList(BaseModel):
     children: List[TextElement]
+    style: Optional[TextStyle] = None
 
     @field_validator("children", mode="before")
     @classmethod
@@ -38,6 +48,10 @@ class ItemList(BaseModel):
     def end_index(self):
         return self.children[-1].endIndex
 
+    @property
+    def total_items(self):
+        return sum([isinstance(c, ListItemTab) for c in self.children])
+
 
 class BulletPointGroup(ItemList):
     pass
@@ -47,7 +61,7 @@ class NumberedListGroup(ItemList):
     pass
 
 
-class LineBreakAfterParagraph(TextElement):
+class UpdateWholeListStyleRequest(UpdateTextStyleRequest):
     pass
 
 
@@ -60,7 +74,7 @@ def markdown_to_text_elements(
     numbered_glyph_preset: Optional[
         BulletGlyphPreset
     ] = BulletGlyphPreset.NUMBERED_DIGIT_ALPHA_ROMAN,
-) -> list[TextElement | CreateParagraphBulletsRequest]:
+) -> list[GSlidesAPIRequest]:
 
     heading_style = heading_style or copy.deepcopy(base_style)
     heading_style = heading_style or TextStyle()
@@ -87,26 +101,61 @@ def markdown_to_text_elements(
         if list_items and list_items[-1].children[-1] == last_break:
             list_items[-1].children.pop()
 
+    # Now convert the elements to requests
+    requests = text_elements_to_requests(elements, objectId="")
+
     # Sort bullets by start index, in reverse order so trimming the tabs doesn't mess others' indices
     list_items.sort(key=lambda b: b.start_index, reverse=True)
     for item in list_items:
-        elements.append(
-            CreateParagraphBulletsRequest(
-                objectId="",
-                textRange=Range(
-                    type=RangeType.FIXED_RANGE,
-                    startIndex=item.start_index,
-                    endIndex=item.end_index,
-                ),
-                bulletPreset=(
-                    bullet_glyph_preset
-                    if isinstance(item, BulletPointGroup)
-                    else numbered_glyph_preset
-                ),
-            )
+        bullet_request = CreateParagraphBulletsRequest(
+            objectId="",
+            textRange=Range(
+                type=RangeType.FIXED_RANGE,
+                startIndex=item.start_index,
+                endIndex=item.end_index,
+            ),
+            bulletPreset=(
+                bullet_glyph_preset if isinstance(item, BulletPointGroup) else numbered_glyph_preset
+            ),
         )
+        requests.append(bullet_request)
+        if item.style is not None:
+            # This is needed to fix the color of bullet points that the previous request creates,
+            # Which otherwise will be a random mixture of black and the color of the text
+            requests.append(
+                UpdateWholeListStyleRequest(
+                    objectId="", style=item.style, textRange=bullet_request.textRange, fields="*"
+                )
+            )
+    tab_end_indices = [e.endIndex for e in elements if isinstance(e, ListItemTab)]
+    requests = adjust_text_style_indices_for_tab_removal(requests, tab_end_indices)
+    return requests
 
-    return elements
+
+def adjust_text_style_indices_for_tab_removal(
+    requests: List[GSlidesAPIRequest], tab_end_indices: list[int]
+) -> List[GSlidesAPIRequest]:
+    other_requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
+    style_requests = [
+        r
+        for r in requests
+        if isinstance(r, UpdateTextStyleRequest) and not isinstance(r, UpdateWholeListStyleRequest)
+    ]
+    list_style_requests = [
+        UpdateTextStyleRequest.model_validate(r.model_dump())
+        for r in requests
+        if isinstance(r, UpdateWholeListStyleRequest)
+    ]
+    # First apply blanket style for each list to cover bullet points, then custom styles for contents
+    all_style_requests = list_style_requests + style_requests
+
+    for s in all_style_requests:
+        s.textRange.startIndex -= sum([t <= s.textRange.startIndex for t in tab_end_indices])
+        s.textRange.endIndex -= sum([t <= s.textRange.endIndex for t in tab_end_indices])
+        if s.textRange.startIndex < s.textRange.endIndex:
+            other_requests.append(s)
+
+    return other_requests
 
 
 def markdown_ast_to_text_elements(
@@ -231,10 +280,11 @@ def markdown_ast_to_text_elements(
         )
         # Create the appropriate group type based on whether this is an ordered list
         if list_depth == 0:
+            color_style = base_style
             if markdown_ast.ordered:
-                out = pre_out + [NumberedListGroup(children=pre_out)]
+                out = pre_out + [NumberedListGroup(children=pre_out, style=color_style)]
             else:
-                out = pre_out + [BulletPointGroup(children=pre_out)]
+                out = pre_out + [BulletPointGroup(children=pre_out, style=color_style)]
         else:
             out = pre_out
     elif isinstance(markdown_ast, marko.block.Document):
@@ -253,7 +303,8 @@ def markdown_ast_to_text_elements(
         # discarded as soon as the bullets are created. So we deal with it as best we can
         # TODO: handle nested lists
         out = [
-            TextElement(endIndex=0, textRun=TextRun(content="\t" * list_depth, style=base_style))
+            ListItemTab(endIndex=0, textRun=TextRun(content="\t", style=base_style))
+            for _ in range(list_depth)
         ] + sum(
             [
                 markdown_ast_to_text_elements(
@@ -272,3 +323,45 @@ def markdown_ast_to_text_elements(
             element, (TextElement, BulletPointGroup, NumberedListGroup)
         ), f"Expected TextElement, BulletPointGroup, or NumberedListGroup, got {type(element)}"
     return out
+
+
+def text_elements_to_requests(
+    text_elements: List[TextElement | GSlidesAPIRequest], objectId: str
+) -> List[GSlidesAPIRequest]:
+    requests = []
+    for te in text_elements:
+        if isinstance(te, GSlidesAPIRequest):
+            te.objectId = objectId
+            requests.append(te)
+            continue
+        else:
+            assert isinstance(te, TextElement), f"Expected TextElement, got {te}"
+        if te.textRun is None:
+            # An empty text run will have a non-None ParagraphMarker
+            # Apparently there's no direct way to insert ParagraphMarkers, instead they have to be created
+            # as a side effect of inserting text or by specialized calls like createParagraphBullets
+            # So we just ignore them when inserting text
+            continue
+
+        # Create InsertTextRequest
+        insert_request = InsertTextRequest(
+            objectId=objectId,
+            text=te.textRun.content,
+            insertionIndex=te.startIndex,
+        )
+
+        # Create UpdateTextStyleRequest
+        text_range = Range(
+            type=RangeType.FIXED_RANGE,
+            startIndex=te.startIndex or 0,
+            endIndex=te.endIndex,
+        )
+        update_style_request = UpdateTextStyleRequest(
+            objectId=objectId,
+            textRange=text_range,
+            style=te.textRun.style,
+            fields="*",
+        )
+
+        requests.extend([insert_request, update_style_request])
+    return requests
