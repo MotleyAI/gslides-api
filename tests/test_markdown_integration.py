@@ -225,6 +225,25 @@ Not to mention other text"""
 
         print("Testing header style...")
 
+    def test_line_after_bullets(self, test_slide_2):
+        old_element = test_slide_2.get_element_by_alt_title("text")
+        text = """# This is a very important report.
+* Here is a bullet point
+* And another
+And some more text that belongs in the last list item
+
+And text outside of the list item. """
+        old_element.write_text(text, as_markdown=True)
+        test_slide_2.sync_from_cloud()
+        new_element = test_slide_2.get_element_by_alt_title("text")
+        new_text = new_element.shape.text
+        for e in new_text.textElements:
+            # Make sure all the bullet points are colored
+            if e.paragraphMarker is not None and e.paragraphMarker.bullet is not None:
+                assert e.paragraphMarker.bullet.bulletStyle.foregroundColor is not None
+
+        print("Testing header style...")
+
     @pytest.mark.skipif(
         not os.getenv("GSLIDES_CREDENTIALS_PATH"),
         reason="GSLIDES_CREDENTIALS_PATH environment variable not set",
