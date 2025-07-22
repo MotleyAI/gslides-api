@@ -217,7 +217,8 @@ def markdown_ast_to_text_elements(
         if list_depth == 0:
             out = [line_break]
         else:
-            out = [line_break_inside_list]
+            raise ValueError("Google Slides API doesn't support newlines inside list items")
+            # out = [line_break_inside_list]
 
     elif isinstance(markdown_ast, marko.inline.CodeSpan):
         base_style = copy.deepcopy(base_style)

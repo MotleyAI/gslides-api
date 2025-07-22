@@ -25,9 +25,11 @@ class GoogleAPIClient:
     # Initial version from the gslides package
     """The credentials object to build the connections to the APIs"""
 
-    def __init__(self, auto_flush: bool = True, initial_wait_s: int = 60, n_backoffs: int = 4) -> None:
+    def __init__(
+        self, auto_flush: bool = True, initial_wait_s: int = 60, n_backoffs: int = 4
+    ) -> None:
         """Constructor method
-        
+
         Args:
             auto_flush: Whether to automatically flush batch requests
             initial_wait_s: Initial wait time in seconds for exponential backoff
@@ -42,12 +44,13 @@ class GoogleAPIClient:
         self.auto_flush = auto_flush
         self.initial_wait_s = initial_wait_s
         self.n_backoffs = n_backoffs
-        
+
         # Create the exponential backoff decorator
         self._with_exponential_backoff = self._create_exponential_backoff_decorator()
 
     def _create_exponential_backoff_decorator(self) -> Callable:
         """Creates an exponential backoff decorator for API calls."""
+
         def decorator(func: Callable) -> Callable:
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -60,9 +63,11 @@ class GoogleAPIClient:
                         if e.resp.status in [429, 500, 502, 503, 504]:
                             last_exception = e
                             if attempt < self.n_backoffs:  # Don't wait after the last attempt
-                                wait_time = self.initial_wait_s * (2 ** attempt)
-                                logger.warning(f"Rate limit/server error encountered (status {e.resp.status}), "
-                                             f"waiting {wait_time}s before retry {attempt + 1}/{self.n_backoffs}")
+                                wait_time = self.initial_wait_s * (2**attempt)
+                                logger.warning(
+                                    f"Rate limit/server error encountered (status {e.resp.status}), "
+                                    f"waiting {wait_time}s before retry {attempt + 1}/{self.n_backoffs}"
+                                )
                                 time.sleep(wait_time)
                             continue
                         else:
@@ -71,12 +76,13 @@ class GoogleAPIClient:
                     except Exception as e:
                         # For non-HTTP errors, don't retry
                         raise e
-                
+
                 # If we get here, all retries failed
                 logger.error(f"All {self.n_backoffs} retry attempts failed")
                 raise last_exception
-            
+
             return wrapper
+
         return decorator
 
     def set_credentials(self, credentials: Optional[Credentials]) -> None:
@@ -220,17 +226,17 @@ class GoogleAPIClient:
     def create_presentation(self, config: dict) -> str:
         self.flush_batch_update()
         # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/create
-        
+
         @self._with_exponential_backoff
         def _create():
             return self.slide_service.presentations().create(body=config).execute()
-        
+
         out = _create()
         return out["presentationId"]
 
     def get_slide_json(self, presentation_id: str, slide_id: str) -> Dict[str, Any]:
         self.flush_batch_update()
-        
+
         @self._with_exponential_backoff
         def _get():
             return (
@@ -239,16 +245,16 @@ class GoogleAPIClient:
                 .get(presentationId=presentation_id, pageObjectId=slide_id)
                 .execute()
             )
-        
+
         return _get()
 
     def get_presentation_json(self, presentation_id: str) -> Dict[str, Any]:
         self.flush_batch_update()
-        
+
         @self._with_exponential_backoff
         def _get():
             return self.slide_service.presentations().get(presentationId=presentation_id).execute()
-        
+
         return _get()
 
     # TODO: test this out and adjust the credentials readme (Drive API scope, anything else?)
@@ -299,7 +305,7 @@ class GoogleAPIClient:
             @self._with_exponential_backoff
             def _list_folders():
                 return self.drive_service.files().list(q=query, fields="files(id,name)").execute()
-                
+
             existing_folders = _list_folders()
 
             if existing_folders.get("files"):
@@ -371,7 +377,7 @@ class GoogleAPIClient:
 
         file_metadata = {"name": os.path.basename(image_path), "mimeType": mime_type}
         media = MediaFileUpload(image_path, mimetype=mime_type)
-        
+
         @self._with_exponential_backoff
         def _upload():
             return (
@@ -379,16 +385,20 @@ class GoogleAPIClient:
                 .create(body=file_metadata, media_body=media, fields="id")
                 .execute()
             )
-        
+
         uploaded = _upload()
 
         @self._with_exponential_backoff
         def _set_permissions():
-            return self.drive_service.permissions().create(
-                fileId=uploaded["id"],
-                # TODO: do we need "anyone"?
-                body={"type": "anyone", "role": "reader"},
-            ).execute()
+            return (
+                self.drive_service.permissions()
+                .create(
+                    fileId=uploaded["id"],
+                    # TODO: do we need "anyone"?
+                    body={"type": "anyone", "role": "reader"},
+                )
+                .execute()
+            )
 
         _set_permissions()
 
@@ -409,7 +419,7 @@ class GoogleAPIClient:
         :rtype: ImageResponse
         """
         self.flush_batch_update()
-        
+
         @self._with_exponential_backoff
         def _get_thumbnail():
             return (
@@ -427,7 +437,7 @@ class GoogleAPIClient:
                 )
                 .execute()
             )
-        
+
         img_info = _get_thumbnail()
         return ImageThumbnail.model_validate(img_info)
 
@@ -454,18 +464,20 @@ def initialize_credentials(credential_location: str):
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists(credential_location + "token.json"):
-        _creds = Credentials.from_authorized_user_file(credential_location + "token.json", SCOPES)
+    if os.path.exists(os.path.join(credential_location, "token.json")):
+        _creds = Credentials.from_authorized_user_file(
+            os.path.join(credential_location, "token.json"), SCOPES
+        )
     # If there are no (valid) credentials available, let the user log in.
     if not _creds or not _creds.valid:
         if _creds and _creds.expired and _creds.refresh_token:
             _creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                credential_location + "credentials.json", SCOPES
+                os.path.join(credential_location, "credentials.json"), SCOPES
             )
             _creds = flow.run_local_server()
         # Save the credentials for the next run
-        with open(credential_location + "token.json", "w") as token:
+        with open(os.path.join(credential_location, "token.json"), "w") as token:
             token.write(_creds.to_json())
     api_client.set_credentials(_creds)
