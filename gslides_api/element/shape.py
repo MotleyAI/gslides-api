@@ -1,17 +1,15 @@
-from typing import Any, Dict, List, Optional, Optional
+from typing import List, Optional
 
 from pydantic import Field, field_validator
 
-from gslides_api import TextElement
 from gslides_api.text import Shape, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.client import api_client, GoogleAPIClient
+from gslides_api.client import GoogleAPIClient, api_client as default_api_client
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
-from gslides_api.markdown.from_markdown import markdown_to_text_elements
+from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.request.request import (
     DeleteParagraphBulletsRequest,
     GSlidesAPIRequest,
-    InsertTextRequest,
     UpdateTextStyleRequest,
     CreateShapeRequest,
     DeleteTextRequest,
@@ -97,7 +95,7 @@ class ShapeElement(PageElementBase):
         return out
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
-        client = api_client or globals()["api_client"]
+        client = api_client or default_api_client
         return client.batch_update(self.delete_text_request(), self.presentation_id)
 
     @property
@@ -160,14 +158,16 @@ class ShapeElement(PageElementBase):
                 style_args["heading_style"] = styles[0]
                 style_args["base_style"] = styles[1]
 
-        elements = markdown_to_text_elements(text, **style_args)
-        requests += text_elements_to_requests(elements, self.objectId)
+        requests += markdown_to_text_elements(text, **style_args)
+        for r in requests:
+            r.objectId = self.objectId
 
+        # TODO: this is broken, we should use different logic to just dump raw text, asterisks, hashes and all
         if not as_markdown:
             requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
 
         if requests:
-            client = api_client or globals()["api_client"]
+            client = api_client or default_api_client
             return client.batch_update(requests, self.presentation_id)
 
     def read_text(self, as_markdown: bool = True):
@@ -184,45 +184,3 @@ class ShapeElement(PageElementBase):
                     if len(out) > 0:
                         out.append("\n")
             return "".join(out)
-
-
-def text_elements_to_requests(
-    text_elements: List[TextElement | GSlidesAPIRequest], objectId: str
-) -> List[GSlidesAPIRequest]:
-    requests = []
-    for te in text_elements:
-        if isinstance(te, GSlidesAPIRequest):
-            te.objectId = objectId
-            requests.append(te)
-            continue
-        else:
-            assert isinstance(te, TextElement), f"Expected TextElement, got {te}"
-        if te.textRun is None:
-            # An empty text run will have a non-None ParagraphMarker
-            # Apparently there's no direct way to insert ParagraphMarkers, instead they have to be created
-            # as a side effect of inserting text or by specialized calls like createParagraphBullets
-            # So we just ignore them when inserting text
-            continue
-
-        # Create InsertTextRequest
-        insert_request = InsertTextRequest(
-            objectId=objectId,
-            text=te.textRun.content,
-            insertionIndex=te.startIndex,
-        )
-
-        # Create UpdateTextStyleRequest
-        text_range = Range(
-            type=RangeType.FIXED_RANGE,
-            startIndex=te.startIndex or 0,
-            endIndex=te.endIndex,
-        )
-        update_style_request = UpdateTextStyleRequest(
-            objectId=objectId,
-            textRange=text_range,
-            style=te.textRun.style,
-            fields="*",
-        )
-
-        requests.extend([insert_request, update_style_request])
-    return requests

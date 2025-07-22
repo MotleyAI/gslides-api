@@ -111,8 +111,6 @@ class TestMarkdownIntegration:
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
 
-            # Note: This test currently doesn't assert equality due to known formatting differences
-            # The test verifies that the operation completes without error
             assert re_md == medium_md
 
         """Test writing complex markdown content with various formatting."""
@@ -207,6 +205,25 @@ Mixed content with [links](https://example.com) and ~~crossed out~~ text."""
         compare_styles(old_style_1, new_style_1)
         print("Testing text style...")
         compare_styles(old_style_2, new_style_2)
+
+    def test_bullet_style(self, test_slide_2):
+        old_element = test_slide_2.get_element_by_alt_title("text")
+        text = """# This is a *very important* report.
+* It *illustrates* **bullet points** 
+* And even `code` blocks
+* And some more bullet points
+
+Not to mention other text"""
+        old_element.write_text(text, as_markdown=True)
+        test_slide_2.sync_from_cloud()
+        new_element = test_slide_2.get_element_by_alt_title("text")
+        new_text = new_element.shape.text
+        for e in new_text.textElements:
+            # Make sure all the bullet points are colored
+            if e.paragraphMarker is not None and e.paragraphMarker.bullet is not None:
+                assert e.paragraphMarker.bullet.bulletStyle.foregroundColor is not None
+
+        print("Testing header style...")
 
     @pytest.mark.skipif(
         not os.getenv("GSLIDES_CREDENTIALS_PATH"),
