@@ -1,12 +1,15 @@
 import logging
 import os
-from typing import Any, Dict, Optional
+import time
+from functools import wraps
+from typing import Any, Dict, Optional, Callable
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 from googleapiclient.http import MediaFileUpload
+from googleapiclient.errors import HttpError
 
 from gslides_api.domain import ThumbnailProperties
 from gslides_api.request.request import (
@@ -22,8 +25,14 @@ class GoogleAPIClient:
     # Initial version from the gslides package
     """The credentials object to build the connections to the APIs"""
 
-    def __init__(self, auto_flush: bool = True) -> None:
-        """Constructor method"""
+    def __init__(self, auto_flush: bool = True, initial_wait_s: int = 60, n_backoffs: int = 4) -> None:
+        """Constructor method
+        
+        Args:
+            auto_flush: Whether to automatically flush batch requests
+            initial_wait_s: Initial wait time in seconds for exponential backoff
+            n_backoffs: Number of backoff attempts before giving up
+        """
         self.crdtls: Optional[Credentials] = None
         self.sht_srvc: Optional[Resource] = None
         self.sld_srvc: Optional[Resource] = None
@@ -31,6 +40,44 @@ class GoogleAPIClient:
         self.pending_batch_requests: list[GSlidesAPIRequest] = []
         self.pending_presentation_id: Optional[str] = None
         self.auto_flush = auto_flush
+        self.initial_wait_s = initial_wait_s
+        self.n_backoffs = n_backoffs
+        
+        # Create the exponential backoff decorator
+        self._with_exponential_backoff = self._create_exponential_backoff_decorator()
+
+    def _create_exponential_backoff_decorator(self) -> Callable:
+        """Creates an exponential backoff decorator for API calls."""
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                last_exception = None
+                for attempt in range(self.n_backoffs + 1):  # +1 for initial attempt
+                    try:
+                        return func(*args, **kwargs)
+                    except HttpError as e:
+                        # Check if it's a rate limit error (429) or server error (5xx)
+                        if e.resp.status in [429, 500, 502, 503, 504]:
+                            last_exception = e
+                            if attempt < self.n_backoffs:  # Don't wait after the last attempt
+                                wait_time = self.initial_wait_s * (2 ** attempt)
+                                logger.warning(f"Rate limit/server error encountered (status {e.resp.status}), "
+                                             f"waiting {wait_time}s before retry {attempt + 1}/{self.n_backoffs}")
+                                time.sleep(wait_time)
+                            continue
+                        else:
+                            # For other HTTP errors, don't retry
+                            raise e
+                    except Exception as e:
+                        # For non-HTTP errors, don't retry
+                        raise e
+                
+                # If we get here, all retries failed
+                logger.error(f"All {self.n_backoffs} retry attempts failed")
+                raise last_exception
+            
+            return wrapper
+        return decorator
 
     def set_credentials(self, credentials: Optional[Credentials]) -> None:
         """Sets the credentials
@@ -95,14 +142,18 @@ class GoogleAPIClient:
 
         re_requests = [r.to_request() for r in self.pending_batch_requests]
 
-        try:
-            out = (
+        @self._with_exponential_backoff
+        def _execute_batch_update():
+            return (
                 self.slide_service.presentations()
                 .batchUpdate(
                     presentationId=self.pending_presentation_id, body={"requests": re_requests}
                 )
                 .execute()
             )
+
+        try:
+            out = _execute_batch_update()
             self.pending_batch_requests = []
             self.pending_presentation_id = None
             return out
@@ -169,21 +220,36 @@ class GoogleAPIClient:
     def create_presentation(self, config: dict) -> str:
         self.flush_batch_update()
         # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/create
-        out = self.slide_service.presentations().create(body=config).execute()
+        
+        @self._with_exponential_backoff
+        def _create():
+            return self.slide_service.presentations().create(body=config).execute()
+        
+        out = _create()
         return out["presentationId"]
 
     def get_slide_json(self, presentation_id: str, slide_id: str) -> Dict[str, Any]:
         self.flush_batch_update()
-        return (
-            self.slide_service.presentations()
-            .pages()
-            .get(presentationId=presentation_id, pageObjectId=slide_id)
-            .execute()
-        )
+        
+        @self._with_exponential_backoff
+        def _get():
+            return (
+                self.slide_service.presentations()
+                .pages()
+                .get(presentationId=presentation_id, pageObjectId=slide_id)
+                .execute()
+            )
+        
+        return _get()
 
     def get_presentation_json(self, presentation_id: str) -> Dict[str, Any]:
         self.flush_batch_update()
-        return self.slide_service.presentations().get(presentationId=presentation_id).execute()
+        
+        @self._with_exponential_backoff
+        def _get():
+            return self.slide_service.presentations().get(presentationId=presentation_id).execute()
+        
+        return _get()
 
     # TODO: test this out and adjust the credentials readme (Drive API scope, anything else?)
     # https://developers.google.com/workspace/slides/api/guides/presentations#python
@@ -205,7 +271,11 @@ class GoogleAPIClient:
         if folder_id:
             body["parents"] = [folder_id]
 
-        return self.drive_service.files().copy(fileId=presentation_id, body=body).execute()
+        @self._with_exponential_backoff
+        def _copy():
+            return self.drive_service.files().copy(fileId=presentation_id, body=body).execute()
+
+        return _copy()
 
     def create_folder(self, folder_name, parent_folder_id=None, ignore_existing=False):
         """
@@ -226,9 +296,11 @@ class GoogleAPIClient:
             else:
                 query += " and 'root' in parents"
 
-            existing_folders = (
-                self.drive_service.files().list(q=query, fields="files(id,name)").execute()
-            )
+            @self._with_exponential_backoff
+            def _list_folders():
+                return self.drive_service.files().list(q=query, fields="files(id,name)").execute()
+                
+            existing_folders = _list_folders()
 
             if existing_folders.get("files"):
                 # Return the first matching folder
@@ -238,7 +310,11 @@ class GoogleAPIClient:
         if parent_folder_id:
             body["parents"] = [parent_folder_id]
 
-        return self.drive_service.files().create(body=body, fields="id,name").execute()
+        @self._with_exponential_backoff
+        def _create_folder():
+            return self.drive_service.files().create(body=body, fields="id,name").execute()
+
+        return _create_folder()
 
     def delete_file(self, file_id):
         """
@@ -253,7 +329,11 @@ class GoogleAPIClient:
         """
         self.flush_batch_update()
 
-        return self.drive_service.files().delete(fileId=file_id).execute()
+        @self._with_exponential_backoff
+        def _delete():
+            return self.drive_service.files().delete(fileId=file_id).execute()
+
+        return _delete()
 
     def upload_image_to_drive(self, image_path) -> str:
         """
@@ -291,17 +371,26 @@ class GoogleAPIClient:
 
         file_metadata = {"name": os.path.basename(image_path), "mimeType": mime_type}
         media = MediaFileUpload(image_path, mimetype=mime_type)
-        uploaded = (
-            self.drive_service.files()
-            .create(body=file_metadata, media_body=media, fields="id")
-            .execute()
-        )
+        
+        @self._with_exponential_backoff
+        def _upload():
+            return (
+                self.drive_service.files()
+                .create(body=file_metadata, media_body=media, fields="id")
+                .execute()
+            )
+        
+        uploaded = _upload()
 
-        self.drive_service.permissions().create(
-            fileId=uploaded["id"],
-            # TODO: do we need "anyone"?
-            body={"type": "anyone", "role": "reader"},
-        ).execute()
+        @self._with_exponential_backoff
+        def _set_permissions():
+            return self.drive_service.permissions().create(
+                fileId=uploaded["id"],
+                # TODO: do we need "anyone"?
+                body={"type": "anyone", "role": "reader"},
+            ).execute()
+
+        _set_permissions()
 
         return f"https://drive.google.com/uc?id={uploaded['id']}"
 
@@ -320,21 +409,26 @@ class GoogleAPIClient:
         :rtype: ImageResponse
         """
         self.flush_batch_update()
-        img_info = (
-            self.slide_service.presentations()
-            .pages()
-            .getThumbnail(
-                presentationId=presentation_id,
-                pageObjectId=slide_id,
-                thumbnailProperties_mimeType=(
-                    properties.mimeType.value if properties.mimeType else None
-                ),
-                thumbnailProperties_thumbnailSize=(
-                    properties.thumbnailSize.value if properties.thumbnailSize else None
-                ),
+        
+        @self._with_exponential_backoff
+        def _get_thumbnail():
+            return (
+                self.slide_service.presentations()
+                .pages()
+                .getThumbnail(
+                    presentationId=presentation_id,
+                    pageObjectId=slide_id,
+                    thumbnailProperties_mimeType=(
+                        properties.mimeType.value if properties.mimeType else None
+                    ),
+                    thumbnailProperties_thumbnailSize=(
+                        properties.thumbnailSize.value if properties.thumbnailSize else None
+                    ),
+                )
+                .execute()
             )
-            .execute()
-        )
+        
+        img_info = _get_thumbnail()
         return ImageThumbnail.model_validate(img_info)
 
 
