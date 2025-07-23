@@ -225,6 +225,46 @@ Not to mention other text"""
 
         print("Testing header style...")
 
+    def test_line_after_bullets(self, test_slide_2):
+        old_element = test_slide_2.get_element_by_alt_title("text")
+        text = """This is a very important report.
+* Here is a bullet point
+* And another
+
+And text outside of the list item."""
+        old_element.write_text(text, as_markdown=True)
+        test_slide_2.sync_from_cloud()
+        new_element = test_slide_2.get_element_by_alt_title("text")
+        new_text = new_element.read_text()
+        assert new_text.strip() == text.strip()
+        # TODO: fix to_markdown to insert extra newline after lists
+        print("Testing line after list...")
+
+    def test_line_after_numbered_list(self, test_slide_2):
+        old_element = test_slide_2.get_element_by_alt_title("text")
+        text = """This is a very important report.
+1. Here is a numbered item
+2. And another
+
+And text outside of the list item."""
+        old_element.write_text(text, as_markdown=True)
+        test_slide_2.sync_from_cloud()
+        new_element = test_slide_2.get_element_by_alt_title("text")
+        new_text = new_element.read_text()
+        assert new_text.strip() == text.strip()
+        # TODO: fix to_markdown to insert extra newline after lists
+        print("Testing line after list...")
+
+    # his one reproduces a bug in GS API, namely no support for inserting newlines into list items
+    def test_newline_in_list(self, test_slide_2):
+        old_element = test_slide_2.get_element_by_alt_title("text")
+        text = """# This is a very important report.
+* Here is a bullet point
+* And another
+And some more text that belongs in the last list item """
+        with pytest.raises(ValueError):
+            old_element.write_text(text, as_markdown=True)
+
     @pytest.mark.skipif(
         not os.getenv("GSLIDES_CREDENTIALS_PATH"),
         reason="GSLIDES_CREDENTIALS_PATH environment variable not set",

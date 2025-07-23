@@ -1,5 +1,5 @@
 import copy
-from typing import Optional, Any, List, Union
+from typing import Optional, Any, List, Tuple, Union
 
 import marko
 from marko.ext.gfm import gfm
@@ -22,6 +22,10 @@ class LineBreakAfterParagraph(TextElement):
 
 class ListItemTab(TextElement):
     pass
+
+
+class LineBreakInsideList(TextElement):
+    previous_element: Optional[TextElement | UpdateTextStyleRequest] = None
 
 
 class ItemList(BaseModel):
@@ -86,10 +90,22 @@ def markdown_to_text_elements(
     elements_and_bullets = markdown_ast_to_text_elements(
         doc, base_style=base_style, heading_style=heading_style
     )
+
     elements = [e for e in elements_and_bullets if isinstance(e, TextElement)]
     list_items = [b for b in elements_and_bullets if isinstance(b, ItemList)]
 
-    # Assign indices to text elements
+    # Newlines inside lists will have to be inserted later, we store in them a reference to the previous element
+    prev_elem = None
+    for e in elements:
+        if isinstance(e, LineBreakInsideList):
+            e.previous_element = prev_elem
+        prev_elem = e
+
+    # Put the newlines inside lists aside, we'll insert them after creating the bullets
+    newlines_inside_lists = [e for e in elements if isinstance(e, LineBreakInsideList)]
+    elements = [e for e in elements if not isinstance(e, LineBreakInsideList)]
+
+    # Assign indices to remaining text elements
     for element in elements:
         element.startIndex = start_index
         element.endIndex = start_index + len(element.textRun.content)
@@ -101,8 +117,10 @@ def markdown_to_text_elements(
         if list_items and list_items[-1].children[-1] == last_break:
             list_items[-1].children.pop()
 
-    # Now convert the elements to requests
-    requests = text_elements_to_requests(elements, objectId="")
+    # Now convert the elements to requests, and store the reference to the style request inside the relevant newline
+    requests, re_newlines_inside_lists = text_elements_to_requests(
+        elements, newlines_inside_lists, objectId=""
+    )
 
     # Sort bullets by start index, in reverse order so trimming the tabs doesn't mess others' indices
     list_items.sort(key=lambda b: b.start_index, reverse=True)
@@ -127,8 +145,13 @@ def markdown_to_text_elements(
                     objectId="", style=item.style, textRange=bullet_request.textRange, fields="*"
                 )
             )
+
     tab_end_indices = [e.endIndex for e in elements if isinstance(e, ListItemTab)]
     requests = adjust_text_style_indices_for_tab_removal(requests, tab_end_indices)
+
+    # now that we have created the correct bullet points, and adjusted the text indices for that,
+    # we can put the newlines inside lists back
+
     return requests
 
 
@@ -174,20 +197,28 @@ def markdown_ast_to_text_elements(
         textRun=TextRun(content="\n", style=base_style),
     )
 
+    line_break_inside_list = LineBreakInsideList(
+        endIndex=0, textRun=TextRun(content="\n", style=base_style)
+    )
+
     line_break_after_paragraph = LineBreakAfterParagraph(
         endIndex=0,
         textRun=TextRun(content="\n", style=base_style),
     )
 
-    if isinstance(markdown_ast, (marko.inline.RawText, marko.inline.LineBreak)):
+    if isinstance(markdown_ast, marko.inline.RawText):
         out = [
             TextElement(
                 endIndex=0,
                 textRun=TextRun(content=markdown_ast.children, style=base_style),
             )
         ]
-    elif isinstance(markdown_ast, marko.block.BlankLine):
-        out = [line_break]
+    elif isinstance(markdown_ast, (marko.block.BlankLine, marko.inline.LineBreak)):
+        if list_depth == 0:
+            out = [line_break]
+        else:
+            raise ValueError("Google Slides API doesn't support newlines inside list items")
+            # out = [line_break_inside_list]
 
     elif isinstance(markdown_ast, marko.inline.CodeSpan):
         base_style = copy.deepcopy(base_style)
@@ -280,11 +311,15 @@ def markdown_ast_to_text_elements(
         )
         # Create the appropriate group type based on whether this is an ordered list
         if list_depth == 0:
-            color_style = base_style
+            children_no_line_breaks = [c for c in pre_out if not isinstance(c, LineBreakInsideList)]
             if markdown_ast.ordered:
-                out = pre_out + [NumberedListGroup(children=pre_out, style=color_style)]
+                out = pre_out + [
+                    NumberedListGroup(children=children_no_line_breaks, style=base_style)
+                ]
             else:
-                out = pre_out + [BulletPointGroup(children=pre_out, style=color_style)]
+                out = pre_out + [
+                    BulletPointGroup(children=children_no_line_breaks, style=base_style)
+                ]
         else:
             out = pre_out
     elif isinstance(markdown_ast, marko.block.Document):
@@ -325,10 +360,25 @@ def markdown_ast_to_text_elements(
     return out
 
 
+def matching_newline(
+    newlines_inside_lists: List[LineBreakInsideList], startIndex: int
+) -> LineBreakInsideList | None:
+    for n in newlines_inside_lists:
+        if (
+            isinstance(n.previous_element, TextElement)
+            and n.previous_element.startIndex == startIndex
+        ):
+            return n
+    return None
+
+
 def text_elements_to_requests(
-    text_elements: List[TextElement | GSlidesAPIRequest], objectId: str
-) -> List[GSlidesAPIRequest]:
+    text_elements: List[TextElement | GSlidesAPIRequest],
+    newlines_inside_lists: List[LineBreakInsideList],
+    objectId: str,
+) -> Tuple[List[GSlidesAPIRequest], List[LineBreakInsideList]]:
     requests = []
+    newlines = []
     for te in text_elements:
         if isinstance(te, GSlidesAPIRequest):
             te.objectId = objectId
@@ -362,6 +412,13 @@ def text_elements_to_requests(
             style=te.textRun.style,
             fields="*",
         )
+        newline = matching_newline(newlines_inside_lists, te.startIndex)
+
+        # We save the reference to the previous UpdateTextStyleRequest so we can reuse the
+        # index adjustment for tab removal from it
+        if newline is not None:
+            newline.previous_element = update_style_request
+        newlines.append(newline)
 
         requests.extend([insert_request, update_style_request])
-    return requests
+    return requests, newlines
