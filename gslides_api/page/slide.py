@@ -1,23 +1,22 @@
-from typing import Dict, Optional
 import logging
+import uuid
+from typing import Optional
 
-from pydantic import Field, field_validator
-
-from gslides_api.element.shape import ShapeElement
-from gslides_api.page.slide_properties import SlideProperties
-from gslides_api.page.base import BasePage, ElementKind, PageType
+from gslides_api.client import GoogleAPIClient, api_client
 from gslides_api.domain import LayoutReference, ThumbnailProperties, ThumbnailSize
-from gslides_api.client import api_client, GoogleAPIClient
+from gslides_api.element.shape import ShapeElement
+from gslides_api.page.base import BasePage, ElementKind, PageType
+from gslides_api.page.slide_properties import SlideProperties
 from gslides_api.request.request import (
+    CreateSlideRequest,
     InsertTextRequest,
-    UpdateSlidesPositionRequest,
     UpdatePagePropertiesRequest,
     UpdateSlidePropertiesRequest,
-    CreateSlideRequest,
+    UpdateSlidesPositionRequest,
 )
 from gslides_api.response import ImageThumbnail
 from gslides_api.utils import dict_to_dot_separated_field_list
-
+from pydantic import Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +32,7 @@ class Slide(BasePage):
     def validate_page_type(cls, v):
         return PageType.SLIDE
 
-    def duplicate(
-        self, id_map: Dict[str, str] = None, api_client: Optional[GoogleAPIClient] = None
-    ) -> "Page":
+    def duplicate(self, api_client: Optional[GoogleAPIClient] = None) -> "Page":
         """
         Duplicates the slide in the same presentation.
 
@@ -45,8 +42,19 @@ class Slide(BasePage):
             self.presentation_id is not None
         ), "self.presentation_id must be set when calling duplicate()"
         client = api_client or globals()["api_client"]
-        new_id = client.duplicate_object(self.objectId, self.presentation_id, id_map)
-        return self.from_ids(self.presentation_id, new_id, api_client=api_client)
+
+        id_map = {self.objectId: uuid.uuid4().hex}  # to avoid force flushing
+        for e in self.page_elements_flat:
+            id_map[e.objectId] = uuid.uuid4().hex
+
+        new_id = client.duplicate_object(
+            object_id=self.objectId, presentation_id=self.presentation_id, id_map=id_map
+        )
+        new_slide = self.model_copy(deep=True)
+        new_slide.objectId = new_id
+        for e in new_slide.page_elements_flat:
+            e.objectId = id_map[e.objectId]
+        return new_slide
 
     def delete(self, api_client: Optional[GoogleAPIClient] = None) -> None:
         assert (

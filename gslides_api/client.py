@@ -2,14 +2,14 @@ import logging
 import os
 import time
 from functools import wraps
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
-from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
 
 from gslides_api.domain import ThumbnailProperties
 from gslides_api.request.request import (
@@ -172,7 +172,9 @@ class GoogleAPIClient:
     ) -> Dict[str, Any]:
         assert all(isinstance(r, GSlidesAPIRequest) for r in requests)
 
-        if self.pending_presentation_id != presentation_id:
+        if self.pending_presentation_id is None:
+            self.pending_presentation_id = presentation_id
+        elif self.pending_presentation_id != presentation_id:
             self.flush_batch_update()
             self.pending_presentation_id = presentation_id
 
@@ -204,6 +206,12 @@ class GoogleAPIClient:
             The ID of the duplicated object.
         """
         request = DuplicateObjectRequest(objectId=object_id, objectIds=id_map)
+
+        if id_map is not None and object_id in id_map:
+            # the result object ID is known in advance, no need to flush
+            self.batch_update([request], presentation_id, flush=False)
+            return id_map[object_id]
+
         # Here we need to flush,
         out = self.batch_update([request], presentation_id, flush=True)
         # The new object ID is always the last one in the replies because we force-flushed
