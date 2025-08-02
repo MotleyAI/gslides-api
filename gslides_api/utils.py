@@ -1,4 +1,7 @@
-from typing import Dict, Any, List
+import logging
+from typing import Any, Dict, List
+
+logger = logging.getLogger(__name__)
 
 
 def dict_to_dot_separated_field_list(x: Dict[str, Any]) -> List[str]:
@@ -22,8 +25,8 @@ def image_url_is_valid(url: str) -> bool:
     Returns:
         True if URL appears to be valid and accessible
     """
-    import urllib.request
     import urllib.error
+    import urllib.request
 
     if not url or not url.startswith(("http://", "https://")):
         return False

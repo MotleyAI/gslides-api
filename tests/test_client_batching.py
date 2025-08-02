@@ -179,6 +179,30 @@ class TestGoogleAPIClientBatching:
         assert object_id == "new_object_id"
         assert client.pending_batch_requests == []
 
+    def test_duplicate_object_with_auto_flush_false_and_id_map(self):
+        """Test duplicate_object method with auto_flush=False."""
+        client = GoogleAPIClient(auto_flush=False)
+        client.sld_srvc = self.mock_slide_service
+
+        # duplicate_object should force flush by default since caller needs the ID
+        object_id = client.duplicate_object(
+            "source_id", "presentation_id", id_map={"source_id": "new_object_id"}
+        )
+
+        assert object_id == "new_object_id"
+        assert isinstance(client.pending_batch_requests[-1], DuplicateObjectRequest)
+        assert client.pending_batch_requests[-1].objectId == "source_id"
+        assert client.pending_batch_requests[-1].objectIds == {"source_id": "new_object_id"}
+
+        # Manually flush
+        result = client.flush_batch_update()
+
+        # Should execute and clear pending requests
+        self.mock_presentations.batchUpdate.assert_called_once()
+        assert client.pending_batch_requests == []
+        assert client.pending_presentation_id is None
+        assert result == {"replies": [{"duplicateObject": {"objectId": "new_object_id"}}]}
+
     def test_delete_object_with_auto_flush_false(self):
         """Test delete_object method with auto_flush=False."""
         client = GoogleAPIClient(auto_flush=False)
