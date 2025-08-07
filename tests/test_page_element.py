@@ -29,7 +29,7 @@ from gslides_api.domain import (
     Dimension,
 )
 from gslides_api import ShapeProperties
-from gslides_api.text import Shape, ShapeType
+from gslides_api.text import Shape, Type
 
 
 def test_page_element_base_fields():
@@ -41,7 +41,7 @@ def test_page_element_base_fields():
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
         title="Test Title",
         description="Test Description",
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     assert element.objectId == "test_id"
@@ -62,18 +62,18 @@ def test_shape_element():
         objectId="shape_id",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     assert element.shape is not None
-    assert element.shape.shapeType == ShapeType.RECTANGLE
+    assert element.shape.shapeType == Type.RECTANGLE
 
     # Create request should generate a valid request
     request = element.create_request("page_id")
     assert len(request) == 1
     # Now returns a domain object instead of a dictionary
     assert hasattr(request[0], "shapeType")
-    assert request[0].shapeType == ShapeType.RECTANGLE
+    assert request[0].shapeType == Type.RECTANGLE
 
 
 def test_line_element():
@@ -170,7 +170,7 @@ def test_update_request_with_title_description():
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
         title="Updated Title",
         description="Updated Description",
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     request_objects = element.element_to_update_request("element_id")
@@ -208,7 +208,7 @@ def test_discriminated_union_with_type_adapter():
 
     element = page_element_adapter.validate_python(shape_data)
     assert isinstance(element, ShapeElement)
-    assert element.shape.shapeType == ShapeType.RECTANGLE
+    assert element.shape.shapeType == Type.RECTANGLE
 
 
 def test_absolute_size_with_dimension_objects():
@@ -220,7 +220,7 @@ def test_absolute_size_with_dimension_objects():
             height=Dimension(magnitude=3000000, unit="EMU"),
         ),
         transform=Transform(translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Test conversion to centimeters
@@ -250,7 +250,7 @@ def test_absolute_size_with_float_values():
         objectId="test_id",
         size=Size(width=1000000, height=2000000),  # Direct float values in EMUs
         transform=Transform(translateX=0, translateY=0, scaleX=2.0, scaleY=0.5),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Test conversion to centimeters
@@ -271,7 +271,7 @@ def test_absolute_size_invalid_units():
         objectId="test_id",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     with pytest.raises(ValueError, match="Units must be 'cm' or 'in'"):
@@ -284,7 +284,7 @@ def test_absolute_size_no_size():
         objectId="test_id",
         size=None,
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     with pytest.raises(ValueError, match="Element size is not available"):

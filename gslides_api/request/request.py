@@ -15,7 +15,7 @@ from gslides_api.domain import (
 from gslides_api import ShapeProperties
 
 
-from gslides_api.text import ShapeType, TextStyle, ParagraphStyle
+from gslides_api.text import Type, TextStyle, ParagraphStyle
 from gslides_api.request.domain import (
     Range,
     SubstringMatchCriteria,
@@ -151,7 +151,7 @@ class CreateShapeRequest(GSlidesAPIRequest):
         description="A user-supplied object ID. If specified, the ID must be unique among all pages and page elements in the presentation.",
     )
     elementProperties: ElementProperties = Field(description="The element properties for the shape")
-    shapeType: ShapeType = Field(description="The shape type")
+    shapeType: Type = Field(description="The shape type")
 
 
 class UpdateShapePropertiesRequest(GSlidesAPIRequest):

@@ -23,7 +23,7 @@ from gslides_api.request.request import (
 )
 from gslides_api.domain import BulletGlyphPreset, LayoutReference, PredefinedLayout, Size, Transform
 from gslides_api import ShapeProperties
-from gslides_api.text import ShapeType, TextStyle
+from gslides_api.text import Type, TextStyle
 
 
 class TestRange:
@@ -469,10 +469,10 @@ class TestCreateShapeRequest:
         )
         request = CreateShapeRequest(
             elementProperties=element_props,
-            shapeType=ShapeType.TEXT_BOX,
+            shapeType=Type.TEXT_BOX,
         )
         assert request.elementProperties.pageObjectId == "slide_123"
-        assert request.shapeType == ShapeType.TEXT_BOX
+        assert request.shapeType == Type.TEXT_BOX
         assert request.objectId is None
 
     def test_shape_request_with_object_id(self):
@@ -488,10 +488,10 @@ class TestCreateShapeRequest:
         request = CreateShapeRequest(
             objectId="custom_shape_id",
             elementProperties=element_props,
-            shapeType=ShapeType.RECTANGLE,
+            shapeType=Type.RECTANGLE,
         )
         assert request.objectId == "custom_shape_id"
-        assert request.shapeType == ShapeType.RECTANGLE
+        assert request.shapeType == Type.RECTANGLE
 
     def test_to_request_format(self):
         """Test that to_request() returns correct format."""
@@ -506,7 +506,7 @@ class TestCreateShapeRequest:
         request = CreateShapeRequest(
             objectId="shape_456",
             elementProperties=element_props,
-            shapeType=ShapeType.ELLIPSE,
+            shapeType=Type.ELLIPSE,
         )
         request_format = request.to_request()
 
