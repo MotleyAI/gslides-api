@@ -8,7 +8,7 @@ from gslides_api.element.element import (
     GroupElement,
     ImageElement,
 )
-from gslides_api.element.base import PageElementBase
+from gslides_api.element.base import PageElementBase, AltText
 from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import (
     Size,
@@ -289,6 +289,97 @@ def test_absolute_size_no_size():
 
     with pytest.raises(ValueError, match="Element size is not available"):
         element.absolute_size("cm")
+
+
+def test_alt_text_property():
+    """Test the alt_text property of PageElementBase."""
+    # Test with both title and description
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        title="Test Title",
+        description="Test Description",
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    alt_text = element.alt_text
+    assert isinstance(alt_text, AltText)
+    assert alt_text.title == "Test Title"
+    assert alt_text.description == "Test Description"
+
+
+def test_alt_text_property_with_none_values():
+    """Test the alt_text property when title and description are None."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        title=None,
+        description=None,
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    alt_text = element.alt_text
+    assert isinstance(alt_text, AltText)
+    assert alt_text.title is None
+    assert alt_text.description is None
+
+
+def test_alt_text_property_partial_values():
+    """Test the alt_text property with only title or only description."""
+    # Test with only title
+    element_title_only = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        title="Only Title",
+        description=None,
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    alt_text = element_title_only.alt_text
+    assert isinstance(alt_text, AltText)
+    assert alt_text.title == "Only Title"
+    assert alt_text.description is None
+
+    # Test with only description
+    element_desc_only = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        title=None,
+        description="Only Description",
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    alt_text = element_desc_only.alt_text
+    assert isinstance(alt_text, AltText)
+    assert alt_text.title is None
+    assert alt_text.description == "Only Description"
+
+
+def test_alt_text_class_initialization():
+    """Test AltText class initialization and properties."""
+    # Test with both values
+    alt_text = AltText(title="Test Title", description="Test Description")
+    assert alt_text.title == "Test Title"
+    assert alt_text.description == "Test Description"
+
+    # Test with default None values
+    alt_text_empty = AltText()
+    assert alt_text_empty.title is None
+    assert alt_text_empty.description is None
+
+    # Test with only title
+    alt_text_title = AltText(title="Only Title")
+    assert alt_text_title.title == "Only Title"
+    assert alt_text_title.description is None
+
+    # Test with only description
+    alt_text_desc = AltText(description="Only Description")
+    assert alt_text_desc.title is None
+    assert alt_text_desc.description == "Only Description"
 
 
 def test_recursive_group_structure():

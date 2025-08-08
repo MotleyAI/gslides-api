@@ -27,7 +27,7 @@ class PageProperties(GSlidesBaseModel):
     colorScheme: Optional[ColorScheme] = None
 
 
-def unroll_group_elements(elements: List["PageElement"]):
+def unroll_group_elements(elements: List["PageElement"]) -> List[PageElement]:
     out = []
     for element in elements:
         if element.type == ElementKind.GROUP:
@@ -65,7 +65,7 @@ class BasePage(GSlidesBaseModel):
             self.slideProperties.notesPage.presentation_id = target_id
 
     @property
-    def page_elements_flat(self):
+    def page_elements_flat(self) -> List[PageElement]:
         if self.pageElements is None:
             return []
         return unroll_group_elements(self.pageElements)

@@ -25,6 +25,11 @@ class ElementKind(Enum):
     SPEAKER_SPOTLIGHT = "speakerSpotlight"
 
 
+class AltText(GSlidesBaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
 class PageElementBase(GSlidesBaseModel):
     """Base class for all page elements."""
 
@@ -89,6 +94,21 @@ class PageElementBase(GSlidesBaseModel):
         else:
             return []
 
+    def set_alt_text(
+        self, title: str, description: str, api_client: Optional[GoogleAPIClient] = None
+    ):
+        client = api_client or globals()["api_client"]
+        client.batch_update(
+            self.alt_text_update_request(
+                title=title, description=description, element_id=self.objectId
+            ),
+            self.presentation_id,
+        )
+
+    @property
+    def alt_text(self):
+        return AltText(title=self.title, description=self.description)
+
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to a create request for the Google Slides API.
 
@@ -129,17 +149,6 @@ class PageElementBase(GSlidesBaseModel):
         This method should be overridden by subclasses.
         """
         raise NotImplementedError("Subclasses must implement to_markdown method")
-
-    def set_alt_text(
-        self, title: str, description: str, api_client: Optional[GoogleAPIClient] = None
-    ):
-        client = api_client or globals()["api_client"]
-        client.batch_update(
-            self.alt_text_update_request(
-                title=title, description=description, element_id=self.objectId
-            ),
-            self.presentation_id,
-        )
 
     def absolute_size(self, units: str = "in") -> Tuple[float, float]:
         """Calculate the absolute size of the element in the specified units.
