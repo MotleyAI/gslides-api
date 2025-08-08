@@ -122,6 +122,24 @@ class ImageElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.IMAGE
 
+    @staticmethod
+    def create_image_request_like(
+        e: PageElementBase, parent_id: str, url: str
+    ) -> List[GSlidesAPIRequest]:
+        """Create a request to create an image element like the given element."""
+        element_properties = e.element_properties(parent_id)
+        request = CreateImageRequest(
+            elementProperties=element_properties,
+            url=e.image.contentUrl,
+        )
+        return [request]
+
+    @staticmethod
+    def create_image_like(
+        e: PageElementBase, parent_id: str, url: str, client: GoogleAPIClient
+    ) -> "ImageElement":
+        raise NotImplementedError("Not implemented yet")
+
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert an ImageElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)

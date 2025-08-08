@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
-from gslides_api.domain import GSlidesBaseModel, Transform, Size
+from gslides_api.domain import GSlidesBaseModel, PageElementProperties, Transform, Size
 from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
 from gslides_api.client import api_client, GoogleAPIClient
 
@@ -55,7 +55,7 @@ class PageElementBase(GSlidesBaseModel):
         except:
             return None
 
-    def element_properties(self, parent_id: str) -> Dict[str, Any]:
+    def element_properties(self, parent_id: str) -> PageElementProperties:
         """Get common element properties for API requests."""
         # Common element properties
         element_properties = {
@@ -64,13 +64,14 @@ class PageElementBase(GSlidesBaseModel):
             "transform": self.transform.to_api_format(),
         }
 
-        # Add title and description if provided
-        if self.title is not None:
-            element_properties["title"] = self.title
-        if self.description is not None:
-            element_properties["description"] = self.description
+        # TODO: this will be ignored - where are they set?
+        # # Add title and description if provided
+        # if self.title is not None:
+        #     element_properties["title"] = self.title
+        # if self.description is not None:
+        #     element_properties["description"] = self.description
 
-        return element_properties
+        return PageElementProperties.model_validate(element_properties)
 
     def alt_text_update_request(
         self, element_id: str, title: str | None = None, description: str | None = None
