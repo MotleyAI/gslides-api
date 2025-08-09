@@ -384,6 +384,10 @@ class CreateImageRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createimagerequest
     """
 
+    objectId: Optional[str] = Field(
+        default=None,
+        description="A user-supplied object ID. If specified, the ID must be unique among all pages and page elements in the presentation.",
+    )
     elementProperties: PageElementProperties = Field(
         description="The element properties for the image"
     )

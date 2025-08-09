@@ -150,7 +150,7 @@ class TestImageElementReplaceImageRequests:
             image=Image(contentUrl="https://example.com/old_image.jpg"),
         )
 
-        result = image_element._replace_image_requests("https://example.com/new_image.jpg")
+        result = ImageElement._replace_image_requests("test_image", "https://example.com/new_image.jpg")
 
         mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
         # Now returns a domain object instead of a dictionary
@@ -169,7 +169,7 @@ class TestImageElementReplaceImageRequests:
         )
 
         with pytest.raises(ValueError, match="Image URL must start with http:// or https://"):
-            image_element._replace_image_requests("ftp://example.com/image.jpg")
+            ImageElement._replace_image_requests("test_image", "ftp://example.com/image.jpg")
 
     @patch("gslides_api.element.element.image_url_is_valid")
     def test_replace_image_requests_url_not_accessible(self, mock_validate):
@@ -184,7 +184,7 @@ class TestImageElementReplaceImageRequests:
         )
 
         with pytest.raises(ValueError, match="Image URL is not accessible or invalid"):
-            image_element._replace_image_requests("https://invalid-url.com/image.jpg")
+            ImageElement._replace_image_requests("test_image", "https://invalid-url.com/image.jpg")
 
     @patch("gslides_api.element.element.image_url_is_valid")
     def test_replace_image_requests_with_method(self, mock_validate):
@@ -198,8 +198,8 @@ class TestImageElementReplaceImageRequests:
             image=Image(contentUrl="https://example.com/old_image.jpg"),
         )
 
-        result = image_element._replace_image_requests(
-            "https://example.com/new_image.jpg", ImageReplaceMethod.CENTER_CROP
+        result = ImageElement._replace_image_requests(
+            "test_image", "https://example.com/new_image.jpg", ImageReplaceMethod.CENTER_CROP
         )
 
         mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
