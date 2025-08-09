@@ -30,10 +30,9 @@ class PageProperties(GSlidesBaseModel):
 def unroll_group_elements(elements: List["PageElement"]) -> List[PageElement]:
     out = []
     for element in elements:
+        out.append(element)
         if element.type == ElementKind.GROUP:
             out.extend(unroll_group_elements(element.elementGroup.children))
-        else:
-            out.append(element)
     return out
 
 
@@ -69,6 +68,12 @@ class BasePage(GSlidesBaseModel):
         if self.pageElements is None:
             return []
         return unroll_group_elements(self.pageElements)
+
+    @model_validator(mode="after")
+    def set_element_parent_id(self) -> "BasePage":
+        for e in self.page_elements_flat:
+            e.parent_id = self.objectId
+        return self
 
     @model_validator(mode="after")
     def set_presentation_id_on_elements(self) -> "BasePage":

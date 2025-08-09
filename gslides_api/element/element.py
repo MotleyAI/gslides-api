@@ -124,21 +124,40 @@ class ImageElement(PageElementBase):
 
     @staticmethod
     def create_image_request_like(
-        e: PageElementBase, parent_id: str, url: str
+        e: PageElementBase,
+        url: str | None = None,
+        parent_id: str | None = None,
     ) -> List[GSlidesAPIRequest]:
         """Create a request to create an image element like the given element."""
-        element_properties = e.element_properties(parent_id)
+        url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
+        element_properties = e.element_properties(parent_id or e.parent_id)
         request = CreateImageRequest(
             elementProperties=element_properties,
-            url=e.image.contentUrl,
+            url=url,
         )
         return [request]
 
     @staticmethod
-    def create_image_like(
-        e: PageElementBase, parent_id: str, url: str, client: GoogleAPIClient
+    def create_image_element_like(
+        e: PageElementBase,
+        api_client: GoogleAPIClient | None = None,
+        parent_id: str | None = None,
+        url: str | None = None,
     ) -> "ImageElement":
-        raise NotImplementedError("Not implemented yet")
+        from gslides_api.page.slide import Slide
+
+        api_client = api_client or globals()["api_client"]
+        parent_id = parent_id or e.parent_id
+
+        # Create the image element
+        requests = ImageElement.create_image_request_like(e, parent_id=parent_id, url=url)
+        pre_out = api_client.batch_update(requests, e.presentation_id)
+        new_element_id = pre_out["replies"][0]["createImage"]["objectId"]
+
+        # GSlides API doesn't allow to retrieve an element by id, so we need to reload the whole slide
+        re_slide = Slide.from_ids(e.presentation_id, parent_id)
+        new_element = re_slide.get_element_by_id(new_element_id)
+        return new_element
 
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert an ImageElement to a create request for the Google Slides API."""
