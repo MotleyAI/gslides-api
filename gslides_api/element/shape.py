@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from pydantic import Field, field_validator
 
+from gslides_api.domain import PageElementProperties
 from gslides_api.text import Shape, TextStyle
 from gslides_api.element.base import PageElementBase, ElementKind
 from gslides_api.client import GoogleAPIClient, api_client as default_api_client
@@ -14,7 +15,7 @@ from gslides_api.request.request import (
     CreateShapeRequest,
     DeleteTextRequest,
 )
-from gslides_api.request.domain import Range, RangeType, ElementProperties
+from gslides_api.request.domain import Range, RangeType
 
 
 class ShapeElement(PageElementBase):
@@ -32,14 +33,8 @@ class ShapeElement(PageElementBase):
 
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to a create request for the Google Slides API."""
-        element_properties_dict = self.element_properties(parent_id)
-        element_props = ElementProperties(
-            pageObjectId=element_properties_dict["pageObjectId"],
-            size=element_properties_dict.get("size"),
-            transform=element_properties_dict.get("transform"),
-            title=element_properties_dict.get("title"),
-            description=element_properties_dict.get("description"),
-        )
+        element_props = self.element_properties(parent_id)
+
         request = CreateShapeRequest(
             elementProperties=element_props, shapeType=self.shape.shapeType
         )

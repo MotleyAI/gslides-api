@@ -72,7 +72,7 @@ from .request.request import (
     DeleteObjectRequest,
     DuplicateObjectRequest,
 )
-from .request.domain import Range, RangeType, TableCellLocation, ElementProperties
+from .request.domain import Range, RangeType, TableCellLocation
 
 from ._version import __version__, __version_info__
 
@@ -164,7 +164,6 @@ __all__ = [
     "Range",
     "RangeType",
     "TableCellLocation",
-    "ElementProperties",
 ]
 
 # Rebuild models to resolve forward references after all imports

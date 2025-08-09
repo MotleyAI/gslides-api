@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
-from gslides_api.domain import GSlidesBaseModel, Transform, Size
+from gslides_api.domain import GSlidesBaseModel, PageElementProperties, Transform, Size
 from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
 from gslides_api.client import api_client, GoogleAPIClient
 
@@ -25,6 +25,11 @@ class ElementKind(Enum):
     SPEAKER_SPOTLIGHT = "speakerSpotlight"
 
 
+class AltText(GSlidesBaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
 class PageElementBase(GSlidesBaseModel):
     """Base class for all page elements."""
 
@@ -36,6 +41,7 @@ class PageElementBase(GSlidesBaseModel):
     type: ElementKind = Field(description="The type of page element", exclude=True)
     # Store the presentation ID for reference but exclude from model_dump
     presentation_id: Optional[str] = Field(default=None, exclude=True)
+    parent_id: Optional[str] = Field(default=None, exclude=True)
 
     def create_copy(
         self, parent_id: str, presentation_id: str, api_client: Optional[GoogleAPIClient] = None
@@ -50,7 +56,14 @@ class PageElementBase(GSlidesBaseModel):
         except:
             return None
 
-    def element_properties(self, parent_id: str) -> Dict[str, Any]:
+    def delete(self, api_client: Optional[GoogleAPIClient] = None) -> None:
+        assert (
+            self.presentation_id is not None
+        ), "self.presentation_id must be set when calling delete()"
+        client = api_client or globals()["api_client"]
+        client.delete_object(self.objectId, self.presentation_id)
+
+    def element_properties(self, parent_id: str) -> PageElementProperties:
         """Get common element properties for API requests."""
         # Common element properties
         element_properties = {
@@ -59,13 +72,14 @@ class PageElementBase(GSlidesBaseModel):
             "transform": self.transform.to_api_format(),
         }
 
-        # Add title and description if provided
-        if self.title is not None:
-            element_properties["title"] = self.title
-        if self.description is not None:
-            element_properties["description"] = self.description
+        # TODO: this will be ignored - where are they set?
+        # # Add title and description if provided
+        # if self.title is not None:
+        #     element_properties["title"] = self.title
+        # if self.description is not None:
+        #     element_properties["description"] = self.description
 
-        return element_properties
+        return PageElementProperties.model_validate(element_properties)
 
     def alt_text_update_request(
         self, element_id: str, title: str | None = None, description: str | None = None
@@ -88,6 +102,21 @@ class PageElementBase(GSlidesBaseModel):
             ]
         else:
             return []
+
+    def set_alt_text(
+        self, title: str, description: str, api_client: Optional[GoogleAPIClient] = None
+    ):
+        client = api_client or globals()["api_client"]
+        client.batch_update(
+            self.alt_text_update_request(
+                title=title, description=description, element_id=self.objectId
+            ),
+            self.presentation_id,
+        )
+
+    @property
+    def alt_text(self):
+        return AltText(title=self.title, description=self.description)
 
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to a create request for the Google Slides API.
@@ -129,17 +158,6 @@ class PageElementBase(GSlidesBaseModel):
         This method should be overridden by subclasses.
         """
         raise NotImplementedError("Subclasses must implement to_markdown method")
-
-    def set_alt_text(
-        self, title: str, description: str, api_client: Optional[GoogleAPIClient] = None
-    ):
-        client = api_client or globals()["api_client"]
-        client.batch_update(
-            self.alt_text_update_request(
-                title=title, description=description, element_id=self.objectId
-            ),
-            self.presentation_id,
-        )
 
     def absolute_size(self, units: str = "in") -> Tuple[float, float]:
         """Calculate the absolute size of the element in the specified units.
