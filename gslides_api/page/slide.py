@@ -54,6 +54,8 @@ class Slide(BasePage):
         new_slide.objectId = new_id
         for e in new_slide.page_elements_flat:
             e.objectId = id_map[e.objectId]
+            e.parent_id = new_slide.objectId
+
         return new_slide
 
     def delete(self, api_client: Optional[GoogleAPIClient] = None) -> None:
