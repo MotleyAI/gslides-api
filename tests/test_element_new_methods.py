@@ -15,7 +15,7 @@ from gslides_api.domain import (
     ImageReplaceMethod,
 )
 from gslides_api import ShapeProperties
-from gslides_api.text import Shape, ShapeType, Text
+from gslides_api.text import Shape, Type, Text
 from gslides_api.presentation import Presentation
 
 
@@ -66,7 +66,7 @@ class TestShapeElementToMarkdown:
             size=Size(width=100, height=100),
             transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
             shape=Shape(
-                shapeType=ShapeType.RECTANGLE,
+                shapeType=Type.RECTANGLE,
                 shapeProperties=ShapeProperties(),
                 # No text property
             ),
@@ -83,7 +83,7 @@ class TestShapeElementToMarkdown:
             size=Size(width=100, height=100),
             transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
             shape=Shape(
-                shapeType=ShapeType.TEXT_BOX,
+                shapeType=Type.TEXT_BOX,
                 shapeProperties=ShapeProperties(),
                 text=Text(textElements=[]),  # Empty text elements
             ),
@@ -223,7 +223,7 @@ class TestElementsFromPresentationData:
             element = page_element_adapter.validate_python(page_element_data.model_dump())
             assert isinstance(element, ShapeElement), f"Element {i} should be a ShapeElement"
             assert element.shape is not None
-            assert element.shape.shapeType == ShapeType.TEXT_BOX
+            assert element.shape.shapeType == Type.TEXT_BOX
 
     def test_slide_3_all_elements_to_markdown(self, presentation_object):
         """Test to_markdown() on all elements from slide 3."""

@@ -16,8 +16,6 @@ from gslides_api.request.request import (
     CreateShapeRequest,
     GSlidesAPIRequest,
 )
-from gslides_api.request.domain import ElementProperties
-from gslides_api.text import ShapeType
 
 
 class MockRequest(GSlidesAPIRequest):

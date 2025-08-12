@@ -8,7 +8,7 @@ from gslides_api.element.element import (
     GroupElement,
     ImageElement,
 )
-from gslides_api.element.base import PageElementBase
+from gslides_api.element.base import PageElementBase, AltText
 from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import (
     Size,
@@ -29,7 +29,7 @@ from gslides_api.domain import (
     Dimension,
 )
 from gslides_api import ShapeProperties
-from gslides_api.text import Shape, ShapeType
+from gslides_api.text import Shape, Type
 
 
 def test_page_element_base_fields():
@@ -41,7 +41,7 @@ def test_page_element_base_fields():
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
         title="Test Title",
         description="Test Description",
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     assert element.objectId == "test_id"
@@ -62,18 +62,18 @@ def test_shape_element():
         objectId="shape_id",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     assert element.shape is not None
-    assert element.shape.shapeType == ShapeType.RECTANGLE
+    assert element.shape.shapeType == Type.RECTANGLE
 
     # Create request should generate a valid request
     request = element.create_request("page_id")
     assert len(request) == 1
     # Now returns a domain object instead of a dictionary
     assert hasattr(request[0], "shapeType")
-    assert request[0].shapeType == ShapeType.RECTANGLE
+    assert request[0].shapeType == Type.RECTANGLE
 
 
 def test_line_element():
@@ -170,7 +170,7 @@ def test_update_request_with_title_description():
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
         title="Updated Title",
         description="Updated Description",
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     request_objects = element.element_to_update_request("element_id")
@@ -208,7 +208,7 @@ def test_discriminated_union_with_type_adapter():
 
     element = page_element_adapter.validate_python(shape_data)
     assert isinstance(element, ShapeElement)
-    assert element.shape.shapeType == ShapeType.RECTANGLE
+    assert element.shape.shapeType == Type.RECTANGLE
 
 
 def test_absolute_size_with_dimension_objects():
@@ -220,7 +220,7 @@ def test_absolute_size_with_dimension_objects():
             height=Dimension(magnitude=3000000, unit="EMU"),
         ),
         transform=Transform(translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Test conversion to centimeters
@@ -250,7 +250,7 @@ def test_absolute_size_with_float_values():
         objectId="test_id",
         size=Size(width=1000000, height=2000000),  # Direct float values in EMUs
         transform=Transform(translateX=0, translateY=0, scaleX=2.0, scaleY=0.5),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Test conversion to centimeters
@@ -271,7 +271,7 @@ def test_absolute_size_invalid_units():
         objectId="test_id",
         size=Size(width=100, height=100),
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     with pytest.raises(ValueError, match="Units must be 'cm' or 'in'"):
@@ -284,11 +284,102 @@ def test_absolute_size_no_size():
         objectId="test_id",
         size=None,
         transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     with pytest.raises(ValueError, match="Element size is not available"):
         element.absolute_size("cm")
+
+
+def test_alt_text_property():
+    """Test the alt_text property of PageElementBase."""
+    # Test with both title and description
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        title="Test Title",
+        description="Test Description",
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    alt_text = element.alt_text
+    assert isinstance(alt_text, AltText)
+    assert alt_text.title == "Test Title"
+    assert alt_text.description == "Test Description"
+
+
+def test_alt_text_property_with_none_values():
+    """Test the alt_text property when title and description are None."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        title=None,
+        description=None,
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    alt_text = element.alt_text
+    assert isinstance(alt_text, AltText)
+    assert alt_text.title is None
+    assert alt_text.description is None
+
+
+def test_alt_text_property_partial_values():
+    """Test the alt_text property with only title or only description."""
+    # Test with only title
+    element_title_only = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        title="Only Title",
+        description=None,
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    alt_text = element_title_only.alt_text
+    assert isinstance(alt_text, AltText)
+    assert alt_text.title == "Only Title"
+    assert alt_text.description is None
+
+    # Test with only description
+    element_desc_only = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        title=None,
+        description="Only Description",
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    alt_text = element_desc_only.alt_text
+    assert isinstance(alt_text, AltText)
+    assert alt_text.title is None
+    assert alt_text.description == "Only Description"
+
+
+def test_alt_text_class_initialization():
+    """Test AltText class initialization and properties."""
+    # Test with both values
+    alt_text = AltText(title="Test Title", description="Test Description")
+    assert alt_text.title == "Test Title"
+    assert alt_text.description == "Test Description"
+
+    # Test with default None values
+    alt_text_empty = AltText()
+    assert alt_text_empty.title is None
+    assert alt_text_empty.description is None
+
+    # Test with only title
+    alt_text_title = AltText(title="Only Title")
+    assert alt_text_title.title == "Only Title"
+    assert alt_text_title.description is None
+
+    # Test with only description
+    alt_text_desc = AltText(description="Only Description")
+    assert alt_text_desc.title is None
+    assert alt_text_desc.description == "Only Description"
 
 
 def test_recursive_group_structure():

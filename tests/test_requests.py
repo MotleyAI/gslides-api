@@ -5,7 +5,7 @@ Tests for the requests module, specifically CreateParagraphBulletsRequest and re
 import pytest
 from pydantic import ValidationError
 
-from gslides_api.request.domain import Range, RangeType, TableCellLocation, ElementProperties
+from gslides_api.request.domain import Range, RangeType, TableCellLocation
 from gslides_api.request.request import (
     CreateParagraphBulletsRequest,
     InsertTextRequest,
@@ -21,9 +21,16 @@ from gslides_api.request.request import (
     DeleteObjectRequest,
     DuplicateObjectRequest,
 )
-from gslides_api.domain import BulletGlyphPreset, LayoutReference, PredefinedLayout, Size, Transform
+from gslides_api.domain import (
+    BulletGlyphPreset,
+    LayoutReference,
+    PageElementProperties,
+    PredefinedLayout,
+    Size,
+    Transform,
+)
 from gslides_api import ShapeProperties
-from gslides_api.text import ShapeType, TextStyle
+from gslides_api.text import Type, TextStyle
 
 
 class TestRange:
@@ -459,7 +466,7 @@ class TestCreateShapeRequest:
 
     def test_basic_shape_request_valid(self):
         """Test that basic shape request works correctly."""
-        element_props = ElementProperties(
+        element_props = PageElementProperties(
             pageObjectId="slide_123",
             size={
                 "width": {"magnitude": 100, "unit": "PT"},
@@ -469,15 +476,15 @@ class TestCreateShapeRequest:
         )
         request = CreateShapeRequest(
             elementProperties=element_props,
-            shapeType=ShapeType.TEXT_BOX,
+            shapeType=Type.TEXT_BOX,
         )
         assert request.elementProperties.pageObjectId == "slide_123"
-        assert request.shapeType == ShapeType.TEXT_BOX
+        assert request.shapeType == Type.TEXT_BOX
         assert request.objectId is None
 
     def test_shape_request_with_object_id(self):
         """Test that shape request with custom object ID works correctly."""
-        element_props = ElementProperties(
+        element_props = PageElementProperties(
             pageObjectId="slide_123",
             size={
                 "width": {"magnitude": 100, "unit": "PT"},
@@ -488,14 +495,14 @@ class TestCreateShapeRequest:
         request = CreateShapeRequest(
             objectId="custom_shape_id",
             elementProperties=element_props,
-            shapeType=ShapeType.RECTANGLE,
+            shapeType=Type.RECTANGLE,
         )
         assert request.objectId == "custom_shape_id"
-        assert request.shapeType == ShapeType.RECTANGLE
+        assert request.shapeType == Type.RECTANGLE
 
     def test_to_request_format(self):
         """Test that to_request() returns correct format."""
-        element_props = ElementProperties(
+        element_props = PageElementProperties(
             pageObjectId="slide_123",
             size={
                 "width": {"magnitude": 100, "unit": "PT"},
@@ -506,7 +513,7 @@ class TestCreateShapeRequest:
         request = CreateShapeRequest(
             objectId="shape_456",
             elementProperties=element_props,
-            shapeType=ShapeType.ELLIPSE,
+            shapeType=Type.ELLIPSE,
         )
         request_format = request.to_request()
 

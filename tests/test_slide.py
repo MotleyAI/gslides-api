@@ -4,7 +4,7 @@ from gslides_api.page.slide_properties import SlideProperties
 from gslides_api.page.base import PageProperties
 from gslides_api.element.shape import ShapeElement
 from gslides_api.domain import Size, Transform
-from gslides_api.text import Shape, ShapeType, ShapeProperties
+from gslides_api.text import Shape, Type, ShapeProperties
 
 
 def test_presentation_id_not_in_api_format():
@@ -139,14 +139,14 @@ def test_presentation_id_propagation_on_creation():
         objectId="element1",
         size=Size(width=100, height=50),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0, translateY=0),
-        shape=Shape(shapeType=ShapeType.TEXT_BOX, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.TEXT_BOX, shapeProperties=ShapeProperties()),
     )
 
     element2 = ShapeElement(
         objectId="element2",
         size=Size(width=200, height=100),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=100, translateY=100),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Create Page with presentation_id and pageElements
@@ -170,14 +170,14 @@ def test_presentation_id_propagation_on_modification():
         objectId="element1",
         size=Size(width=100, height=50),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0, translateY=0),
-        shape=Shape(shapeType=ShapeType.TEXT_BOX, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.TEXT_BOX, shapeProperties=ShapeProperties()),
     )
 
     element2 = ShapeElement(
         objectId="element2",
         size=Size(width=200, height=100),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=100, translateY=100),
-        shape=Shape(shapeType=ShapeType.RECTANGLE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Create Page with initial presentation_id
@@ -251,7 +251,7 @@ def test_presentation_id_propagation_when_adding_elements_later():
         objectId="element3",
         size=Size(width=150, height=75),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=200, translateY=200),
-        shape=Shape(shapeType=ShapeType.ELLIPSE, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.ELLIPSE, shapeProperties=ShapeProperties()),
     )
 
     page.pageElements = [element]
@@ -336,7 +336,7 @@ def test_presentation_id_propagation_to_notes_page_elements():
         objectId="notes-element",
         size=Size(width=100, height=50),
         transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0, translateY=0),
-        shape=Shape(shapeType=ShapeType.TEXT_BOX, shapeProperties=ShapeProperties()),
+        shape=Shape(shapeType=Type.TEXT_BOX, shapeProperties=ShapeProperties()),
     )
 
     # Create a notes page with elements
