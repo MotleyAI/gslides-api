@@ -41,7 +41,7 @@ class PageElementBase(GSlidesBaseModel):
     type: ElementKind = Field(description="The type of page element", exclude=True)
     # Store the presentation ID for reference but exclude from model_dump
     presentation_id: Optional[str] = Field(default=None, exclude=True)
-    parent_id: Optional[str] = Field(default=None, exclude=True)
+    slide_id: Optional[str] = Field(default=None, exclude=True)
 
     def create_copy(
         self, parent_id: str, presentation_id: str, api_client: Optional[GoogleAPIClient] = None

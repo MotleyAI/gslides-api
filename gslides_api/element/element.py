@@ -1,4 +1,5 @@
 from typing import Dict, Any, List, Union, Annotated, Optional
+import uuid
 
 from pydantic import Field, Discriminator, Tag, field_validator
 
@@ -125,13 +126,15 @@ class ImageElement(PageElementBase):
     @staticmethod
     def create_image_request_like(
         e: PageElementBase,
+        image_id: str | None = None,
         url: str | None = None,
         parent_id: str | None = None,
     ) -> List[GSlidesAPIRequest]:
         """Create a request to create an image element like the given element."""
         url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
-        element_properties = e.element_properties(parent_id or e.parent_id)
+        element_properties = e.element_properties(parent_id or e.slide_id)
         request = CreateImageRequest(
+            objectId=image_id,
             elementProperties=element_properties,
             url=url,
         )
@@ -143,21 +146,22 @@ class ImageElement(PageElementBase):
         api_client: GoogleAPIClient | None = None,
         parent_id: str | None = None,
         url: str | None = None,
-    ) -> "ImageElement":
+    ) -> str:
         from gslides_api.page.slide import Slide
 
         api_client = api_client or globals()["api_client"]
-        parent_id = parent_id or e.parent_id
+        parent_id = parent_id or e.slide_id
 
         # Create the image element
-        requests = ImageElement.create_image_request_like(e, parent_id=parent_id, url=url)
-        pre_out = api_client.batch_update(requests, e.presentation_id)
-        new_element_id = pre_out["replies"][0]["createImage"]["objectId"]
-
-        # GSlides API doesn't allow to retrieve an element by id, so we need to reload the whole slide
-        re_slide = Slide.from_ids(e.presentation_id, parent_id)
-        new_element = re_slide.get_element_by_id(new_element_id)
-        return new_element
+        image_id = uuid.uuid4().hex
+        requests = ImageElement.create_image_request_like(
+            e,
+            parent_id=parent_id,
+            url=url,
+            image_id=image_id,
+        )
+        api_client.batch_update(requests, e.presentation_id)
+        return image_id
 
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert an ImageElement to a create request for the Google Slides API."""
@@ -191,7 +195,10 @@ class ImageElement(PageElementBase):
         description = self.title or "Image"
         return f"![{description}]({url})"
 
-    def _replace_image_requests(self, new_url: str, method: ImageReplaceMethod | None = None):
+    @staticmethod
+    def _replace_image_requests(
+        objectId: str, new_url: str, method: ImageReplaceMethod | None = None
+    ):
         """
         Replace image by URL with validation.
 
@@ -210,7 +217,7 @@ class ImageElement(PageElementBase):
             raise ValueError(f"Image URL is not accessible or invalid: {new_url}")
 
         request = ReplaceImageRequest(
-            imageObjectId=self.objectId,
+            imageObjectId=objectId,
             url=new_url,
             imageReplaceMethod=method.value if method is not None else None,
         )
@@ -218,6 +225,35 @@ class ImageElement(PageElementBase):
 
     def replace_image(
         self,
+        url: str | None = None,
+        file: str | None = None,
+        method: ImageReplaceMethod | None = None,
+        api_client: Optional[GoogleAPIClient] = None,
+    ):
+        # if url is None and file is None:
+        #     raise ValueError("Must specify either url or file")
+        # if url is not None and file is not None:
+        #     raise ValueError("Must specify either url or file, not both")
+        #
+        # client = api_client or globals()["api_client"]
+        # if file is not None:
+        #     url = client.upload_image_to_drive(file)
+        #
+        # requests = self._replace_image_requests(url, method)
+        # return client.batch_update(requests, self.presentation_id)
+        return ImageElement.replace_image_from_id(
+            self.objectId,
+            self.presentation_id,
+            url=url,
+            file=file,
+            method=method,
+            api_client=api_client,
+        )
+
+    @staticmethod
+    def replace_image_from_id(
+        image_id: str,
+        presentation_id: str,
         url: str | None = None,
         file: str | None = None,
         method: ImageReplaceMethod | None = None,
@@ -232,8 +268,8 @@ class ImageElement(PageElementBase):
         if file is not None:
             url = client.upload_image_to_drive(file)
 
-        requests = self._replace_image_requests(url, method)
-        return client.batch_update(requests, self.presentation_id)
+        requests = ImageElement._replace_image_requests(image_id, url, method)
+        return client.batch_update(requests, presentation_id)
 
 
 class VideoElement(PageElementBase):
