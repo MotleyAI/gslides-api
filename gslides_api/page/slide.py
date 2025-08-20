@@ -3,16 +3,19 @@ import uuid
 from typing import Optional
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import LayoutReference, ThumbnailProperties, ThumbnailSize
+from gslides_api.domain import LayoutReference, ThumbnailProperties, ThumbnailSize, Transform
 from gslides_api.element.shape import ShapeElement
 from gslides_api.page.base import BasePage, ElementKind, PageType
 from gslides_api.page.slide_properties import SlideProperties
+from gslides_api.text import Shape, ShapeProperties
+from gslides_api.request.domain import Range, RangeType
 from gslides_api.request.request import (
     CreateSlideRequest,
     InsertTextRequest,
     UpdatePagePropertiesRequest,
     UpdateSlidePropertiesRequest,
     UpdateSlidesPositionRequest,
+    DeleteTextRequest,
 )
 from gslides_api.response import ImageThumbnail
 from gslides_api.utils import dict_to_dot_separated_field_list
@@ -182,23 +185,34 @@ class Slide(BasePage):
             if e.objectId == id:
                 return e
 
-        # Apparently even if the notes element doesn't exist, the API creates it upon the first insertTextRequest
-        req = InsertTextRequest(
+        # The element must not have been created yet
+        return ShapeElement(
             objectId=id,
-            text="...",
+            slide_id=self.objectId,
+            presentation_id=self.presentation_id,
+            transform=Transform(),
+            shape=Shape(shapeProperties=ShapeProperties()),
+        )
+
+    def create_speaker_notes(
+        self, text: str | None = None, api_client: Optional[GoogleAPIClient] = None
+    ) -> None:
+        # This assumes the speaker notes don't exist yet
+        # Apparently even if the notes element doesn't exist, the API creates it upon the first insertTextRequest
+        api_client = api_client or globals()["api_client"]
+
+        notes_id = self.slideProperties.notesPage.notesProperties.speakerNotesObjectId
+
+        req = InsertTextRequest(
+            objectId=notes_id,
+            text=text if text is not None else "...",
             insertionIndex=0,
         )
 
+        del_req = DeleteTextRequest(objectId=notes_id, textRange=Range(type=RangeType.ALL))
+
         # Use the global api_client for this internal operation
-        globals()["api_client"].batch_update([req], self.presentation_id)
-
-        # Now it should exist
-        for e in self.slideProperties.notesPage.pageElements:
-            if e.objectId == id:
-                break
-
-        e.delete_text()
-        return e
+        api_client.batch_update([req, del_req], self.presentation_id)
 
     def sync_from_cloud(self):
         new_state = Slide.from_ids(self.presentation_id, self.objectId, api_client=api_client)

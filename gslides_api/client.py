@@ -10,6 +10,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+from typeguard import typechecked
 
 from gslides_api.domain import ThumbnailProperties
 from gslides_api.request.request import (
@@ -21,6 +22,7 @@ from gslides_api.response import ImageThumbnail
 
 
 # The functions in this file are the only interaction with the raw gslides API in this library
+@typechecked
 class GoogleAPIClient:
     # Initial version from the gslides package
     """The credentials object to build the connections to the APIs"""
@@ -190,7 +192,7 @@ class GoogleAPIClient:
         self,
         object_id: str,
         presentation_id: str,
-        id_map: Dict[str, str] = None,
+        id_map: Dict[str, str] | None = None,
     ) -> str:
         """Duplicates an object in a Google Slides presentation.
         When duplicating a slide, the duplicate slide will be created immediately following the specified slide.
