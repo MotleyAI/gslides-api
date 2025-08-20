@@ -132,7 +132,7 @@ class ImageElement(PageElementBase):
     ) -> List[GSlidesAPIRequest]:
         """Create a request to create an image element like the given element."""
         url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
-        element_properties = e.element_properties(parent_id or e.parent_id)
+        element_properties = e.element_properties(parent_id or e.slide_id)
         request = CreateImageRequest(
             objectId=image_id,
             elementProperties=element_properties,
@@ -150,7 +150,7 @@ class ImageElement(PageElementBase):
         from gslides_api.page.slide import Slide
 
         api_client = api_client or globals()["api_client"]
-        parent_id = parent_id or e.parent_id
+        parent_id = parent_id or e.slide_id
 
         # Create the image element
         image_id = uuid.uuid4().hex

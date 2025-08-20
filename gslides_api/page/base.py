@@ -72,7 +72,7 @@ class BasePage(GSlidesBaseModel):
     @model_validator(mode="after")
     def set_element_parent_id(self) -> "BasePage":
         for e in self.page_elements_flat:
-            e.parent_id = self.objectId
+            e.slide_id = self.objectId
         return self
 
     @model_validator(mode="after")
