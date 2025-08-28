@@ -4,10 +4,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import Field
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import (GSlidesBaseModel, PageElementProperties, Size,
-                                Transform)
-from gslides_api.request.request import (GSlidesAPIRequest,
-                                         UpdatePageElementAltTextRequest)
+from gslides_api.domain import GSlidesBaseModel, PageElementProperties, Size, Transform
+from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
 
 
 class ElementKind(Enum):
@@ -127,8 +125,12 @@ class PageElementBase(GSlidesBaseModel):
         :rtype: list
 
         """
-
-        if self.title is not None or self.description is not None:
+        if (
+            title is not None
+            or description is not None
+            or self.title is not None
+            or self.description is not None
+        ):
             return [
                 UpdatePageElementAltTextRequest(
                     objectId=element_id,
@@ -190,9 +192,7 @@ class PageElementBase(GSlidesBaseModel):
 
         This method should be overridden by subclasses.
         """
-        raise NotImplementedError(
-            "Subclasses must implement element_to_update_request method"
-        )
+        raise NotImplementedError("Subclasses must implement element_to_update_request method")
 
     def to_markdown(self) -> str | None:
         """Convert a PageElement to markdown.
