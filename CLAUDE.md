@@ -6,8 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 ```bash
-poetry run pytest                    # Run all tests
-poetry run pytest tests/test_*.py    # Run specific test file
+poetry run pytest                           # Run all tests
+poetry run pytest tests/test_specific.py    # Run specific test file
+poetry run pytest -v                        # Verbose test output
+poetry run pytest -k "test_name"            # Run tests matching pattern
 ```
 
 ### Code Quality
@@ -21,6 +23,12 @@ poetry run isort gslides_api/         # Sort imports with isort
 poetry install                       # Install all dependencies
 poetry install -E image              # Install with image extras (Pillow)
 poetry build                         # Build distribution packages
+```
+
+### Debug/Development Scripts
+```bash
+# Use the debug script with credentials for testing
+GSLIDES_CREDENTIALS_PATH=/path/to/credentials poetry run python debug_elements.py
 ```
 
 ## Architecture Overview
@@ -82,3 +90,41 @@ This is a Python library that provides a type-safe, Pydantic-based wrapper for t
 
 The library requires Google API credentials. See `CREDENTIALS.md` for setup instructions. 
 Use the `initialize_credentials("/path/to/credentials/")` function to configure authentication before making API calls.
+
+## Development Patterns
+
+### Model Design Principles
+
+- **Avoid Dict Fields**: When creating Pydantic models, use `List[HelperClass]` instead of `Dict[str, Value]` patterns
+- **Forward References**: Call `model_rebuild()` after all imports to resolve circular dependencies (see `__init__.py:170-174`)
+- **API Serialization**: All models provide `to_api_format()` method for Google API compatibility
+- **Discriminated Unions**: Element types use discriminated unions with `ElementKind` enum for type safety
+
+### Testing Patterns
+
+- Tests are organized by functionality (e.g., `test_markdown_features.py`, `test_element_kind.py`)
+- Use `pytest` fixtures for common setup patterns
+- Test both API format serialization and domain model validation
+- Integration tests often require credentials setup for real API calls
+
+### Code Organization
+
+- **Domain Models**: Core Pydantic models in `domain.py` with extensive type annotations
+- **Element Hierarchy**: Elements inherit from `PageElementBase` with kind-based discrimination
+- **Request Builders**: Type-safe request objects that validate before API calls
+- **Page Abstraction**: All page types (Slide, Layout, Master, Notes) inherit from `BasePage`
+
+### Important Dependencies
+
+- **Python 3.11+**: Required for latest Pydantic v2 features
+- **Pydantic v2**: Core validation and serialization framework
+- **Google API Client**: Official Google API Python library
+- **marko**: Markdown parsing for conversion features
+- **Pillow**: Optional image processing (install with `-E image`)
+
+### API Integration Notes
+
+- Client manages batch requests for efficiency - queue operations then execute
+- All Google API responses are deserialized into type-safe Pydantic models
+- Authentication supports both OAuth2 and Service Account workflows
+- Enable both Google Slides API and Google Sheets API in your Google Cloud project

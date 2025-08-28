@@ -194,6 +194,7 @@ class Slide(BasePage):
             shape=Shape(shapeProperties=ShapeProperties()),
         )
 
+    # TODO: do we ever need this?
     def create_speaker_notes(
         self, text: str | None = None, api_client: Optional[GoogleAPIClient] = None
     ) -> None:

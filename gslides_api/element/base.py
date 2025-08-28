@@ -104,7 +104,10 @@ class PageElementBase(GSlidesBaseModel):
             return []
 
     def set_alt_text(
-        self, title: str, description: str, api_client: Optional[GoogleAPIClient] = None
+        self,
+        title: str | None = None,
+        description: str | None = None,
+        api_client: Optional[GoogleAPIClient] = None,
     ):
         client = api_client or globals()["api_client"]
         client.batch_update(
@@ -116,6 +119,7 @@ class PageElementBase(GSlidesBaseModel):
 
     @property
     def alt_text(self):
+        # Don't provide a setter as want to also pass api_client to the setter
         return AltText(title=self.title, description=self.description)
 
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
@@ -205,3 +209,15 @@ class PageElementBase(GSlidesBaseModel):
             height_result = actual_height_emu / 914400
 
         return (width_result, height_result)
+
+    def absolute_position(self, units: str = "in") -> Tuple[float, float]:
+        """Calculate the absolute position of the top left corner of the element in the specified units.
+
+        Args:
+            units: The units to return the position in. Can be "cm" or "in".
+
+        Returns:
+            A tuple of (x, y) in the specified units.
+        """
+        if units not in ["cm", "in"]:
+            raise ValueError("Units must be 'cm' or 'in'")
