@@ -1,10 +1,14 @@
+import logging
+import mimetypes
 import uuid
 from typing import Annotated, Any, Dict, List, Optional, Union
+from urllib.parse import urlparse
 
+import requests
 from pydantic import Discriminator, Field, Tag, field_validator
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import (Group, Image, ImageReplaceMethod, Line,
+from gslides_api.domain import (Group, Image, ImageData, ImageReplaceMethod, Line,
                                 SheetsChart, SpeakerSpotlight, Table, Video,
                                 WordArt)
 from gslides_api.element.base import ElementKind, PageElementBase
@@ -260,6 +264,82 @@ class ImageElement(PageElementBase):
 
         requests = ImageElement._replace_image_requests(image_id, url, method)
         return client.batch_update(requests, presentation_id)
+
+    def get_image_data(self) -> ImageData:
+        """Retrieve the actual image data from Google Slides.
+        
+        Returns:
+            ImageData: Container with image bytes, MIME type, and optional filename.
+            
+        Raises:
+            ValueError: If no image URL is available.
+            requests.RequestException: If the image download fails.
+        """
+        logger = logging.getLogger(__name__)
+        
+        # Prefer contentUrl over sourceUrl as it's Google's cached version
+        url = self.image.contentUrl or self.image.sourceUrl
+        
+        if not url:
+            logger.error("No image URL available for element %s", self.objectId)
+            raise ValueError("No image URL available (neither contentUrl nor sourceUrl)")
+        
+        logger.info("Downloading image from URL: %s", url)
+        
+        try:
+            # Download the image with retries for common network issues
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            
+            content_length = len(response.content)
+            logger.debug("Downloaded %d bytes from %s", content_length, url)
+            
+            if content_length == 0:
+                logger.warning("Downloaded empty image content from %s", url)
+                raise ValueError("Downloaded image is empty")
+                
+        except requests.exceptions.Timeout as e:
+            logger.error("Timeout downloading image from %s: %s", url, e)
+            raise requests.RequestException(f"Timeout downloading image: {e}") from e
+        except requests.exceptions.RequestException as e:
+            logger.error("Failed to download image from %s: %s", url, e)
+            raise
+        
+        # Determine MIME type
+        mime_type = response.headers.get('content-type', 'application/octet-stream')
+        logger.debug("Content-Type header: %s", mime_type)
+        
+        # If MIME type is not image-specific, try to guess from URL
+        if not mime_type.startswith('image/'):
+            parsed_url = urlparse(url)
+            path = parsed_url.path
+            if path:
+                guessed_type, _ = mimetypes.guess_type(path)
+                if guessed_type and guessed_type.startswith('image/'):
+                    logger.debug("Guessed MIME type from URL: %s -> %s", path, guessed_type)
+                    mime_type = guessed_type
+                else:
+                    logger.warning("Could not determine image MIME type, using default: %s", mime_type)
+        
+        # Extract filename from URL if possible
+        filename = None
+        parsed_url = urlparse(url)
+        if parsed_url.path:
+            filename = parsed_url.path.split('/')[-1]
+            # Only keep if it looks like a filename with extension
+            if '.' not in filename:
+                filename = None
+            else:
+                logger.debug("Extracted filename from URL: %s", filename)
+        
+        logger.info("Successfully retrieved image: %d bytes, MIME type: %s", 
+                   content_length, mime_type)
+        
+        return ImageData(
+            content=response.content,
+            mime_type=mime_type,
+            filename=filename
+        )
 
 
 class VideoElement(PageElementBase):
