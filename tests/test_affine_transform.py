@@ -1,6 +1,7 @@
 """Test AffineTransform and Unit classes."""
 
 import pytest
+
 from gslides_api.domain import AffineTransform, Unit
 
 
@@ -32,9 +33,9 @@ class TestAffineTransform:
             shearY=0.2,
             translateX=100.0,
             translateY=200.0,
-            unit=Unit.EMU
+            unit=Unit.EMU,
         )
-        
+
         assert transform.scaleX == 1.5
         assert transform.scaleY == 2.0
         assert transform.shearX == 0.1
@@ -51,9 +52,9 @@ class TestAffineTransform:
             shearX=0.0,
             shearY=0.0,
             translateX=0.0,
-            translateY=0.0
+            translateY=0.0,
         )
-        
+
         assert transform.scaleX == 1.0
         assert transform.scaleY == 1.0
         assert transform.shearX == 0.0
@@ -71,11 +72,11 @@ class TestAffineTransform:
             shearY=0.2,
             translateX=100.0,
             translateY=200.0,
-            unit=Unit.EMU
+            unit=Unit.EMU,
         )
-        
+
         api_format = transform.to_api_format()
-        
+
         expected = {
             "scaleX": 1.5,
             "scaleY": 2.0,
@@ -83,9 +84,9 @@ class TestAffineTransform:
             "shearY": 0.2,
             "translateX": 100.0,
             "translateY": 200.0,
-            "unit": "EMU"
+            "unit": "EMU",
         }
-        
+
         assert api_format == expected
 
     def test_affine_transform_api_format_without_unit(self):
@@ -96,20 +97,20 @@ class TestAffineTransform:
             shearX=0.0,
             shearY=0.0,
             translateX=0.0,
-            translateY=0.0
+            translateY=0.0,
         )
-        
+
         api_format = transform.to_api_format()
-        
+
         expected = {
             "scaleX": 1.0,
             "scaleY": 1.0,
             "shearX": 0.0,
             "shearY": 0.0,
             "translateX": 0.0,
-            "translateY": 0.0
+            "translateY": 0.0,
         }
-        
+
         # unit should be excluded when None due to exclude_none=True
         assert api_format == expected
         assert "unit" not in api_format
@@ -122,23 +123,23 @@ class TestAffineTransform:
             shearX=0.5,
             shearY=0.2,
             translateX=10.0,
-            translateY=20.0
+            translateY=20.0,
         )
-        
+
         # Test point (5, 4)
         x, y = 5.0, 4.0
-        
+
         # Apply transformation as described in docstring:
         # x' = scaleX * x + shearX * y + translateX
         # y' = scaleY * y + shearY * x + translateY
         x_prime = transform.scaleX * x + transform.shearX * y + transform.translateX
         y_prime = transform.scaleY * y + transform.shearY * x + transform.translateY
-        
+
         # Expected: x' = 2.0 * 5 + 0.5 * 4 + 10 = 10 + 2 + 10 = 22
         # Expected: y' = 3.0 * 4 + 0.2 * 5 + 20 = 12 + 1 + 20 = 33
         expected_x = 22.0
         expected_y = 33.0
-        
+
         assert abs(x_prime - expected_x) < 0.001
         assert abs(y_prime - expected_y) < 0.001
 
@@ -150,16 +151,16 @@ class TestAffineTransform:
             shearX=0.0,
             shearY=0.0,
             translateX=0.0,
-            translateY=0.0
+            translateY=0.0,
         )
-        
+
         # Test multiple points
         test_points = [(0, 0), (1, 1), (5, 3), (-2, 4)]
-        
+
         for x, y in test_points:
             x_prime = transform.scaleX * x + transform.shearX * y + transform.translateX
             y_prime = transform.scaleY * y + transform.shearY * x + transform.translateY
-            
+
             assert abs(x_prime - x) < 0.001
             assert abs(y_prime - y) < 0.001
 
@@ -174,7 +175,7 @@ class TestAffineTransform:
             shearX=0.0,
             shearY=0.0,
             translateX=0.0,
-            translateY=0.0
+            translateY=0.0,
         )
 
         # Missing required fields should raise validation error

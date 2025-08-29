@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any, List, Set
+from typing import Any, Dict, List, Set
 
 import pytest
 
@@ -37,7 +37,9 @@ def reconstructed_json(presentation_model: Presentation) -> Dict[str, Any]:
 @pytest.fixture
 def output_json_path() -> str:
     """Fixture that returns the path to save the reconstructed JSON."""
-    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "reconstructed_output.json")
+    return os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "reconstructed_output.json"
+    )
 
 
 @pytest.fixture
@@ -52,7 +54,9 @@ def ignored_paths() -> Set[str]:
     return set()
 
 
-def test_save_reconstructed_json(reconstructed_json: Dict[str, Any], output_json_path: str):
+def test_save_reconstructed_json(
+    reconstructed_json: Dict[str, Any], output_json_path: str
+):
     """Test that we can save the reconstructed JSON to a file."""
     with open(output_json_path, "w") as f:
         json.dump(reconstructed_json, f, indent=2)
@@ -68,10 +72,14 @@ def test_essential_fields_preserved(
     essential_fields = ["presentationId", "pageSize", "slides"]
     for field in essential_fields:
         assert field in original_json, f"Field '{field}' missing in original JSON"
-        assert field in reconstructed_json, f"Field '{field}' missing in reconstructed JSON"
+        assert (
+            field in reconstructed_json
+        ), f"Field '{field}' missing in reconstructed JSON"
 
 
-def test_slide_count_preserved(original_json: Dict[str, Any], reconstructed_json: Dict[str, Any]):
+def test_slide_count_preserved(
+    original_json: Dict[str, Any], reconstructed_json: Dict[str, Any]
+):
     """Test that the number of slides is preserved in the reconstructed JSON."""
     original_slides = len(original_json.get("slides", []))
     reconstructed_slides = len(reconstructed_json.get("slides", []))
@@ -90,7 +98,9 @@ def test_slide_count_preserved(original_json: Dict[str, Any], reconstructed_json
     ],
 )
 def test_field_values_preserved(
-    original_json: Dict[str, Any], reconstructed_json: Dict[str, Any], field_path: List[str]
+    original_json: Dict[str, Any],
+    reconstructed_json: Dict[str, Any],
+    field_path: List[str],
 ):
     """Test that specific field values are preserved in the reconstructed JSON."""
     # Navigate to the field in both JSONs
@@ -115,7 +125,9 @@ def test_field_values_preserved(
         ), f"Value mismatch at {'.'.join(field_path)}: {orig_value} vs {recon_value}"
 
 
-def test_slide_content_preserved(original_json: Dict[str, Any], reconstructed_json: Dict[str, Any]):
+def test_slide_content_preserved(
+    original_json: Dict[str, Any], reconstructed_json: Dict[str, Any]
+):
     """Test that slide content is preserved in the reconstructed JSON."""
     # Skip if there are no slides
     if not original_json.get("slides") or not reconstructed_json.get("slides"):
@@ -157,7 +169,9 @@ def test_slide_content_preserved(original_json: Dict[str, Any], reconstructed_js
                     pytest.skip(f"Path {path_to_check} not found in one of the JSONs")
 
         # If we got here, we have values to compare
-        assert orig_value == recon_value, f"Slide content mismatch: {orig_value} vs {recon_value}"
+        assert (
+            orig_value == recon_value
+        ), f"Slide content mismatch: {orig_value} vs {recon_value}"
     except (KeyError, IndexError, TypeError):
         # If the path doesn't exist, skip the test rather than fail
         pytest.skip("Could not extract comparable content from slides")
@@ -171,12 +185,17 @@ def test_deep_comparison(
 ):
     """Test that the deep comparison of JSON structures finds no differences."""
     differences = json_diff(
-        original_json, reconstructed_json, ignored_keys=ignored_keys, ignored_paths=ignored_paths
+        original_json,
+        reconstructed_json,
+        ignored_keys=ignored_keys,
+        ignored_paths=ignored_paths,
     )
 
     # If there are differences, format them for the assertion message
     if differences:
-        diff_message = "\n".join([f"{i+1}. {diff}" for i, diff in enumerate(differences)])
+        diff_message = "\n".join(
+            [f"{i+1}. {diff}" for i, diff in enumerate(differences)]
+        )
         assert not differences, f"Found {len(differences)} differences:\n{diff_message}"
     else:
         assert True, "No differences found in the deep comparison"

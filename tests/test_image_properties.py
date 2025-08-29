@@ -1,16 +1,8 @@
 import pytest
-from gslides_api.domain import (
-    Image,
-    ImageProperties,
-    CropProperties,
-    Recolor,
-    RecolorName,
-    ColorStop,
-    Color,
-    RgbColor,
-    Outline,
-    Shadow,
-)
+
+from gslides_api.domain import (Color, ColorStop, CropProperties, Image,
+                                ImageProperties, Outline, Recolor, RecolorName,
+                                RgbColor, Shadow)
 
 
 def test_image_properties_creation():
@@ -27,7 +19,7 @@ def test_image_properties_creation():
             angle=0.0,
         ),
     )
-    
+
     assert props.transparency == 0.5
     assert props.brightness == 0.2
     assert props.contrast == -0.1
@@ -43,7 +35,7 @@ def test_image_with_properties():
             brightness=0.2,
         ),
     )
-    
+
     assert isinstance(image.imageProperties, ImageProperties)
     assert image.imageProperties.transparency == 0.5
     assert image.imageProperties.brightness == 0.2
@@ -62,7 +54,7 @@ def test_image_with_dict_properties():
             },
         },
     )
-    
+
     assert isinstance(image.imageProperties, ImageProperties)
     assert image.imageProperties.transparency == 0.5
     assert image.imageProperties.brightness == 0.2
@@ -80,16 +72,14 @@ def test_image_to_api_format():
                 name=RecolorName.GRAYSCALE,
                 recolorStops=[
                     ColorStop(
-                        color=Color(
-                            rgbColor=RgbColor(red=0.5, green=0.5, blue=0.5)
-                        ),
+                        color=Color(rgbColor=RgbColor(red=0.5, green=0.5, blue=0.5)),
                         position=0.5,
                     )
                 ],
             ),
         ),
     )
-    
+
     api_format = image.to_api_format()
     assert "imageProperties" in api_format
     assert api_format["imageProperties"]["transparency"] == 0.5

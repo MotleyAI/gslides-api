@@ -13,7 +13,9 @@ class CreateTableRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createtablerequest
     """
 
-    elementProperties: Dict[str, Any] = Field(description="The element properties for the table")
+    elementProperties: Dict[str, Any] = Field(
+        description="The element properties for the table"
+    )
     rows: int = Field(description="Number of rows in the table")
     columns: int = Field(description="Number of columns in the table")
 
@@ -30,7 +32,8 @@ class InsertTableRowsRequest(GSlidesAPIRequest):
         description="The reference table cell location from which rows will be inserted",
     )
     insertBelow: Optional[bool] = Field(
-        default=None, description="Whether to insert new rows below the reference cell location"
+        default=None,
+        description="Whether to insert new rows below the reference cell location",
     )
     number: int = Field(description="The number of rows to be inserted")
 
@@ -87,7 +90,9 @@ class UpdateTableCellPropertiesRequest(GSlidesAPIRequest):
     tableRange: Dict[str, Any] = Field(
         description="The table range representing the subset of the table to which the updates are applied"
     )
-    tableCellProperties: Dict[str, Any] = Field(description="The table cell properties to update")
+    tableCellProperties: Dict[str, Any] = Field(
+        description="The table cell properties to update"
+    )
     fields: str = Field(description="The fields that should be updated")
 
 
@@ -137,9 +142,12 @@ class UpdateTableRowPropertiesRequest(GSlidesAPIRequest):
 
     objectId: str = Field(description="The object ID of the table")
     rowIndices: Optional[List[int]] = Field(
-        default=None, description="The list of zero-based indices specifying which rows to update"
+        default=None,
+        description="The list of zero-based indices specifying which rows to update",
     )
-    tableRowProperties: Dict[str, Any] = Field(description="The table row properties to update")
+    tableRowProperties: Dict[str, Any] = Field(
+        description="The table row properties to update"
+    )
     fields: str = Field(description="The fields that should be updated")
 
 

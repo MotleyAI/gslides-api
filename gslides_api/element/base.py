@@ -4,8 +4,10 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import Field
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import GSlidesBaseModel, PageElementProperties, Size, Transform
-from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
+from gslides_api.domain import (GSlidesBaseModel, OutputUnit,
+                                PageElementProperties, Size, Transform)
+from gslides_api.request.request import (GSlidesAPIRequest,
+                                         UpdatePageElementAltTextRequest)
 
 
 class ElementKind(Enum):
@@ -47,32 +49,30 @@ class PageElementBase(GSlidesBaseModel):
     _EMU_PER_CM = 360000  # 1 EMU = 1/360,000 cm
     _EMU_PER_INCH = 914400  # 1 inch = 914,400 EMUs
 
-    def _validate_units(self, units: str) -> None:
-        """Validate that units parameter is supported.
-
-        Args:
-            units: The units to validate. Must be "cm" or "in".
-
-        Raises:
-            ValueError: If units is not "cm" or "in".
-        """
-        if units not in ["cm", "in"]:
-            raise ValueError("Units must be 'cm' or 'in'")
-
-    def _convert_emu_to_units(self, value_emu: float, units: str) -> float:
+    def _convert_emu_to_units(self, value_emu: float, units: OutputUnit) -> float:
         """Convert a value from EMUs to the specified units.
 
         Args:
             value_emu: The value in EMUs to convert.
-            units: The target units ("cm" or "in").
+            units: The target units (OutputUnit.CM or OutputUnit.IN).
 
         Returns:
             The converted value in the specified units.
+
+        Raises:
+            TypeError: If units is not an OutputUnit enum value.
         """
-        if units == "cm":
+        if not isinstance(units, OutputUnit):
+            raise TypeError(
+                f"units must be an OutputUnit enum value, got {type(units)}"
+            )
+
+        if units == OutputUnit.CM:
             return value_emu / self._EMU_PER_CM
-        else:  # units == "in"
+        elif units == OutputUnit.IN:
             return value_emu / self._EMU_PER_INCH
+        else:
+            raise ValueError(f"Unsupported OutputUnit: {units}")
 
     def create_copy(
         self,
@@ -192,7 +192,9 @@ class PageElementBase(GSlidesBaseModel):
 
         This method should be overridden by subclasses.
         """
-        raise NotImplementedError("Subclasses must implement element_to_update_request method")
+        raise NotImplementedError(
+            "Subclasses must implement element_to_update_request method"
+        )
 
     def to_markdown(self) -> str | None:
         """Convert a PageElement to markdown.
@@ -201,7 +203,7 @@ class PageElementBase(GSlidesBaseModel):
         """
         raise NotImplementedError("Subclasses must implement to_markdown method")
 
-    def absolute_size(self, units: str = "in") -> Tuple[float, float]:
+    def absolute_size(self, units: OutputUnit) -> Tuple[float, float]:
         """Calculate the absolute size of the element in the specified units.
 
         This method calculates the actual rendered size of the element, taking into
@@ -219,7 +221,6 @@ class PageElementBase(GSlidesBaseModel):
             ValueError: If units is not "cm" or "in".
             ValueError: If element size is not available.
         """
-        self._validate_units(units)
 
         if self.size is None:
             raise ValueError("Element size is not available")
@@ -246,7 +247,7 @@ class PageElementBase(GSlidesBaseModel):
 
         return width_result, height_result
 
-    def absolute_position(self, units: str = "in") -> Tuple[float, float]:
+    def absolute_position(self, units: OutputUnit) -> Tuple[float, float]:
         """Calculate the absolute position of the element on the page in the specified units.
 
         Position represents the distance of the top-left corner of the element
@@ -259,11 +260,7 @@ class PageElementBase(GSlidesBaseModel):
             A tuple of (x, y) representing the position in the specified units,
             where x is the horizontal distance from the left edge and y is the
             vertical distance from the top edge of the slide.
-
-        Raises:
-            ValueError: If units is not "cm" or "in".
         """
-        self._validate_units(units)
 
         # Extract position from transform (translateX, translateY are in EMUs)
         x_emu = self.transform.translateX

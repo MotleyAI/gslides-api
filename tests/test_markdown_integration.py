@@ -6,9 +6,11 @@ with proper formatting preservation. Tests are skipped if GSLIDES_CREDENTIALS_PA
 environment variable is not set.
 """
 
-import os
 import logging
+import os
+
 import pytest
+
 from gslides_api import Presentation, Slide, initialize_credentials
 from gslides_api.text import TextStyle
 
@@ -89,7 +91,9 @@ class TestMarkdownIntegration:
             md = "Oh what a text\n* Bullet points\n* And more\n1. Numbered items\n2. And more"
 
             # Write markdown to text element
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
 
             # Sync and verify content matches
             test_slide.sync_from_cloud()
@@ -105,7 +109,9 @@ class TestMarkdownIntegration:
     * And even more `code` blocks"""
 
             # Write markdown to text element
-            test_slide.get_element_by_alt_title("text_1").write_text(medium_md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                medium_md, as_markdown=True
+            )
 
             # Sync from cloud
             test_slide.sync_from_cloud()
@@ -179,7 +185,9 @@ Mixed content with [links](https://example.com) and ~~crossed out~~ text."""
                     f"Expected: ...{repr(complex_markdown[context_start:expected_context_end])}..."
                 )
                 print(f"Actual:   ...{repr(re_md[context_start:context_end])}...")
-                print(f"Expected length: {len(complex_markdown)}, Actual length: {len(re_md)}")
+                print(
+                    f"Expected length: {len(complex_markdown)}, Actual length: {len(re_md)}"
+                )
 
             assert re_md == complex_markdown
 
@@ -275,7 +283,9 @@ And some more text that belongs in the last list item """
         def test_strikethrough_standalone(self, test_slide):
             """Test strikethrough formatting in a standalone line."""
             md = "This is regular text with ~~strikethrough~~ formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -283,7 +293,9 @@ And some more text that belongs in the last list item """
         def test_emphasis_standalone(self, test_slide):
             """Test emphasis formatting in a standalone line."""
             md = "This is regular text with *emphasis* formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -291,7 +303,9 @@ And some more text that belongs in the last list item """
         def test_bold_standalone(self, test_slide):
             """Test bold formatting in a standalone line."""
             md = "This is regular text with **bold** formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -299,7 +313,9 @@ And some more text that belongs in the last list item """
         def test_bold_emphasis_standalone(self, test_slide):
             """Test bold emphasis formatting in a standalone line."""
             md = "This is regular text with ***bold emphasis*** formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -307,7 +323,9 @@ And some more text that belongs in the last list item """
         def test_code_standalone(self, test_slide):
             """Test code formatting in a standalone line."""
             md = "This is regular text with `code` formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -315,7 +333,9 @@ And some more text that belongs in the last list item """
         def test_link_standalone(self, test_slide):
             """Test link formatting in a standalone line."""
             md = "This is regular text with a [link to Google](https://google.com) formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -323,7 +343,9 @@ And some more text that belongs in the last list item """
         def test_strikethrough_in_bullet(self, test_slide):
             """Test strikethrough formatting within a bullet list."""
             md = "* This is regular text with ~~strikethrough~~ formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -331,7 +353,9 @@ And some more text that belongs in the last list item """
         def test_emphasis_in_bullet(self, test_slide):
             """Test emphasis formatting within a bullet list."""
             md = "* This is regular text with *emphasis* formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -339,7 +363,9 @@ And some more text that belongs in the last list item """
         def test_bold_in_bullet(self, test_slide):
             """Test bold formatting within a bullet list."""
             md = "* This is regular text with **bold** formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -347,7 +373,9 @@ And some more text that belongs in the last list item """
         def test_bold_emphasis_in_bullet(self, test_slide):
             """Test bold emphasis formatting within a bullet list."""
             md = "* This is regular text with ***bold emphasis*** formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -355,7 +383,9 @@ And some more text that belongs in the last list item """
         def test_code_in_bullet(self, test_slide):
             """Test code formatting within a bullet list."""
             md = "* This is regular text with `code` formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -363,7 +393,9 @@ And some more text that belongs in the last list item """
         def test_link_in_bullet(self, test_slide):
             """Test link formatting within a bullet list."""
             md = "* This is regular text with a [link to Google](https://google.com) formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -371,7 +403,9 @@ And some more text that belongs in the last list item """
         def test_simple_nested_numbered_list(self, test_slide):
             """Test simple nested numbered list reconstruction."""
             md = "1. First item\n    1. Nested item\n    2. Another nested item\n2. Second item"
-            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
+            test_slide.get_element_by_alt_title("text_1").write_text(
+                md, as_markdown=True
+            )
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md

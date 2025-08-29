@@ -40,7 +40,9 @@ def image_url_is_valid(url: str) -> bool:
         # If no obvious image extension, try a quick HEAD request
         try:
             req = urllib.request.Request(url, method="HEAD")
-            req.add_header("User-Agent", "Mozilla/5.0 (compatible; Google-Slides-Templater/1.0)")
+            req.add_header(
+                "User-Agent", "Mozilla/5.0 (compatible; Google-Slides-Templater/1.0)"
+            )
 
             with urllib.request.urlopen(req, timeout=5) as response:
                 content_type = response.headers.get("Content-Type", "")

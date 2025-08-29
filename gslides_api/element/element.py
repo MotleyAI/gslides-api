@@ -1,38 +1,22 @@
-from typing import Dict, Any, List, Union, Annotated, Optional
 import uuid
+from typing import Annotated, Any, Dict, List, Optional, Union
 
-from pydantic import Field, Discriminator, Tag, field_validator
+from pydantic import Discriminator, Field, Tag, field_validator
 
-
-from gslides_api.domain import (
-    Table,
-    Image,
-    Video,
-    Line,
-    WordArt,
-    SheetsChart,
-    SpeakerSpotlight,
-    Group,
-    ImageReplaceMethod,
-)
-from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.client import api_client, GoogleAPIClient
+from gslides_api.client import GoogleAPIClient, api_client
+from gslides_api.domain import (Group, Image, ImageReplaceMethod, Line,
+                                SheetsChart, SpeakerSpotlight, Table, Video,
+                                WordArt)
+from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.shape import ShapeElement
-from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
-from gslides_api.request.request import (
-    UpdateImagePropertiesRequest,
-    ReplaceImageRequest,
-    GSlidesAPIRequest,
-    UpdateVideoPropertiesRequest,
-    UpdateLinePropertiesRequest,
-    # UpdateSheetsChartPropertiesRequest,
-    CreateImageRequest,
-    CreateVideoRequest,
-    CreateLineRequest,
-    # CreateWordArtRequest,
-    CreateSheetsChartRequest,
-)
+from gslides_api.request.request import (  # UpdateSheetsChartPropertiesRequest,; CreateWordArtRequest,
+    CreateImageRequest, CreateLineRequest, CreateSheetsChartRequest,
+    CreateVideoRequest, GSlidesAPIRequest, ReplaceImageRequest,
+    UpdateImagePropertiesRequest, UpdateLinePropertiesRequest,
+    UpdateVideoPropertiesRequest)
 from gslides_api.request.table import CreateTableRequest
+from gslides_api.utils import (dict_to_dot_separated_field_list,
+                               image_url_is_valid)
 
 
 def element_discriminator(v: Any) -> str:
@@ -131,7 +115,10 @@ class ImageElement(PageElementBase):
         parent_id: str | None = None,
     ) -> List[GSlidesAPIRequest]:
         """Create a request to create an image element like the given element."""
-        url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
+        url = (
+            url
+            or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
+        )
         element_properties = e.element_properties(parent_id or e.slide_id)
         request = CreateImageRequest(
             objectId=image_id,
@@ -176,7 +163,10 @@ class ImageElement(PageElementBase):
         """Convert an ImageElement to an update request for the Google Slides API."""
         requests = self.alt_text_update_request(element_id)
 
-        if hasattr(self.image, "imageProperties") and self.image.imageProperties is not None:
+        if (
+            hasattr(self.image, "imageProperties")
+            and self.image.imageProperties is not None
+        ):
             image_properties = self.image.imageProperties.to_api_format()
             # "fields": "*" causes an error
             request = UpdateImagePropertiesRequest(
@@ -303,7 +293,10 @@ class VideoElement(PageElementBase):
         """Convert a VideoElement to an update request for the Google Slides API."""
         requests = self.alt_text_update_request(element_id)
 
-        if hasattr(self.video, "videoProperties") and self.video.videoProperties is not None:
+        if (
+            hasattr(self.video, "videoProperties")
+            and self.video.videoProperties is not None
+        ):
             video_properties = self.video.videoProperties.to_api_format()
             video_request = UpdateVideoPropertiesRequest(
                 objectId=element_id,
@@ -341,7 +334,10 @@ class LineElement(PageElementBase):
         """Convert a LineElement to an update request for the Google Slides API."""
         requests = self.alt_text_update_request(element_id)
 
-        if hasattr(self.line, "lineProperties") and self.line.lineProperties is not None:
+        if (
+            hasattr(self.line, "lineProperties")
+            and self.line.lineProperties is not None
+        ):
             line_properties = self.line.lineProperties.to_api_format()
             line_request = UpdateLinePropertiesRequest(
                 objectId=element_id,
@@ -358,7 +354,9 @@ class WordArtElement(PageElementBase):
 
     wordArt: WordArt
     type: ElementKind = Field(
-        default=ElementKind.WORD_ART, description="The type of page element", exclude=True
+        default=ElementKind.WORD_ART,
+        description="The type of page element",
+        exclude=True,
     )
 
     @field_validator("type")
@@ -390,7 +388,9 @@ class SheetsChartElement(PageElementBase):
 
     sheetsChart: SheetsChart
     type: ElementKind = Field(
-        default=ElementKind.SHEETS_CHART, description="The type of page element", exclude=True
+        default=ElementKind.SHEETS_CHART,
+        description="The type of page element",
+        exclude=True,
     )
 
     @field_validator("type")
@@ -403,7 +403,9 @@ class SheetsChartElement(PageElementBase):
         element_properties = self.element_properties(parent_id)
 
         if not self.sheetsChart.spreadsheetId or not self.sheetsChart.chartId:
-            raise ValueError("Spreadsheet ID and Chart ID are required for Sheets Chart")
+            raise ValueError(
+                "Spreadsheet ID and Chart ID are required for Sheets Chart"
+            )
 
         request = CreateSheetsChartRequest(
             elementProperties=element_properties,
@@ -436,7 +438,9 @@ class SpeakerSpotlightElement(PageElementBase):
 
     speakerSpotlight: SpeakerSpotlight
     type: ElementKind = Field(
-        default=ElementKind.SPEAKER_SPOTLIGHT, description="The type of page element", exclude=True
+        default=ElementKind.SPEAKER_SPOTLIGHT,
+        description="The type of page element",
+        exclude=True,
     )
 
     @field_validator("type")
@@ -475,7 +479,9 @@ class GroupElement(PageElementBase):
         """Convert a GroupElement to a create request for the Google Slides API."""
         # Note: Group creation is typically done by grouping existing elements
         # This is a placeholder implementation
-        raise NotImplementedError("Group creation should be done by grouping existing elements")
+        raise NotImplementedError(
+            "Group creation should be done by grouping existing elements"
+        )
 
     def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
         """Convert a GroupElement to an update request for the Google Slides API."""

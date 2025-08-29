@@ -32,7 +32,9 @@ def json_diff(
         ignored_paths = set(ignored_paths)
 
     # Check if the current path should be ignored
-    if any(path.startswith(ignored_path) for ignored_path in ignored_paths if ignored_path):
+    if any(
+        path.startswith(ignored_path) for ignored_path in ignored_paths if ignored_path
+    ):
         return []
 
     differences = []
@@ -40,10 +42,14 @@ def json_diff(
     # If types are different, handle special cases
     if type(original) != type(reconstructed):
         # Allow int/float conversions for numeric values
-        if isinstance(original, (int, float)) and isinstance(reconstructed, (int, float)):
+        if isinstance(original, (int, float)) and isinstance(
+            reconstructed, (int, float)
+        ):
             # For numeric values, compare the actual values with a small tolerance
             if abs(float(original) - float(reconstructed)) > 1e-10:
-                differences.append(f"Value mismatch at {path}: {original} vs {reconstructed}")
+                differences.append(
+                    f"Value mismatch at {path}: {original} vs {reconstructed}"
+                )
         else:
             differences.append(
                 f"Type mismatch at {path}: {type(original)} vs {type(reconstructed)}"
@@ -59,17 +65,27 @@ def json_diff(
         # Keys in original but not in reconstructed
         for key in original_keys - reconstructed_keys:
             # Skip default style properties that might be missing in the original
-            differences.append(f"Key '{key}' at {path} exists in original but not in reconstructed")
+            differences.append(
+                f"Key '{key}' at {path} exists in original but not in reconstructed"
+            )
 
         # Keys in reconstructed but not in original
         for key in reconstructed_keys - original_keys:
-            differences.append(f"Key '{key}' at {path} exists in reconstructed but not in original")
+            differences.append(
+                f"Key '{key}' at {path} exists in reconstructed but not in original"
+            )
 
         # Recursively compare values for keys that exist in both
         for key in original_keys & reconstructed_keys:
             new_path = f"{path}.{key}" if path else key
             differences.extend(
-                json_diff(original[key], reconstructed[key], new_path, ignored_keys, ignored_paths)
+                json_diff(
+                    original[key],
+                    reconstructed[key],
+                    new_path,
+                    ignored_keys,
+                    ignored_paths,
+                )
             )
 
     # Handle lists
@@ -83,7 +99,9 @@ def json_diff(
             for i, (orig_item, recon_item) in enumerate(zip(original, reconstructed)):
                 new_path = f"{path}[{i}]"
                 differences.extend(
-                    json_diff(orig_item, recon_item, new_path, ignored_keys, ignored_paths)
+                    json_diff(
+                        orig_item, recon_item, new_path, ignored_keys, ignored_paths
+                    )
                 )
 
     # Handle primitive values (strings, numbers, booleans, None)
@@ -91,8 +109,12 @@ def json_diff(
         # For floating point values, allow small differences
         if isinstance(original, float) and isinstance(reconstructed, float):
             if abs(original - reconstructed) > 1e-10:
-                differences.append(f"Value mismatch at {path}: {original} vs {reconstructed}")
+                differences.append(
+                    f"Value mismatch at {path}: {original} vs {reconstructed}"
+                )
         else:
-            differences.append(f"Value mismatch at {path}: {original} vs {reconstructed}")
+            differences.append(
+                f"Value mismatch at {path}: {original} vs {reconstructed}"
+            )
 
     return differences

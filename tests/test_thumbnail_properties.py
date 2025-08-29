@@ -1,7 +1,8 @@
 """Tests for ThumbnailProperties, ThumbnailSize, and MimeType classes."""
 
 import pytest
-from gslides_api.domain import ThumbnailProperties, ThumbnailSize, MimeType
+
+from gslides_api.domain import MimeType, ThumbnailProperties, ThumbnailSize
 
 
 class TestMimeType:
@@ -10,7 +11,7 @@ class TestMimeType:
     def test_mime_type_values(self):
         """Test that MimeType has the expected values."""
         assert MimeType.PNG.value == "PNG"
-        
+
     def test_mime_type_enum_members(self):
         """Test that MimeType has exactly one member."""
         assert len(list(MimeType)) == 1
@@ -22,11 +23,14 @@ class TestThumbnailSize:
 
     def test_thumbnail_size_values(self):
         """Test that ThumbnailSize has the expected values."""
-        assert ThumbnailSize.THUMBNAIL_SIZE_UNSPECIFIED.value == "THUMBNAIL_SIZE_UNSPECIFIED"
+        assert (
+            ThumbnailSize.THUMBNAIL_SIZE_UNSPECIFIED.value
+            == "THUMBNAIL_SIZE_UNSPECIFIED"
+        )
         assert ThumbnailSize.LARGE.value == "LARGE"
         assert ThumbnailSize.MEDIUM.value == "MEDIUM"
         assert ThumbnailSize.SMALL.value == "SMALL"
-        
+
     def test_thumbnail_size_enum_members(self):
         """Test that ThumbnailSize has exactly four members."""
         assert len(list(ThumbnailSize)) == 4
@@ -34,7 +38,7 @@ class TestThumbnailSize:
             ThumbnailSize.THUMBNAIL_SIZE_UNSPECIFIED,
             ThumbnailSize.LARGE,
             ThumbnailSize.MEDIUM,
-            ThumbnailSize.SMALL
+            ThumbnailSize.SMALL,
         }
         assert set(ThumbnailSize) == expected_members
 
@@ -63,8 +67,7 @@ class TestThumbnailProperties:
     def test_thumbnail_properties_with_both_fields(self):
         """Test creating ThumbnailProperties with both fields."""
         props = ThumbnailProperties(
-            mimeType=MimeType.PNG,
-            thumbnailSize=ThumbnailSize.MEDIUM
+            mimeType=MimeType.PNG, thumbnailSize=ThumbnailSize.MEDIUM
         )
         assert props.mimeType == MimeType.PNG
         assert props.thumbnailSize == ThumbnailSize.MEDIUM
@@ -90,14 +93,10 @@ class TestThumbnailProperties:
     def test_thumbnail_properties_to_api_format_with_both_fields(self):
         """Test converting ThumbnailProperties with both fields to API format."""
         props = ThumbnailProperties(
-            mimeType=MimeType.PNG,
-            thumbnailSize=ThumbnailSize.LARGE
+            mimeType=MimeType.PNG, thumbnailSize=ThumbnailSize.LARGE
         )
         api_format = props.to_api_format()
-        expected = {
-            "mimeType": "PNG",
-            "thumbnailSize": "LARGE"
-        }
+        expected = {"mimeType": "PNG", "thumbnailSize": "LARGE"}
         assert api_format == expected
 
     def test_thumbnail_properties_all_thumbnail_sizes(self):
@@ -106,9 +105,9 @@ class TestThumbnailProperties:
             ThumbnailSize.THUMBNAIL_SIZE_UNSPECIFIED,
             ThumbnailSize.LARGE,
             ThumbnailSize.MEDIUM,
-            ThumbnailSize.SMALL
+            ThumbnailSize.SMALL,
         ]
-        
+
         for size in sizes:
             props = ThumbnailProperties(thumbnailSize=size)
             api_format = props.to_api_format()
@@ -117,6 +116,7 @@ class TestThumbnailProperties:
     def test_thumbnail_properties_inheritance(self):
         """Test that ThumbnailProperties inherits from GSlidesBaseModel."""
         from gslides_api.domain import GSlidesBaseModel
+
         props = ThumbnailProperties()
         assert isinstance(props, GSlidesBaseModel)
-        assert hasattr(props, 'to_api_format')
+        assert hasattr(props, "to_api_format")

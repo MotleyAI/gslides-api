@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from gslides_api import Dimension, Outline, Shadow, ShapeBackgroundFill
+from gslides_api.domain import Dimension, Outline, Shadow, ShapeBackgroundFill
 from gslides_api.domain import GSlidesBaseModel, OptionalColor
 
 

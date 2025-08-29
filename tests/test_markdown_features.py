@@ -7,6 +7,7 @@ This file tests both currently supported features and new features we want to ad
 """
 
 import pytest
+
 from gslides_api.markdown.from_markdown import markdown_to_text_elements
 from gslides_api.text import TextStyle
 
@@ -125,7 +126,10 @@ class TestMarkdownWithBaseStyle:
     def test_with_custom_base_style(self):
         """Test that base styles are properly applied."""
         base_style = TextStyle(
-            fontFamily="Arial", fontSize={"magnitude": 12, "unit": "PT"}, bold=False, italic=False
+            fontFamily="Arial",
+            fontSize={"magnitude": 12, "unit": "PT"},
+            bold=False,
+            italic=False,
         )
 
         markdown = "This is **bold** and *italic* text"

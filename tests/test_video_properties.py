@@ -1,10 +1,6 @@
 import pytest
-from gslides_api.domain import (
-    Video,
-    VideoProperties,
-    VideoSourceType,
-    Outline,
-)
+
+from gslides_api.domain import Outline, Video, VideoProperties, VideoSourceType
 
 
 def test_video_properties_creation():
@@ -15,7 +11,7 @@ def test_video_properties_creation():
         end=60,
         mute=False,
     )
-    
+
     assert props.autoPlay is True
     assert props.start == 10
     assert props.end == 60
@@ -36,7 +32,7 @@ def test_video_with_properties():
             mute=True,
         ),
     )
-    
+
     assert isinstance(video.videoProperties, VideoProperties)
     assert video.videoProperties.autoPlay is True
     assert video.videoProperties.start == 10
@@ -57,7 +53,7 @@ def test_video_to_api_format():
             mute=True,
         ),
     )
-    
+
     api_format = video.to_api_format()
     assert "videoProperties" in api_format
     assert api_format["videoProperties"]["autoPlay"] is True
