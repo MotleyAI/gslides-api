@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import Field, model_validator
 
@@ -41,7 +41,9 @@ class Range(GSlidesBaseModel):
         """Validate that the range parameters are consistent with the type."""
         if self.type == RangeType.ALL:
             if self.startIndex is not None or self.endIndex is not None:
-                raise ValueError("startIndex and endIndex must be None when type is ALL")
+                raise ValueError(
+                    "startIndex and endIndex must be None when type is ALL"
+                )
         elif self.type == RangeType.FIXED_RANGE:
             if self.startIndex is None or self.endIndex is None:
                 raise ValueError(
@@ -51,7 +53,9 @@ class Range(GSlidesBaseModel):
                 raise ValueError("startIndex must be less than endIndex")
         elif self.type == RangeType.FROM_START_INDEX:
             if self.startIndex is None:
-                raise ValueError("startIndex must be provided when type is FROM_START_INDEX")
+                raise ValueError(
+                    "startIndex must be provided when type is FROM_START_INDEX"
+                )
             if self.endIndex is not None:
                 raise ValueError("endIndex must be None when type is FROM_START_INDEX")
         return self
@@ -80,15 +84,21 @@ class TableCellLocation(GSlidesBaseModel):
 class PlaceholderIdMapping(GSlidesBaseModel):
     """Represents a mapping of placeholder IDs for slide creation."""
 
-    layoutPlaceholder: Dict[str, Any] = Field(description="The placeholder on the layout")
-    layoutPlaceholderObjectId: str = Field(description="The object ID of the layout placeholder")
+    layoutPlaceholder: Dict[str, Any] = Field(
+        description="The placeholder on the layout"
+    )
+    layoutPlaceholderObjectId: str = Field(
+        description="The object ID of the layout placeholder"
+    )
     objectId: str = Field(description="The object ID to assign to the placeholder")
 
 
 class ObjectIdMapping(GSlidesBaseModel):
     """Represents a mapping of object IDs for duplication operations."""
 
-    objectIds: Dict[str, str] = Field(description="A map of object IDs to their new IDs")
+    objectIds: Dict[str, str] = Field(
+        description="A map of object IDs to their new IDs"
+    )
 
 
 class SubstringMatchCriteria(GSlidesBaseModel):

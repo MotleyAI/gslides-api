@@ -1,31 +1,20 @@
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import Field
 
-from gslides_api.domain import (
-    BulletGlyphPreset,
-    GSlidesBaseModel,
-    LayoutReference,
-    ImageProperties,
-    PageElementProperties,
-    VideoProperties,
-    LineProperties,
-    AffineTransform,
-)
-from gslides_api import ShapeProperties
-
-
-from gslides_api.text import Type, TextStyle, ParagraphStyle
-from gslides_api.request.domain import (
-    Range,
-    SubstringMatchCriteria,
-    TableCellLocation,
-    PlaceholderIdMapping,
-)
+from gslides_api.text import ShapeProperties
+from gslides_api.domain import (AffineTransform, BulletGlyphPreset,
+                                GSlidesBaseModel, ImageProperties,
+                                LayoutReference, LineProperties,
+                                PageElementProperties, VideoProperties)
+from gslides_api.request.domain import (PlaceholderIdMapping, Range,
+                                        SubstringMatchCriteria,
+                                        TableCellLocation)
+from gslides_api.text import ParagraphStyle, TextStyle, Type
 
 if TYPE_CHECKING:
-    from gslides_api.page.slide_properties import SlideProperties
     from gslides_api.page.base import PageProperties
+    from gslides_api.page.slide_properties import SlideProperties
 
 
 class GSlidesAPIRequest(GSlidesBaseModel):
@@ -164,7 +153,9 @@ class UpdateShapePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the shape to update")
-    shapeProperties: ShapeProperties = Field(description="The shape properties to update")
+    shapeProperties: ShapeProperties = Field(
+        description="The shape properties to update"
+    )
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'shapeProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -178,7 +169,9 @@ class ReplaceImageRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#replaceimagerequest
     """
 
-    imageObjectId: str = Field(description="The ID of the existing image that will be replaced")
+    imageObjectId: str = Field(
+        description="The ID of the existing image that will be replaced"
+    )
     url: str = Field(
         description="The image URL. The image is fetched once at insertion time and a copy is stored for display inside the presentation. Images must be less than 50MB in size, cannot exceed 25 megapixels, and must be in one of PNG, JPEG, or GIF format."
     )
@@ -224,7 +217,9 @@ class UpdateSlidePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the slide to update")
-    slideProperties: "SlideProperties" = Field(description="The slide properties to update")
+    slideProperties: "SlideProperties" = Field(
+        description="The slide properties to update"
+    )
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'slideProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -255,7 +250,9 @@ class UpdatePagePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the page to update")
-    pageProperties: "PageProperties" = Field(description="The page properties to update")
+    pageProperties: "PageProperties" = Field(
+        description="The page properties to update"
+    )
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'pageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -270,7 +267,9 @@ class DeleteObjectRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#deleteobjectrequest
     """
 
-    objectId: str = Field(description="The object ID of the page or page element to delete")
+    objectId: str = Field(
+        description="The object ID of the page or page element to delete"
+    )
 
 
 class DuplicateObjectRequest(GSlidesAPIRequest):
@@ -298,7 +297,9 @@ class UpdateImagePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the image to update")
-    imageProperties: ImageProperties = Field(description="The image properties to update")
+    imageProperties: ImageProperties = Field(
+        description="The image properties to update"
+    )
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'imageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -336,7 +337,9 @@ class UpdateVideoPropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the video to update")
-    videoProperties: VideoProperties = Field(description="The video properties to update")
+    videoProperties: VideoProperties = Field(
+        description="The video properties to update"
+    )
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'videoProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -501,7 +504,9 @@ class ReplaceAllShapesWithImageRequest(GSlidesAPIRequest):
         description="If set, this request will replace all of the shapes that contain the given text"
     )
     imageUrl: Optional[str] = Field(default=None, description="The image URL")
-    imageReplaceMethod: Optional[str] = Field(default=None, description="The image replace method")
+    imageReplaceMethod: Optional[str] = Field(
+        default=None, description="The image replace method"
+    )
     pageObjectIds: Optional[List[str]] = Field(
         default=None,
         description="If non-empty, limits the matches to page elements only on the given pages",
@@ -563,7 +568,9 @@ class UpdateParagraphStyleRequest(GSlidesAPIRequest):
         description="The location of the cell in the table containing the paragraph(s) to style",
     )
     style: ParagraphStyle = Field(description="The paragraph's style")
-    textRange: Range = Field(description="The range of text containing the paragraph(s) to style")
+    textRange: Range = Field(
+        description="The range of text containing the paragraph(s) to style"
+    )
     fields: str = Field(description="The fields that should be updated")
 
 
@@ -574,9 +581,12 @@ class GroupObjectsRequest(GSlidesAPIRequest):
     """
 
     groupObjectId: Optional[str] = Field(
-        default=None, description="A user-supplied object ID for the group to be created"
+        default=None,
+        description="A user-supplied object ID for the group to be created",
     )
-    childrenObjectIds: List[str] = Field(description="The object IDs of the objects to group")
+    childrenObjectIds: List[str] = Field(
+        description="The object IDs of the objects to group"
+    )
 
 
 class UngroupObjectsRequest(GSlidesAPIRequest):
@@ -597,7 +607,9 @@ class UpdatePageElementsZOrderRequest(GSlidesAPIRequest):
     pageElementObjectIds: List[str] = Field(
         description="The object IDs of the page elements to update"
     )
-    operation: str = Field(description="The Z-order operation to apply on the page elements")
+    operation: str = Field(
+        description="The Z-order operation to apply on the page elements"
+    )
 
 
 class UpdateLineCategoryRequest(GSlidesAPIRequest):
@@ -606,7 +618,9 @@ class UpdateLineCategoryRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatelinecategoryrequest
     """
 
-    objectId: str = Field(description="The object ID of the line the update is applied to")
+    objectId: str = Field(
+        description="The object ID of the line the update is applied to"
+    )
     lineCategory: str = Field(description="The line category to update to")
 
 

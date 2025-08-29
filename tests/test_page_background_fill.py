@@ -1,14 +1,8 @@
 import unittest
-from gslides_api.domain import (
-    PageBackgroundFill,
-    PropertyState,
-    SolidFill,
-    StretchedPictureFill,
-    Color,
-    RgbColor,
-    Size,
-    Dimension,
-)
+
+from gslides_api.domain import (Color, Dimension, PageBackgroundFill,
+                                PropertyState, RgbColor, Size, SolidFill,
+                                StretchedPictureFill)
 
 
 class TestPageBackgroundFill(unittest.TestCase):
@@ -36,7 +30,8 @@ class TestPageBackgroundFill(unittest.TestCase):
     def test_stretched_picture_fill_background(self):
         # Create a stretched picture fill background
         size = Size(
-            width=Dimension(magnitude=100, unit="PT"), height=Dimension(magnitude=200, unit="PT")
+            width=Dimension(magnitude=100, unit="PT"),
+            height=Dimension(magnitude=200, unit="PT"),
         )
         stretched_picture = StretchedPictureFill(
             contentUrl="https://example.com/image.jpg", size=size
@@ -53,12 +48,21 @@ class TestPageBackgroundFill(unittest.TestCase):
         self.assertEqual(api_format["propertyState"], "RENDERED")
         self.assertIn("stretchedPictureFill", api_format)
         self.assertEqual(
-            api_format["stretchedPictureFill"]["contentUrl"], "https://example.com/image.jpg"
+            api_format["stretchedPictureFill"]["contentUrl"],
+            "https://example.com/image.jpg",
         )
-        self.assertEqual(api_format["stretchedPictureFill"]["size"]["width"]["magnitude"], 100)
-        self.assertEqual(api_format["stretchedPictureFill"]["size"]["width"]["unit"], "PT")
-        self.assertEqual(api_format["stretchedPictureFill"]["size"]["height"]["magnitude"], 200)
-        self.assertEqual(api_format["stretchedPictureFill"]["size"]["height"]["unit"], "PT")
+        self.assertEqual(
+            api_format["stretchedPictureFill"]["size"]["width"]["magnitude"], 100
+        )
+        self.assertEqual(
+            api_format["stretchedPictureFill"]["size"]["width"]["unit"], "PT"
+        )
+        self.assertEqual(
+            api_format["stretchedPictureFill"]["size"]["height"]["magnitude"], 200
+        )
+        self.assertEqual(
+            api_format["stretchedPictureFill"]["size"]["height"]["unit"], "PT"
+        )
 
 
 if __name__ == "__main__":

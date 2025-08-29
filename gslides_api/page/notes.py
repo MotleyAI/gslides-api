@@ -1,7 +1,7 @@
 from pydantic import Field, field_validator
 
-from gslides_api.page.base import BasePage, PageType
 from gslides_api.domain import GSlidesBaseModel
+from gslides_api.page.base import BasePage, PageType
 
 
 class NotesProperties(GSlidesBaseModel):
@@ -14,7 +14,9 @@ class Notes(BasePage):
     """Represents a notes page in a presentation."""
 
     notesProperties: NotesProperties
-    pageType: PageType = Field(default=PageType.NOTES, description="The type of page", exclude=True)
+    pageType: PageType = Field(
+        default=PageType.NOTES, description="The type of page", exclude=True
+    )
 
     @field_validator("pageType")
     @classmethod

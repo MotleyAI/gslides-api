@@ -1,5 +1,6 @@
-from typing import List, Dict, Optional, Any, Union
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
 from pydantic import BaseModel, model_validator
 from pydantic.json import pydantic_encoder
 
@@ -26,6 +27,13 @@ class Unit(Enum):
 
     PT = "PT"
     """A point, 1/72 of an inch."""
+
+
+class OutputUnit(Enum):
+    """Used in PageElementBase.absolute_* methods"""
+
+    IN = "in"
+    CM = "cm"
 
 
 class Dimension(GSlidesBaseModel):
@@ -388,7 +396,9 @@ class Image(GSlidesBaseModel):
                 self._original_properties_type = type(self.imageProperties).__name__
 
             try:
-                self.imageProperties = ImageProperties.model_validate(self.imageProperties)
+                self.imageProperties = ImageProperties.model_validate(
+                    self.imageProperties
+                )
             except (ValueError, TypeError):
                 # Keep as is if conversion fails
                 pass

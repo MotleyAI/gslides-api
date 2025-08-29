@@ -1,6 +1,7 @@
 import os
-import requests
 from io import BytesIO
+
+import requests
 
 from gslides_api.domain import GSlidesBaseModel
 
@@ -30,18 +31,21 @@ class ImageThumbnail(GSlidesBaseModel):
         """
         try:
             from PIL import Image
+
             with BytesIO(self.payload) as img_buffer:
                 with Image.open(img_buffer) as img:
                     # PIL format names to standard format names
                     format_mapping = {
-                        'JPEG': 'jpeg',
-                        'PNG': 'png',
-                        'GIF': 'gif',
-                        'BMP': 'bmp',
-                        'WEBP': 'webp',
-                        'TIFF': 'tiff'
+                        "JPEG": "jpeg",
+                        "PNG": "png",
+                        "GIF": "gif",
+                        "BMP": "bmp",
+                        "WEBP": "webp",
+                        "TIFF": "tiff",
                     }
-                    return format_mapping.get(img.format, img.format.lower() if img.format else None)
+                    return format_mapping.get(
+                        img.format, img.format.lower() if img.format else None
+                    )
         except ImportError:
             # Fallback: basic header detection for common formats
             return self._detect_format_from_header()
@@ -55,18 +59,18 @@ class ImageThumbnail(GSlidesBaseModel):
             return None
 
         # Check common image format headers
-        if self.payload.startswith(b'\xff\xd8\xff'):
-            return 'jpeg'
-        elif self.payload.startswith(b'\x89PNG\r\n\x1a\n'):
-            return 'png'
-        elif self.payload.startswith(b'GIF87a') or self.payload.startswith(b'GIF89a'):
-            return 'gif'
-        elif self.payload.startswith(b'BM'):
-            return 'bmp'
-        elif self.payload.startswith(b'RIFF') and b'WEBP' in self.payload[:12]:
-            return 'webp'
-        elif self.payload.startswith(b'II*\x00') or self.payload.startswith(b'MM\x00*'):
-            return 'tiff'
+        if self.payload.startswith(b"\xff\xd8\xff"):
+            return "jpeg"
+        elif self.payload.startswith(b"\x89PNG\r\n\x1a\n"):
+            return "png"
+        elif self.payload.startswith(b"GIF87a") or self.payload.startswith(b"GIF89a"):
+            return "gif"
+        elif self.payload.startswith(b"BM"):
+            return "bmp"
+        elif self.payload.startswith(b"RIFF") and b"WEBP" in self.payload[:12]:
+            return "webp"
+        elif self.payload.startswith(b"II*\x00") or self.payload.startswith(b"MM\x00*"):
+            return "tiff"
         else:
             return None
 
@@ -78,7 +82,9 @@ class ImageThumbnail(GSlidesBaseModel):
             # Detect the actual image format from the payload
 
             # Handle common extension aliases
-            expected_format = "jpeg" if file_extension in ("jpg", "jpeg") else file_extension
+            expected_format = (
+                "jpeg" if file_extension in ("jpg", "jpeg") else file_extension
+            )
 
             if self.mime_type and self.mime_type != expected_format:
                 raise ValueError(
@@ -93,7 +99,9 @@ class ImageThumbnail(GSlidesBaseModel):
         try:
             from IPython.display import Image
         except ImportError:
-            raise ImportError("IPython is not installed. Please install it to use this method.")
+            raise ImportError(
+                "IPython is not installed. Please install it to use this method."
+            )
         from IPython.display import Image
 
         return Image(self.payload)

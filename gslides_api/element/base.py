@@ -3,9 +3,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
-from gslides_api.domain import GSlidesBaseModel, PageElementProperties, Transform, Size
-from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
-from gslides_api.client import api_client, GoogleAPIClient
+from gslides_api.client import GoogleAPIClient, api_client
+from gslides_api.domain import (GSlidesBaseModel, OutputUnit,
+                                PageElementProperties, Size, Transform)
+from gslides_api.request.request import (GSlidesAPIRequest,
+                                         UpdatePageElementAltTextRequest)
 
 
 class ElementKind(Enum):
@@ -43,8 +45,40 @@ class PageElementBase(GSlidesBaseModel):
     presentation_id: Optional[str] = Field(default=None, exclude=True)
     slide_id: Optional[str] = Field(default=None, exclude=True)
 
+    # EMU conversion constants
+    _EMU_PER_CM = 360000  # 1 EMU = 1/360,000 cm
+    _EMU_PER_INCH = 914400  # 1 inch = 914,400 EMUs
+
+    def _convert_emu_to_units(self, value_emu: float, units: OutputUnit) -> float:
+        """Convert a value from EMUs to the specified units.
+
+        Args:
+            value_emu: The value in EMUs to convert.
+            units: The target units (OutputUnit.CM or OutputUnit.IN).
+
+        Returns:
+            The converted value in the specified units.
+
+        Raises:
+            TypeError: If units is not an OutputUnit enum value.
+        """
+        if not isinstance(units, OutputUnit):
+            raise TypeError(
+                f"units must be an OutputUnit enum value, got {type(units)}"
+            )
+
+        if units == OutputUnit.CM:
+            return value_emu / self._EMU_PER_CM
+        elif units == OutputUnit.IN:
+            return value_emu / self._EMU_PER_INCH
+        else:
+            raise ValueError(f"Unsupported OutputUnit: {units}")
+
     def create_copy(
-        self, parent_id: str, presentation_id: str, api_client: Optional[GoogleAPIClient] = None
+        self,
+        parent_id: str,
+        presentation_id: str,
+        api_client: Optional[GoogleAPIClient] = None,
     ):
         client = api_client or globals()["api_client"]
         request = self.create_request(parent_id)
@@ -91,8 +125,12 @@ class PageElementBase(GSlidesBaseModel):
         :rtype: list
 
         """
-
-        if self.title is not None or self.description is not None:
+        if (
+            title is not None
+            or description is not None
+            or self.title is not None
+            or self.description is not None
+        ):
             return [
                 UpdatePageElementAltTextRequest(
                     objectId=element_id,
@@ -104,7 +142,10 @@ class PageElementBase(GSlidesBaseModel):
             return []
 
     def set_alt_text(
-        self, title: str, description: str, api_client: Optional[GoogleAPIClient] = None
+        self,
+        title: str | None = None,
+        description: str | None = None,
+        api_client: Optional[GoogleAPIClient] = None,
     ):
         client = api_client or globals()["api_client"]
         client.batch_update(
@@ -116,6 +157,7 @@ class PageElementBase(GSlidesBaseModel):
 
     @property
     def alt_text(self):
+        # Don't provide a setter as want to also pass api_client to the setter
         return AltText(title=self.title, description=self.description)
 
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
@@ -150,7 +192,9 @@ class PageElementBase(GSlidesBaseModel):
 
         This method should be overridden by subclasses.
         """
-        raise NotImplementedError("Subclasses must implement element_to_update_request method")
+        raise NotImplementedError(
+            "Subclasses must implement element_to_update_request method"
+        )
 
     def to_markdown(self) -> str | None:
         """Convert a PageElement to markdown.
@@ -159,21 +203,24 @@ class PageElementBase(GSlidesBaseModel):
         """
         raise NotImplementedError("Subclasses must implement to_markdown method")
 
-    def absolute_size(self, units: str = "in") -> Tuple[float, float]:
+    def absolute_size(self, units: OutputUnit) -> Tuple[float, float]:
         """Calculate the absolute size of the element in the specified units.
+
+        This method calculates the actual rendered size of the element, taking into
+        account any scaling applied via the transform. The size represents the
+        width and height of the element as it appears on the slide.
 
         Args:
             units: The units to return the size in. Can be "cm" or "in".
 
         Returns:
-            A tuple of (width, height) in the specified units.
+            A tuple of (width, height) representing the element's dimensions
+            in the specified units.
 
         Raises:
             ValueError: If units is not "cm" or "in".
-            ValueError: If size is None.
+            ValueError: If element size is not available.
         """
-        if units not in ["cm", "in"]:
-            raise ValueError("Units must be 'cm' or 'in'")
 
         if self.size is None:
             raise ValueError("Element size is not available")
@@ -195,13 +242,32 @@ class PageElementBase(GSlidesBaseModel):
         actual_height_emu = height_emu * self.transform.scaleY
 
         # Convert from EMUs to the requested units
-        if units == "cm":
-            # 1 EMU = 1/360000 cm (as per the instructions)
-            width_result = actual_width_emu / 360000
-            height_result = actual_height_emu / 360000
-        else:  # units == "in"
-            # 1 inch = 914400 EMUs (as per the instructions)
-            width_result = actual_width_emu / 914400
-            height_result = actual_height_emu / 914400
+        width_result = self._convert_emu_to_units(actual_width_emu, units)
+        height_result = self._convert_emu_to_units(actual_height_emu, units)
 
-        return (width_result, height_result)
+        return width_result, height_result
+
+    def absolute_position(self, units: OutputUnit) -> Tuple[float, float]:
+        """Calculate the absolute position of the element on the page in the specified units.
+
+        Position represents the distance of the top-left corner of the element
+        from the top-left corner of the slide.
+
+        Args:
+            units: The units to return the position in. Can be "cm" or "in".
+
+        Returns:
+            A tuple of (x, y) representing the position in the specified units,
+            where x is the horizontal distance from the left edge and y is the
+            vertical distance from the top edge of the slide.
+        """
+
+        # Extract position from transform (translateX, translateY are in EMUs)
+        x_emu = self.transform.translateX
+        y_emu = self.transform.translateY
+
+        # Convert from EMUs to the requested units
+        x_result = self._convert_emu_to_units(x_emu, units)
+        y_result = self._convert_emu_to_units(y_emu, units)
+
+        return x_result, y_result

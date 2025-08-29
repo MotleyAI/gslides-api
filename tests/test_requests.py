@@ -5,32 +5,25 @@ Tests for the requests module, specifically CreateParagraphBulletsRequest and re
 import pytest
 from pydantic import ValidationError
 
-from gslides_api.request.domain import Range, RangeType, TableCellLocation
-from gslides_api.request.request import (
-    CreateParagraphBulletsRequest,
-    InsertTextRequest,
-    UpdateTextStyleRequest,
-    DeleteTextRequest,
-    CreateShapeRequest,
-    UpdateShapePropertiesRequest,
-    ReplaceImageRequest,
-    CreateSlideRequest,
-    UpdateSlidePropertiesRequest,
-    UpdateSlidesPositionRequest,
-    UpdatePagePropertiesRequest,
-    DeleteObjectRequest,
-    DuplicateObjectRequest,
-)
-from gslides_api.domain import (
-    BulletGlyphPreset,
-    LayoutReference,
-    PageElementProperties,
-    PredefinedLayout,
-    Size,
-    Transform,
-)
 from gslides_api import ShapeProperties
-from gslides_api.text import Type, TextStyle
+from gslides_api.domain import (BulletGlyphPreset, LayoutReference,
+                                PageElementProperties, PredefinedLayout, Size,
+                                Transform)
+from gslides_api.request.domain import Range, RangeType, TableCellLocation
+from gslides_api.request.request import (CreateParagraphBulletsRequest,
+                                         CreateShapeRequest,
+                                         CreateSlideRequest,
+                                         DeleteObjectRequest,
+                                         DeleteTextRequest,
+                                         DuplicateObjectRequest,
+                                         InsertTextRequest,
+                                         ReplaceImageRequest,
+                                         UpdatePagePropertiesRequest,
+                                         UpdateShapePropertiesRequest,
+                                         UpdateSlidePropertiesRequest,
+                                         UpdateSlidesPositionRequest,
+                                         UpdateTextStyleRequest)
+from gslides_api.text import TextStyle, Type
 
 
 class TestRange:
@@ -60,7 +53,8 @@ class TestRange:
     def test_all_range_with_indexes_invalid(self):
         """Test that ALL range with indexes raises validation error."""
         with pytest.raises(
-            ValidationError, match="startIndex and endIndex must be None when type is ALL"
+            ValidationError,
+            match="startIndex and endIndex must be None when type is ALL",
         ):
             Range(type=RangeType.ALL, startIndex=0)
 
@@ -82,16 +76,21 @@ class TestRange:
 
     def test_fixed_range_start_greater_than_end_invalid(self):
         """Test that FIXED_RANGE with startIndex >= endIndex raises validation error."""
-        with pytest.raises(ValidationError, match="startIndex must be less than endIndex"):
+        with pytest.raises(
+            ValidationError, match="startIndex must be less than endIndex"
+        ):
             Range(type=RangeType.FIXED_RANGE, startIndex=5, endIndex=3)
 
-        with pytest.raises(ValidationError, match="startIndex must be less than endIndex"):
+        with pytest.raises(
+            ValidationError, match="startIndex must be less than endIndex"
+        ):
             Range(type=RangeType.FIXED_RANGE, startIndex=5, endIndex=5)
 
     def test_from_start_index_missing_start_invalid(self):
         """Test that FROM_START_INDEX without startIndex raises validation error."""
         with pytest.raises(
-            ValidationError, match="startIndex must be provided when type is FROM_START_INDEX"
+            ValidationError,
+            match="startIndex must be provided when type is FROM_START_INDEX",
         ):
             Range(type=RangeType.FROM_START_INDEX)
 
@@ -198,7 +197,9 @@ class TestCreateParagraphBulletsRequest:
         """Test that all bullet presets from the enum work correctly."""
         for preset in BulletGlyphPreset:
             request = CreateParagraphBulletsRequest(
-                objectId="test_shape", textRange=Range(type=RangeType.ALL), bulletPreset=preset
+                objectId="test_shape",
+                textRange=Range(type=RangeType.ALL),
+                bulletPreset=preset,
             )
             assert request.bulletPreset == preset
 
@@ -472,7 +473,13 @@ class TestCreateShapeRequest:
                 "width": {"magnitude": 100, "unit": "PT"},
                 "height": {"magnitude": 50, "unit": "PT"},
             },
-            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"},
+            transform={
+                "scaleX": 1,
+                "scaleY": 1,
+                "translateX": 10,
+                "translateY": 20,
+                "unit": "PT",
+            },
         )
         request = CreateShapeRequest(
             elementProperties=element_props,
@@ -490,7 +497,13 @@ class TestCreateShapeRequest:
                 "width": {"magnitude": 100, "unit": "PT"},
                 "height": {"magnitude": 50, "unit": "PT"},
             },
-            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"},
+            transform={
+                "scaleX": 1,
+                "scaleY": 1,
+                "translateX": 10,
+                "translateY": 20,
+                "unit": "PT",
+            },
         )
         request = CreateShapeRequest(
             objectId="custom_shape_id",
@@ -508,7 +521,13 @@ class TestCreateShapeRequest:
                 "width": {"magnitude": 100, "unit": "PT"},
                 "height": {"magnitude": 50, "unit": "PT"},
             },
-            transform={"scaleX": 1, "scaleY": 1, "translateX": 10, "translateY": 20, "unit": "PT"},
+            transform={
+                "scaleX": 1,
+                "scaleY": 1,
+                "translateX": 10,
+                "translateY": 20,
+                "unit": "PT",
+            },
         )
         request = CreateShapeRequest(
             objectId="shape_456",
@@ -607,7 +626,10 @@ class TestCreateSlideRequest:
         )
         assert request.objectId == "slide_123"
         assert request.insertionIndex == 2
-        assert request.slideLayoutReference.predefinedLayout == PredefinedLayout.TITLE_AND_BODY
+        assert (
+            request.slideLayoutReference.predefinedLayout
+            == PredefinedLayout.TITLE_AND_BODY
+        )
 
     def test_to_request_format(self):
         """Test that to_request() returns correct format."""

@@ -1,7 +1,7 @@
 from typing import Optional
 
-from gslides_api.page.notes import Notes
 from gslides_api.domain import GSlidesBaseModel
+from gslides_api.page.notes import Notes
 
 
 class SlideProperties(GSlidesBaseModel):

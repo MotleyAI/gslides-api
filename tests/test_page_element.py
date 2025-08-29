@@ -1,34 +1,17 @@
 import pytest
 from pydantic import TypeAdapter
-from gslides_api.element.element import (
-    PageElement,
-    LineElement,
-    WordArtElement,
-    SheetsChartElement,
-    GroupElement,
-    ImageElement,
-)
-from gslides_api.element.base import PageElementBase, AltText
+
+from gslides_api.text import ShapeProperties
+from gslides_api.domain import (Dimension, Group, Image, ImageProperties, Line,
+                                LineProperties, OutputUnit, SheetsChart,
+                                SheetsChartProperties, Size, SpeakerSpotlight,
+                                SpeakerSpotlightProperties, Table, Transform,
+                                Video, VideoProperties, WordArt)
+from gslides_api.element.base import AltText, PageElementBase
+from gslides_api.element.element import (GroupElement, ImageElement,
+                                         LineElement, PageElement,
+                                         SheetsChartElement, WordArtElement)
 from gslides_api.element.shape import ShapeElement
-from gslides_api.domain import (
-    Size,
-    Transform,
-    Line,
-    LineProperties,
-    WordArt,
-    SheetsChart,
-    SheetsChartProperties,
-    SpeakerSpotlight,
-    SpeakerSpotlightProperties,
-    Group,
-    Video,
-    VideoProperties,
-    Image,
-    ImageProperties,
-    Table,
-    Dimension,
-)
-from gslides_api import ShapeProperties
 from gslides_api.text import Shape, Type
 
 
@@ -191,7 +174,10 @@ def test_update_request_with_title_description():
     assert update_request is not None
     assert update_request["updatePageElementAltText"]["objectId"] == "element_id"
     assert update_request["updatePageElementAltText"]["title"] == "Updated Title"
-    assert update_request["updatePageElementAltText"]["description"] == "Updated Description"
+    assert (
+        update_request["updatePageElementAltText"]["description"]
+        == "Updated Description"
+    )
 
 
 def test_discriminated_union_with_type_adapter():
@@ -219,12 +205,14 @@ def test_absolute_size_with_dimension_objects():
             width=Dimension(magnitude=3000000, unit="EMU"),
             height=Dimension(magnitude=3000000, unit="EMU"),
         ),
-        transform=Transform(translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"),
+        transform=Transform(
+            translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"
+        ),
         shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
     # Test conversion to centimeters
-    width_cm, height_cm = element.absolute_size("cm")
+    width_cm, height_cm = element.absolute_size(OutputUnit.CM)
 
     # Expected calculation:
     # actual_width_emu = 3000000 * 0.3 = 900000
@@ -235,7 +223,7 @@ def test_absolute_size_with_dimension_objects():
     assert abs(height_cm - 1.0) < 0.001
 
     # Test conversion to inches
-    width_in, height_in = element.absolute_size("in")
+    width_in, height_in = element.absolute_size(OutputUnit.IN)
 
     # Expected calculation:
     # width_in = 900000 / 914400 ≈ 0.984
@@ -254,7 +242,7 @@ def test_absolute_size_with_float_values():
     )
 
     # Test conversion to centimeters
-    width_cm, height_cm = element.absolute_size("cm")
+    width_cm, height_cm = element.absolute_size(OutputUnit.CM)
 
     # Expected calculation:
     # actual_width_emu = 1000000 * 2.0 = 2000000
@@ -274,8 +262,10 @@ def test_absolute_size_invalid_units():
         shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
-    with pytest.raises(ValueError, match="Units must be 'cm' or 'in'"):
-        element.absolute_size("px")
+    with pytest.raises(TypeError, match="units must be an OutputUnit enum value"):
+        element.absolute_size(
+            "px"
+        )  # String should cause TypeError since we expect OutputUnit
 
 
 def test_absolute_size_no_size():
@@ -288,7 +278,7 @@ def test_absolute_size_no_size():
     )
 
     with pytest.raises(ValueError, match="Element size is not available"):
-        element.absolute_size("cm")
+        element.absolute_size(OutputUnit.CM)
 
 
 def test_alt_text_property():
@@ -458,3 +448,111 @@ def test_nested_group_structure():
     # Second child should be an ImageElement
     second_child = outer_group.elementGroup.children[1]
     assert isinstance(second_child, ImageElement)
+
+
+def test_absolute_position_cm():
+    """Test absolute_position method with centimeter output."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(
+            translateX=360000, translateY=720000, scaleX=1, scaleY=1
+        ),  # 1cm x, 2cm y in EMUs
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    x_cm, y_cm = element.absolute_position(OutputUnit.CM)
+
+    # 360000 EMU = 1 cm, 720000 EMU = 2 cm
+    assert abs(x_cm - 1.0) < 0.001
+    assert abs(y_cm - 2.0) < 0.001
+
+
+def test_absolute_position_in():
+    """Test absolute_position method with inch output."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(
+            translateX=914400, translateY=1828800, scaleX=1, scaleY=1
+        ),  # 1in x, 2in y in EMUs
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    x_in, y_in = element.absolute_position(OutputUnit.IN)
+
+    # 914400 EMU = 1 inch, 1828800 EMU = 2 inches
+    assert abs(x_in - 1.0) < 0.001
+    assert abs(y_in - 2.0) < 0.001
+
+
+def test_absolute_position_origin():
+    """Test absolute_position method at origin (0, 0)."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    x_cm, y_cm = element.absolute_position(OutputUnit.CM)
+    assert abs(x_cm - 0.0) < 0.001
+    assert abs(y_cm - 0.0) < 0.001
+
+    x_in, y_in = element.absolute_position(OutputUnit.IN)
+    assert abs(x_in - 0.0) < 0.001
+    assert abs(y_in - 0.0) < 0.001
+
+
+def test_absolute_position_negative_values():
+    """Test absolute_position method with negative coordinates."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(
+            translateX=-360000, translateY=-720000, scaleX=1, scaleY=1
+        ),  # -1cm x, -2cm y
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    x_cm, y_cm = element.absolute_position(OutputUnit.CM)
+    assert abs(x_cm - (-1.0)) < 0.001
+    assert abs(y_cm - (-2.0)) < 0.001
+
+
+def test_absolute_position_invalid_units():
+    """Test absolute_position method with invalid units."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    with pytest.raises(TypeError, match="units must be an OutputUnit enum value"):
+        element.absolute_position(
+            "px"
+        )  # String should cause TypeError since we expect OutputUnit
+
+
+def test_absolute_position_returns_x_y_order():
+    """Test that absolute_position returns (x, y) order - horizontal first, then vertical."""
+    element = ShapeElement(
+        objectId="test_id",
+        size=Size(width=100, height=100),
+        transform=Transform(
+            translateX=914400, translateY=1828800, scaleX=1, scaleY=1
+        ),  # 1in x, 2in y
+        shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
+    )
+
+    position = element.absolute_position(OutputUnit.IN)
+
+    # Verify it's a tuple with 2 elements
+    assert isinstance(position, tuple)
+    assert len(position) == 2
+
+    x, y = position
+    # x should be horizontal (translateX), y should be vertical (translateY)
+    assert abs(x - 1.0) < 0.001  # translateX=914400 EMU = 1 inch
+    assert abs(y - 2.0) < 0.001  # translateY=1828800 EMU = 2 inches

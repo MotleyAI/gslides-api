@@ -2,8 +2,10 @@
 
 import os
 import tempfile
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from gslides_api.response import ImageThumbnail
 
 
@@ -13,9 +15,7 @@ class TestImageThumbnail:
     def test_image_thumbnail_creation(self):
         """Test creating ImageThumbnail instance."""
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.png",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.png", width=800, height=600
         )
         assert thumbnail.contentUrl == "https://example.com/image.png"
         assert thumbnail.width == 800
@@ -25,26 +25,23 @@ class TestImageThumbnail:
     def test_image_thumbnail_inheritance(self):
         """Test that ImageThumbnail inherits from GSlidesBaseModel."""
         from gslides_api.domain import GSlidesBaseModel
+
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/test.jpg",
-            width=100,
-            height=100
+            contentUrl="https://example.com/test.jpg", width=100, height=100
         )
         assert isinstance(thumbnail, GSlidesBaseModel)
-        assert hasattr(thumbnail, 'to_api_format')
+        assert hasattr(thumbnail, "to_api_format")
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_payload_property_lazy_loading(self, mock_requests):
         """Test that payload property lazy loads content."""
         # Mock the response
         mock_response = MagicMock()
-        mock_response.content = b'fake_image_data'
+        mock_response.content = b"fake_image_data"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.png",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.png", width=800, height=600
         )
 
         # Initially _payload should be None
@@ -52,55 +49,51 @@ class TestImageThumbnail:
 
         # First access should trigger the request
         payload = thumbnail.payload
-        assert payload == b'fake_image_data'
+        assert payload == b"fake_image_data"
         mock_requests.assert_called_once_with("https://example.com/image.png")
 
         # Second access should use cached value
         payload2 = thumbnail.payload
-        assert payload2 == b'fake_image_data'
+        assert payload2 == b"fake_image_data"
         # Should still only have been called once
         mock_requests.assert_called_once()
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_mime_type_property(self, mock_requests):
         """Test mime_type property."""
         # Mock the response with PNG header
         mock_response = MagicMock()
-        mock_response.content = b'\x89PNG\r\n\x1a\n' + b'fake_png_data'
+        mock_response.content = b"\x89PNG\r\n\x1a\n" + b"fake_png_data"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.png",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.png", width=800, height=600
         )
 
         mime_type = thumbnail.mime_type
-        assert mime_type == 'png'
+        assert mime_type == "png"
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_save_png_success(self, mock_requests):
         """Test successful save of PNG image."""
         # Mock the response with PNG header
         mock_response = MagicMock()
-        mock_response.content = b'\x89PNG\r\n\x1a\n' + b'fake_png_data'
+        mock_response.content = b"\x89PNG\r\n\x1a\n" + b"fake_png_data"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.png",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.png", width=800, height=600
         )
 
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
             try:
                 thumbnail.save(tmp_file.name)
 
                 # Verify the file was written
                 assert os.path.exists(tmp_file.name)
-                with open(tmp_file.name, 'rb') as f:
+                with open(tmp_file.name, "rb") as f:
                     content = f.read()
-                assert content == b'\x89PNG\r\n\x1a\n' + b'fake_png_data'
+                assert content == b"\x89PNG\r\n\x1a\n" + b"fake_png_data"
 
                 # Verify requests.get was called (through payload property)
                 mock_requests.assert_called_with("https://example.com/image.png")
@@ -110,50 +103,46 @@ class TestImageThumbnail:
                 if os.path.exists(tmp_file.name):
                     os.unlink(tmp_file.name)
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_save_jpeg_with_jpg_extension_success(self, mock_requests):
         """Test successful save of JPEG image with .jpg extension."""
         # Mock the response with JPEG header
         mock_response = MagicMock()
-        mock_response.content = b'\xff\xd8\xff' + b'fake_jpeg_data'
+        mock_response.content = b"\xff\xd8\xff" + b"fake_jpeg_data"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.jpg",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.jpg", width=800, height=600
         )
 
-        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_file:
             try:
                 thumbnail.save(tmp_file.name)
 
                 # Verify the file was written
                 assert os.path.exists(tmp_file.name)
-                with open(tmp_file.name, 'rb') as f:
+                with open(tmp_file.name, "rb") as f:
                     content = f.read()
-                assert content == b'\xff\xd8\xff' + b'fake_jpeg_data'
+                assert content == b"\xff\xd8\xff" + b"fake_jpeg_data"
 
             finally:
                 # Clean up
                 if os.path.exists(tmp_file.name):
                     os.unlink(tmp_file.name)
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_save_jpeg_with_jpeg_extension_success(self, mock_requests):
         """Test successful save of JPEG image with .jpeg extension."""
         # Mock the response with JPEG header
         mock_response = MagicMock()
-        mock_response.content = b'\xff\xd8\xff' + b'fake_jpeg_data'
+        mock_response.content = b"\xff\xd8\xff" + b"fake_jpeg_data"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.jpeg",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.jpeg", width=800, height=600
         )
 
-        with tempfile.NamedTemporaryFile(suffix='.jpeg', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=".jpeg", delete=False) as tmp_file:
             try:
                 thumbnail.save(tmp_file.name)
 
@@ -165,21 +154,19 @@ class TestImageThumbnail:
                 if os.path.exists(tmp_file.name):
                     os.unlink(tmp_file.name)
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_save_format_mismatch_error(self, mock_requests):
         """Test that format mismatch raises ValueError."""
         # Mock the response with JPEG header but .png extension
         mock_response = MagicMock()
-        mock_response.content = b'\xff\xd8\xff' + b'fake_jpeg_data'
+        mock_response.content = b"\xff\xd8\xff" + b"fake_jpeg_data"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.png",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.png", width=800, height=600
         )
 
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
             try:
                 with pytest.raises(ValueError, match="Image format mismatch"):
                     thumbnail.save(tmp_file.name)
@@ -198,18 +185,16 @@ class TestImageThumbnail:
                 if os.path.exists(tmp_file.name):
                     os.unlink(tmp_file.name)
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_save_no_extension_success(self, mock_requests):
         """Test save with no file extension (should skip validation)."""
         # Mock the response
         mock_response = MagicMock()
-        mock_response.content = b'fake_data'
+        mock_response.content = b"fake_data"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image", width=800, height=600
         )
 
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
@@ -224,21 +209,19 @@ class TestImageThumbnail:
                 if os.path.exists(tmp_file.name):
                     os.unlink(tmp_file.name)
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_save_mime_type_returns_none(self, mock_requests):
         """Test save when mime_type returns None (unrecognized format)."""
         # Mock the response with unrecognized format (no known header)
         mock_response = MagicMock()
-        mock_response.content = b'fake_data_unknown_format'
+        mock_response.content = b"fake_data_unknown_format"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.png",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.png", width=800, height=600
         )
 
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
             try:
                 # Should not raise error when mime_type is None
                 thumbnail.save(tmp_file.name)
@@ -251,22 +234,20 @@ class TestImageThumbnail:
                 if os.path.exists(tmp_file.name):
                     os.unlink(tmp_file.name)
 
-    @patch('gslides_api.response.requests.get')
+    @patch("gslides_api.response.requests.get")
     def test_to_ipython_image(self, mock_requests):
         """Test to_ipython_image method."""
         # Mock the response
         mock_response = MagicMock()
-        mock_response.content = b'fake_image_data'
+        mock_response.content = b"fake_image_data"
         mock_requests.return_value = mock_response
 
         thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image.png",
-            width=800,
-            height=600
+            contentUrl="https://example.com/image.png", width=800, height=600
         )
 
         # Mock the IPython Image import inside the method
-        with patch('IPython.display.Image') as mock_image:
+        with patch("IPython.display.Image") as mock_image:
             mock_image_instance = MagicMock()
             mock_image.return_value = mock_image_instance
 
@@ -276,7 +257,7 @@ class TestImageThumbnail:
             mock_requests.assert_called_with("https://example.com/image.png")
 
             # Verify Image was called with the payload
-            mock_image.assert_called_with(b'fake_image_data')
+            mock_image.assert_called_with(b"fake_image_data")
 
             # Verify the result is the mock image instance
             assert result == mock_image_instance
@@ -284,19 +265,21 @@ class TestImageThumbnail:
     def test_extension_format_mapping_logic(self):
         """Test the extension to format mapping logic."""
         test_cases = [
-            ('image.png', 'png', 'png'),
-            ('photo.jpg', 'jpg', 'jpeg'),
-            ('picture.JPEG', 'jpeg', 'jpeg'),
-            ('animation.gif', 'gif', 'gif'),
-            ('bitmap.bmp', 'bmp', 'bmp'),
-            ('web.webp', 'webp', 'webp'),
-            ('tagged.tiff', 'tiff', 'tiff'),
-            ('tagged.tif', 'tif', 'tif'),  # Fixed: tif extension stays as tif
+            ("image.png", "png", "png"),
+            ("photo.jpg", "jpg", "jpeg"),
+            ("picture.JPEG", "jpeg", "jpeg"),
+            ("animation.gif", "gif", "gif"),
+            ("bitmap.bmp", "bmp", "bmp"),
+            ("web.webp", "webp", "webp"),
+            ("tagged.tiff", "tiff", "tiff"),
+            ("tagged.tif", "tif", "tif"),  # Fixed: tif extension stays as tif
         ]
 
         for file_path, expected_extension, expected_format in test_cases:
-            file_extension = os.path.splitext(file_path)[1].lower().lstrip('.')
-            actual_format = 'jpeg' if file_extension in ('jpg', 'jpeg') else file_extension
+            file_extension = os.path.splitext(file_path)[1].lower().lstrip(".")
+            actual_format = (
+                "jpeg" if file_extension in ("jpg", "jpeg") else file_extension
+            )
 
             assert file_extension == expected_extension
             assert actual_format == expected_format

@@ -1,13 +1,11 @@
 import copy
 import logging
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from gslides_api.page.page import Page
-from gslides_api.domain import Size
-from gslides_api.client import api_client, GoogleAPIClient
-from gslides_api.domain import GSlidesBaseModel
+from gslides_api.client import GoogleAPIClient, api_client
+from gslides_api.domain import GSlidesBaseModel, Size
+from gslides_api.page.page import Layout, Master, NotesMaster, Page
 from gslides_api.page.slide import Slide
-from gslides_api.page.page import Layout, Master, NotesMaster
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +25,9 @@ class Presentation(GSlidesBaseModel):
 
     @classmethod
     def create_blank(
-        cls, title: str = "New Presentation", api_client: Optional[GoogleAPIClient] = None
+        cls,
+        title: str = "New Presentation",
+        api_client: Optional[GoogleAPIClient] = None,
     ) -> "Presentation":
         """Create a blank presentation in Google Slides."""
         client = api_client or globals()["api_client"]
@@ -82,7 +82,9 @@ class Presentation(GSlidesBaseModel):
     ):
         client = api_client or globals()["api_client"]
         copy_title = copy_title or f"Copy of {self.title}"
-        new = client.copy_presentation(self.presentationId, copy_title, folder_id=folder_id)
+        new = client.copy_presentation(
+            self.presentationId, copy_title, folder_id=folder_id
+        )
         return self.from_id(new["id"], api_client=api_client)
 
     def sync_from_cloud(self, api_client: Optional[GoogleAPIClient] = None):

@@ -1,6 +1,8 @@
-import pytest
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from gslides_api.client import api_client
 
 
@@ -15,14 +17,18 @@ class TestUploadImageToDrive:
 
             # Setup mocks
             mock_basename.return_value = "test_image.png"
-            mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+            mock_drive_service.files().create().execute.return_value = {
+                "id": "test_file_id"
+            }
             mock_drive_service.permissions().create().execute.return_value = {}
 
             # Test PNG format
             result = api_client.upload_image_to_drive("test_image.png")
 
             # Verify correct MIME type was used
-            mock_media_upload.assert_called_once_with("test_image.png", mimetype="image/png")
+            mock_media_upload.assert_called_once_with(
+                "test_image.png", mimetype="image/png"
+            )
 
             # Verify file metadata has correct MIME type
             create_call_args = mock_drive_service.files().create.call_args
@@ -48,14 +54,18 @@ class TestUploadImageToDrive:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+                mock_drive_service.files().create().execute.return_value = {
+                    "id": "test_file_id"
+                }
                 mock_drive_service.permissions().create().execute.return_value = {}
 
                 # Test the format
                 result = api_client.upload_image_to_drive(image_path)
 
                 # Verify correct MIME type was used
-                mock_media_upload.assert_called_once_with(image_path, mimetype=expected_mime_type)
+                mock_media_upload.assert_called_once_with(
+                    image_path, mimetype=expected_mime_type
+                )
 
                 # Verify file metadata has correct MIME type
                 create_call_args = mock_drive_service.files().create.call_args
@@ -70,14 +80,18 @@ class TestUploadImageToDrive:
 
             # Setup mocks
             mock_basename.return_value = "test_image.gif"
-            mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+            mock_drive_service.files().create().execute.return_value = {
+                "id": "test_file_id"
+            }
             mock_drive_service.permissions().create().execute.return_value = {}
 
             # Test GIF format
             result = api_client.upload_image_to_drive("test_image.gif")
 
             # Verify correct MIME type was used
-            mock_media_upload.assert_called_once_with("test_image.gif", mimetype="image/gif")
+            mock_media_upload.assert_called_once_with(
+                "test_image.gif", mimetype="image/gif"
+            )
 
             # Verify file metadata has correct MIME type
             create_call_args = mock_drive_service.files().create.call_args
@@ -130,7 +144,9 @@ class TestUploadImageToDrive:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+                mock_drive_service.files().create().execute.return_value = {
+                    "id": "test_file_id"
+                }
                 mock_drive_service.permissions().create().execute.return_value = {}
 
                 # Should not raise an exception
@@ -153,7 +169,9 @@ class TestUploadImageToDrive:
 
                 # Setup mocks
                 mock_basename.return_value = os.path.basename(image_path)
-                mock_drive_service.files().create().execute.return_value = {"id": "test_file_id"}
+                mock_drive_service.files().create().execute.return_value = {
+                    "id": "test_file_id"
+                }
                 mock_drive_service.permissions().create().execute.return_value = {}
 
                 # Should not raise an exception

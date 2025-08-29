@@ -5,17 +5,16 @@ This module tests the auto_flush parameter and batching behavior of the GoogleAP
 including the batch_update and flush_batch_update methods.
 """
 
+from typing import Any, Dict
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
-from typing import Dict, Any
 
 from gslides_api.client import GoogleAPIClient
-from gslides_api.request.request import (
-    DuplicateObjectRequest,
-    DeleteObjectRequest,
-    CreateShapeRequest,
-    GSlidesAPIRequest,
-)
+from gslides_api.request.request import (CreateShapeRequest,
+                                         DeleteObjectRequest,
+                                         DuplicateObjectRequest,
+                                         GSlidesAPIRequest)
 
 
 class MockRequest(GSlidesAPIRequest):
@@ -77,7 +76,9 @@ class TestGoogleAPIClientBatching:
         # Should clear pending requests
         assert client.pending_batch_requests == []
         assert client.pending_presentation_id is None
-        assert result == {"replies": [{"duplicateObject": {"objectId": "new_object_id"}}]}
+        assert result == {
+            "replies": [{"duplicateObject": {"objectId": "new_object_id"}}]
+        }
 
     def test_batch_update_with_auto_flush_false(self):
         """Test batch_update with auto_flush=False accumulates requests."""
@@ -162,7 +163,9 @@ class TestGoogleAPIClientBatching:
         self.mock_presentations.batchUpdate.assert_called_once()
         assert client.pending_batch_requests == []
         assert client.pending_presentation_id is None
-        assert result == {"replies": [{"duplicateObject": {"objectId": "new_object_id"}}]}
+        assert result == {
+            "replies": [{"duplicateObject": {"objectId": "new_object_id"}}]
+        }
 
     def test_duplicate_object_with_auto_flush_false(self):
         """Test duplicate_object method with auto_flush=False."""
@@ -190,7 +193,9 @@ class TestGoogleAPIClientBatching:
         assert object_id == "new_object_id"
         assert isinstance(client.pending_batch_requests[-1], DuplicateObjectRequest)
         assert client.pending_batch_requests[-1].objectId == "source_id"
-        assert client.pending_batch_requests[-1].objectIds == {"source_id": "new_object_id"}
+        assert client.pending_batch_requests[-1].objectIds == {
+            "source_id": "new_object_id"
+        }
 
         # Manually flush
         result = client.flush_batch_update()
@@ -199,7 +204,9 @@ class TestGoogleAPIClientBatching:
         self.mock_presentations.batchUpdate.assert_called_once()
         assert client.pending_batch_requests == []
         assert client.pending_presentation_id is None
-        assert result == {"replies": [{"duplicateObject": {"objectId": "new_object_id"}}]}
+        assert result == {
+            "replies": [{"duplicateObject": {"objectId": "new_object_id"}}]
+        }
 
     def test_delete_object_with_auto_flush_false(self):
         """Test delete_object method with auto_flush=False."""
