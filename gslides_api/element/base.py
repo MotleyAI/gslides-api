@@ -1,4 +1,5 @@
 from enum import Enum
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
@@ -6,6 +7,8 @@ from pydantic import Field
 from gslides_api.client import GoogleAPIClient, api_client
 from gslides_api.domain import GSlidesBaseModel, OutputUnit, PageElementProperties, Size, Transform
 from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
+
+logger = logging.getLogger(__name__)
 
 
 class ElementKind(Enum):
@@ -144,6 +147,12 @@ class PageElementBase(GSlidesBaseModel):
         api_client: Optional[GoogleAPIClient] = None,
     ):
         client = api_client or globals()["api_client"]
+        if not title and not description:
+            logger.warning(
+                "No alt text provided, skipping update. \n "
+                "Remember that Google Slides API won't allow to write empty strings."
+            )
+            return
         client.batch_update(
             self.alt_text_update_request(
                 title=title, description=description, element_id=self.objectId
