@@ -63,6 +63,11 @@ class PageElementBase(GSlidesBaseModel):
         Raises:
             TypeError: If units is not an OutputUnit enum value.
         """
+        try:
+            units = OutputUnit(units)
+        except Exception as e:
+            raise TypeError(f"units must be an OutputUnit enum value, got {units}") from e
+
         if not isinstance(units, OutputUnit):
             raise TypeError(f"units must be an OutputUnit enum value, got {type(units)}")
 
