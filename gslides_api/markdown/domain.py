@@ -450,42 +450,42 @@ class MarkdownDeck(BaseModel):
 
 if __name__ == "__main__":
     example_md = """
-    ---
-    # Slide Title
-    
-    <!-- text: Text_1 -->
-    ## Introduction
-    
-    Content here...
-    
-    <!-- text: Details -->
-    ## Details
-    
-    More content...
-    
-    <!-- image: Image_1 -->
-    ![Image](https://example.com/image.jpg)
-    
-    <!-- chart: Chart_1 -->
-    ```json
-    {
-        "data": [1, 2, 3]
-    }
-    ```
-    
-    <!-- table: Table_1 -->
-    | Header 1 | Header 2 |
-    |----------|----------|
-    | Cell 1   | Cell 2   |
-    
-    ---
-    # Next Slide
-    
-    <!-- text: Summary -->
-    ## Summary
-    
-    Final thoughts
-    """
+---
+# Slide Title
+
+<!-- text: Text_1 -->
+## Introduction
+
+Content here...
+
+<!-- text: Details -->
+## Details
+
+More content...
+
+<!-- image: Image_1 -->
+![Image](https://example.com/image.jpg)
+
+<!-- chart: Chart_1 -->
+```json
+{
+    "data": [1, 2, 3]
+}
+```
+
+<!-- table: Table_1 -->
+| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+
+---
+# Next Slide
+
+<!-- text: Summary -->
+## Summary
+
+Final thoughts
+"""
 
     deck = MarkdownDeck.loads(example_md)
     print(deck.dumps())

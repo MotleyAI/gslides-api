@@ -11,8 +11,48 @@ from gslides_api.markdown.domain import (
     TableElement,
     ChartElement,
     TableData,
-    example_md
 )
+
+
+@pytest.fixture
+def example_md():
+    return """
+---
+# Slide Title
+
+<!-- text: Text_1 -->
+## Introduction
+
+Content here...
+
+<!-- text: Details -->
+## Details
+
+More content...
+
+<!-- image: Image_1 -->
+![Image](https://example.com/image.jpg)
+
+<!-- chart: Chart_1 -->
+```json
+{
+    "data": [1, 2, 3]
+}
+```
+
+<!-- table: Table_1 -->
+| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+
+---
+# Next Slide
+
+<!-- text: Summary -->
+## Summary
+
+Final thoughts
+"""
 
 
 class TestContentType:
@@ -407,7 +447,7 @@ Content"""
 class TestFullCycleRoundTrip:
     """Test that loading and dumping preserves content exactly."""
     
-    def test_example_md_round_trip(self):
+    def test_example_md_round_trip(self, example_md):
         """Test that example_md can be loaded and dumped back to identical content."""
         deck = MarkdownDeck.loads(example_md)
         output = deck.dumps()
