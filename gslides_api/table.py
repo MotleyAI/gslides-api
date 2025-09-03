@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 from gslides_api.domain import Dimension, GSlidesBaseModel, SolidFill, DashStyle
-from gslides_api.text import Text
+from gslides_api.text import TextContent
 
 
 class TableCellLocation(GSlidesBaseModel):
@@ -52,7 +52,7 @@ class TableCell(GSlidesBaseModel):
     location: Optional[TableCellLocation] = None
     rowSpan: Optional[int] = None
     columnSpan: Optional[int] = None
-    text: Optional[Text] = None
+    text: Optional[TextContent] = None
     tableCellProperties: Optional[TableCellProperties] = None
 
 

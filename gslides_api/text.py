@@ -3,8 +3,14 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from gslides_api.domain import (Dimension, GSlidesBaseModel, OptionalColor,
-                                Outline, Shadow, ShapeBackgroundFill)
+from gslides_api.domain import (
+    Dimension,
+    GSlidesBaseModel,
+    OptionalColor,
+    Outline,
+    Shadow,
+    ShapeBackgroundFill,
+)
 
 
 class Type(Enum):
@@ -351,7 +357,7 @@ class TextElement(GSlidesBaseModel):
     autoText: Optional[AutoText] = None
 
 
-class Text(GSlidesBaseModel):
+class TextContent(GSlidesBaseModel):
     """Represents text content with its elements and lists."""
 
     textElements: List[TextElement]
@@ -363,5 +369,5 @@ class Shape(GSlidesBaseModel):
 
     shapeProperties: ShapeProperties
     shapeType: Optional[Type] = None  # Make optional to preserve original JSON exactly
-    text: Optional[Text] = None
+    text: Optional[TextContent] = None
     placeholder: Optional[Placeholder] = None

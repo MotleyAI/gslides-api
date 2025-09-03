@@ -4,18 +4,19 @@ from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
-from gslides_api.domain import (Dimension, OutputUnit, PageElementProperties,
-                                Unit)
+from gslides_api.domain import Dimension, OutputUnit, PageElementProperties, Unit
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import TextElement as MarkdownTextElement
-from gslides_api.markdown.from_markdown import (markdown_to_text_elements,
-                                                text_elements_to_requests)
+from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
 from gslides_api.request.domain import Range, RangeType
-from gslides_api.request.request import (CreateShapeRequest,
-                                         DeleteParagraphBulletsRequest,
-                                         DeleteTextRequest, GSlidesAPIRequest,
-                                         UpdateTextStyleRequest)
+from gslides_api.request.request import (
+    CreateShapeRequest,
+    DeleteParagraphBulletsRequest,
+    DeleteTextRequest,
+    GSlidesAPIRequest,
+    UpdateTextStyleRequest,
+)
 from gslides_api.text import Shape, TextStyle
 
 
@@ -66,9 +67,7 @@ class ShapeElement(PageElementBase):
         #     }
         # ]
         if self.shape.text is not None:
-            text_requests = text_elements_to_requests(
-                self.shape.text.textElements, element_id
-            )
+            text_requests = text_elements_to_requests(self.shape.text.textElements, element_id)
             requests.extend(text_requests)
 
         return requests
@@ -86,16 +85,10 @@ class ShapeElement(PageElementBase):
         else:
             out = []
 
-        if (not self.shape.text.textElements) or self.shape.text.textElements[
-            0
-        ].endIndex == 0:
+        if (not self.shape.text.textElements) or self.shape.text.textElements[0].endIndex == 0:
             return out
 
-        out.append(
-            DeleteTextRequest(
-                objectId=self.objectId, textRange=Range(type=RangeType.ALL)
-            )
-        )
+        out.append(DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL)))
         return out
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
@@ -106,10 +99,7 @@ class ShapeElement(PageElementBase):
     def styles(self) -> List[TextStyle] | None:
         if not hasattr(self.shape, "text") or self.shape.text is None:
             return None
-        if (
-            not hasattr(self.shape.text, "textElements")
-            or not self.shape.text.textElements
-        ):
+        if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
             return None
         styles = []
         for te in self.shape.text.textElements:
@@ -129,10 +119,7 @@ class ShapeElement(PageElementBase):
         """
         if not hasattr(self.shape, "text") or self.shape.text is None:
             return None
-        if (
-            not hasattr(self.shape.text, "textElements")
-            or not self.shape.text.textElements
-        ):
+        if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
             return None
 
         elements = self.shape.text.textElements
@@ -179,17 +166,13 @@ class ShapeElement(PageElementBase):
 
         # TODO: this is broken, we should use different logic to just dump raw text, asterisks, hashes and all
         if not as_markdown:
-            requests = [
-                r for r in requests if not isinstance(r, UpdateTextStyleRequest)
-            ]
+            requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
 
         if requests:
             client = api_client or default_api_client
             return client.batch_update(requests, self.presentation_id)
 
-    def autoscale_text(
-        self, text: str, styles: List[TextStyle] | None = None
-    ) -> List[TextStyle]:
+    def autoscale_text(self, text: str, styles: List[TextStyle] | None = None) -> List[TextStyle]:
         # Unfortunately, GS
 
         # For now, just derive the scaling factor based on first style
@@ -228,9 +211,7 @@ class ShapeElement(PageElementBase):
 
         # Count actual text length (excluding markdown formatting)
         # Simple approximation: remove common markdown characters
-        clean_text = (
-            text.replace("*", "").replace("_", "").replace("#", "").replace("`", "")
-        )
+        clean_text = text.replace("*", "").replace("_", "").replace("#", "").replace("`", "")
         actual_text_length = len(clean_text)
 
         # Determine the scaling factor based on the number of characters that would fit in the box overall
@@ -244,18 +225,14 @@ class ShapeElement(PageElementBase):
             ) ** 0.5  # Square root for more gradual scaling
 
         # Apply minimum scaling factor to ensure text remains readable
-        scaling_factor = max(
-            scaling_factor, 0.3
-        )  # Don't scale below 30% of original size
+        scaling_factor = max(scaling_factor, 0.3)  # Don't scale below 30% of original size
 
         # Apply the scaling factor to the font size of ALL styles
 
         scaled_styles = []
 
         for style in styles:
-            scaled_style = (
-                style.model_copy()
-            )  # Create a copy to avoid modifying the original
+            scaled_style = style.model_copy()  # Create a copy to avoid modifying the original
 
             # Get the current font size for this style
             style_font_size_pt = 12.0  # default
@@ -309,9 +286,7 @@ class ShapeElement(PageElementBase):
 
         if hasattr(self, "transform") and self.transform:
             metadata["transform"] = (
-                self.transform.to_api_format()
-                if hasattr(self.transform, "to_api_format")
-                else None
+                self.transform.to_api_format() if hasattr(self.transform, "to_api_format") else None
             )
 
         # Store title and description if available
@@ -345,14 +320,14 @@ class ShapeElement(PageElementBase):
         stored_shape_type = metadata.get("shape_type") or shape_type or "TEXT_BOX"
 
         # Create basic shape with text content
-        from gslides_api.text import Shape, ShapeProperties, Text
+        from gslides_api.text import Shape, ShapeProperties, TextContent
         from gslides_api.text import Type as ShapeType
 
         # Create a minimal shape - the actual content will be written via write_text
         shape = Shape(
             shapeProperties=ShapeProperties(),
             shapeType=ShapeType(stored_shape_type),
-            text=Text(textElements=[]) if markdown_elem.content.strip() else None,
+            text=TextContent(textElements=[]) if markdown_elem.content.strip() else None,
         )
 
         # Create element properties from metadata
@@ -364,12 +339,8 @@ class ShapeElement(PageElementBase):
             from gslides_api.domain import Dimension, Size, Unit
 
             element_props.size = Size(
-                width=Dimension(
-                    magnitude=size_data["width"], unit=Unit(size_data["unit"])
-                ),
-                height=Dimension(
-                    magnitude=size_data["height"], unit=Unit(size_data["unit"])
-                ),
+                width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
+                height=Dimension(magnitude=size_data["height"], unit=Unit(size_data["unit"])),
             )
         else:
             # Provide default size for text boxes

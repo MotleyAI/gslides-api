@@ -28,7 +28,7 @@ from gslides_api.markdown.element import ImageElement as MarkdownImageElement
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import TableElement as MarkdownTableElement
 from gslides_api.markdown.element import TextElement as MarkdownTextElement
-from gslides_api.text import ParagraphMarker, Shape, ShapeProperties, Text
+from gslides_api.text import ParagraphMarker, Shape, ShapeProperties, TextContent
 from gslides_api.text import TextElement as GSlidesTextElement
 from gslides_api.text import TextRun, TextStyle
 from gslides_api.text import Type as ShapeType
@@ -74,7 +74,7 @@ class TestTextElementConversion:
         shape = Shape(
             shapeProperties=ShapeProperties(),
             shapeType=ShapeType.TEXT_BOX,
-            text=Text(textElements=[]),
+            text=TextContent(textElements=[]),
         )
 
         shape_elem = ShapeElement(
@@ -210,14 +210,22 @@ class TestTableElementConversion:
         table_rows = [
             {
                 "tableCells": [
-                    {"text": {"textElements": [{"textRun": {"content": "Header 1"}}]}},
-                    {"text": {"textElements": [{"textRun": {"content": "Header 2"}}]}},
+                    {
+                        "text": {
+                            "textElements": [{"endIndex": 8, "textRun": {"content": "Header 1"}}]
+                        }
+                    },
+                    {
+                        "text": {
+                            "textElements": [{"endIndex": 8, "textRun": {"content": "Header 2"}}]
+                        }
+                    },
                 ]
             },
             {
                 "tableCells": [
-                    {"text": {"textElements": [{"textRun": {"content": "Cell 1"}}]}},
-                    {"text": {"textElements": [{"textRun": {"content": "Cell 2"}}]}},
+                    {"text": {"textElements": [{"endIndex": 6, "textRun": {"content": "Cell 1"}}]}},
+                    {"text": {"textElements": [{"endIndex": 6, "textRun": {"content": "Cell 2"}}]}},
                 ]
             },
         ]
@@ -250,9 +258,9 @@ class TestTableElementConversion:
             tableRows=[
                 {
                     "tableCells": [
-                        {"text": {"textElements": [{"textRun": {"content": "H1"}}]}},
-                        {"text": {"textElements": [{"textRun": {"content": "H2"}}]}},
-                        {"text": {"textElements": [{"textRun": {"content": "H3"}}]}},
+                        {"text": {"textElements": [{"endIndex": 2, "textRun": {"content": "H1"}}]}},
+                        {"text": {"textElements": [{"endIndex": 2, "textRun": {"content": "H2"}}]}},
+                        {"text": {"textElements": [{"endIndex": 2, "textRun": {"content": "H3"}}]}},
                     ]
                 }
             ],

@@ -13,7 +13,7 @@ from gslides_api.element.element import PageElement
 from gslides_api.element.image import ImageElement
 from gslides_api.element.shape import ShapeElement
 from gslides_api.presentation import Presentation
-from gslides_api.text import Shape, Text, Type
+from gslides_api.text import Shape, TextContent, Type
 
 
 @pytest.fixture
@@ -82,7 +82,7 @@ class TestShapeElementToMarkdown:
             shape=Shape(
                 shapeType=Type.TEXT_BOX,
                 shapeProperties=ShapeProperties(),
-                text=Text(textElements=[]),  # Empty text elements
+                text=TextContent(textElements=[]),  # Empty text elements
             ),
         )
 

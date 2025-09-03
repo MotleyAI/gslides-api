@@ -57,8 +57,16 @@ class TableElement(PageElementBase):
                 for cell in table_row.tableCells:
                     cell_text = ""
                     if hasattr(cell, 'text') and cell.text:
-                        # Handle the text field which is now Dict[str, Any]
-                        if isinstance(cell.text, dict) and "textElements" in cell.text:
+                        # Handle the text field which is now proper Text type
+                        if hasattr(cell.text, 'textElements') and cell.text.textElements:
+                            text_parts = []
+                            for text_element in cell.text.textElements:
+                                if hasattr(text_element, 'textRun') and text_element.textRun:
+                                    if hasattr(text_element.textRun, 'content'):
+                                        text_parts.append(text_element.textRun.content)
+                            cell_text = "".join(text_parts).strip()
+                        elif isinstance(cell.text, dict) and "textElements" in cell.text:
+                            # Fallback for dict format
                             text_parts = []
                             for text_element in cell.text["textElements"]:
                                 if (
