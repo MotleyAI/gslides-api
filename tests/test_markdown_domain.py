@@ -6,6 +6,11 @@ from gslides_api.markdown.domain import (
     MarkdownDeck, 
     MarkdownSlide,
     MarkdownSlideElement,
+    TextElement,
+    ImageElement,
+    TableElement,
+    ChartElement,
+    TableData,
     example_md
 )
 
@@ -18,12 +23,11 @@ class TestContentType:
         assert ContentType.TABLE == "table"
 
 
-class TestMarkdownSlideElement:
+class TestTextElement:
     def test_create_element(self):
-        element = MarkdownSlideElement(
+        element = TextElement(
             name="Test",
-            content="Some content",
-            content_type=ContentType.TEXT
+            content="Some content"
         )
         assert element.name == "Test"
         assert element.content == "Some content"
@@ -31,43 +35,137 @@ class TestMarkdownSlideElement:
         assert element.metadata == {}
 
     def test_element_with_metadata(self):
-        element = MarkdownSlideElement(
+        element = TextElement(
             name="Test",
             content="Some content",
-            content_type=ContentType.TEXT,
             metadata={"key": "value"}
         )
         assert element.metadata == {"key": "value"}
 
     def test_to_markdown_with_comment(self):
-        element = MarkdownSlideElement(
+        element = TextElement(
             name="TestElement",
-            content="## Header\n\nSome content",
-            content_type=ContentType.TEXT
+            content="## Header\n\nSome content"
         )
         result = element.to_markdown()
         expected = "<!-- text: TestElement -->\n## Header\n\nSome content"
         assert result == expected
 
     def test_to_markdown_default_text_no_comment(self):
-        element = MarkdownSlideElement(
+        element = TextElement(
             name="Default",
-            content="# Title\n\nDefault content",
-            content_type=ContentType.TEXT
+            content="# Title\n\nDefault content"
         )
         result = element.to_markdown()
         expected = "# Title\n\nDefault content"
         assert result == expected
 
     def test_to_markdown_strips_trailing_whitespace(self):
-        element = MarkdownSlideElement(
+        element = TextElement(
             name="Test",
-            content="Content with trailing spaces   \n  ",
-            content_type=ContentType.TEXT
+            content="Content with trailing spaces   \n  "
         )
         result = element.to_markdown()
         expected = "<!-- text: Test -->\nContent with trailing spaces"
         assert result == expected
+
+
+class TestImageElement:
+    def test_create_valid_image_from_markdown(self):
+        element = ImageElement.from_markdown(
+            name="Image1",
+            markdown_content="![alt text](https://example.com/image.jpg)"
+        )
+        assert element.name == "Image1"
+        assert element.content_type == ContentType.IMAGE
+        assert element.content == "https://example.com/image.jpg"  # URL in content
+        assert element.metadata["alt_text"] == "alt text"  # Alt text in metadata
+        assert element.metadata["original_markdown"] == "![alt text](https://example.com/image.jpg)"
+
+    def test_create_valid_image_direct(self):
+        element = ImageElement(
+            name="Image1",
+            content="![alt text](https://example.com/image.jpg)"
+        )
+        assert element.name == "Image1"
+        assert element.content_type == ContentType.IMAGE
+        assert element.content == "https://example.com/image.jpg"  # URL extracted
+        assert element.metadata["alt_text"] == "alt text"  # Alt text extracted
+        
+    def test_image_round_trip(self):
+        original = "![alt text](https://example.com/image.jpg)"
+        element = ImageElement.from_markdown("Test", original)
+        reconstructed = element.to_markdown()
+        assert "<!-- image: Test -->" in reconstructed
+        assert original in reconstructed
+    
+    def test_invalid_image_content_raises(self):
+        with pytest.raises(ValueError, match="Image element must contain at least one markdown image"):
+            ImageElement.from_markdown(
+                name="BadImage",
+                markdown_content="This is not an image"
+            )
+
+
+class TestTableElement:
+    def test_create_valid_table(self):
+        table_md = """| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |"""
+        
+        element = TableElement(
+            name="Table1",
+            content=table_md
+        )
+        assert element.name == "Table1"
+        assert element.content_type == ContentType.TABLE
+        assert element.content.headers == ["Header 1", "Header 2"]
+        assert element.content.rows == [["Cell 1", "Cell 2"]]
+
+    def test_invalid_table_content_raises(self):
+        with pytest.raises(ValueError, match="Table element must contain a valid markdown table"):
+            TableElement(
+                name="BadTable",
+                content="This is not a table"
+            )
+
+    def test_table_to_markdown(self):
+        table_data = TableData(headers=["A", "B"], rows=[["1", "2"]])
+        element = TableElement(name="Test", content=table_data)
+        result = element.to_markdown()
+        assert "<!-- table: Test -->" in result
+        assert "| A | B |" in result
+
+
+class TestChartElement:
+    def test_create_valid_chart(self):
+        chart_md = """```json
+{
+    "data": [1, 2, 3]
+}
+```"""
+        
+        element = ChartElement(
+            name="Chart1",
+            content=chart_md
+        )
+        assert element.name == "Chart1"
+        assert element.content_type == ContentType.CHART
+        assert element.metadata["chart_data"] == {"data": [1, 2, 3]}
+
+    def test_invalid_chart_content_raises(self):
+        with pytest.raises(ValueError, match="Chart element must contain only a ```json code block"):
+            ChartElement(
+                name="BadChart",
+                content="This is not a JSON code block"
+            )
+
+    def test_invalid_json_raises(self):
+        with pytest.raises(ValueError, match="Chart element must contain valid JSON"):
+            ChartElement(
+                name="BadJSON",
+                content="```json\n{invalid json\n```"
+            )
 
 
 class TestMarkdownSlide:
@@ -77,15 +175,13 @@ class TestMarkdownSlide:
 
     def test_slide_with_elements(self):
         elements = [
-            MarkdownSlideElement(
+            TextElement(
                 name="Default",
-                content="# Title",
-                content_type=ContentType.TEXT
+                content="# Title"
             ),
-            MarkdownSlideElement(
+            ImageElement(
                 name="Image1",
-                content="![alt](url)",
-                content_type=ContentType.IMAGE
+                content="![alt](url)"
             )
         ]
         slide = MarkdownSlide(elements=elements)
@@ -93,15 +189,13 @@ class TestMarkdownSlide:
 
     def test_to_markdown(self):
         elements = [
-            MarkdownSlideElement(
+            TextElement(
                 name="Default",
-                content="# Slide Title",
-                content_type=ContentType.TEXT
+                content="# Slide Title"
             ),
-            MarkdownSlideElement(
+            TextElement(
                 name="Description",
-                content="Some description text",
-                content_type=ContentType.TEXT
+                content="Some description text"
             )
         ]
         slide = MarkdownSlide(elements=elements)
@@ -145,8 +239,9 @@ Content here
         
         # Image element
         assert slide.elements[2].name == "Img1"
-        assert slide.elements[2].content == "![Image](url.jpg)"
+        assert slide.elements[2].content == "url.jpg"  # URL is stored in content
         assert slide.elements[2].content_type == ContentType.IMAGE
+        assert slide.elements[2].metadata["alt_text"] == "Image"  # Alt text in metadata
 
     def test_from_markdown_invalid_element_type_warn(self, caplog):
         markdown = """# Title
@@ -195,10 +290,9 @@ class TestMarkdownDeck:
     def test_deck_with_slides(self):
         slides = [
             MarkdownSlide(elements=[
-                MarkdownSlideElement(
+                TextElement(
                     name="Default",
-                    content="# Slide 1",
-                    content_type=ContentType.TEXT
+                    content="# Slide 1"
                 )
             ])
         ]
@@ -208,10 +302,9 @@ class TestMarkdownDeck:
     def test_dumps_single_slide(self):
         deck = MarkdownDeck(slides=[
             MarkdownSlide(elements=[
-                MarkdownSlideElement(
+                TextElement(
                     name="Default",
-                    content="# Title",
-                    content_type=ContentType.TEXT
+                    content="# Title"
                 )
             ])
         ])
@@ -222,17 +315,15 @@ class TestMarkdownDeck:
     def test_dumps_multiple_slides(self):
         deck = MarkdownDeck(slides=[
             MarkdownSlide(elements=[
-                MarkdownSlideElement(
+                TextElement(
                     name="Default",
-                    content="# Slide 1",
-                    content_type=ContentType.TEXT
+                    content="# Slide 1"
                 )
             ]),
             MarkdownSlide(elements=[
-                MarkdownSlideElement(
+                TextElement(
                     name="Default",
-                    content="# Slide 2",
-                    content_type=ContentType.TEXT
+                    content="# Slide 2"
                 )
             ])
         ])
@@ -244,10 +335,9 @@ class TestMarkdownDeck:
         deck = MarkdownDeck(slides=[
             MarkdownSlide(elements=[]),  # Empty slide
             MarkdownSlide(elements=[
-                MarkdownSlideElement(
+                TextElement(
                     name="Default",
-                    content="# Valid Slide",
-                    content_type=ContentType.TEXT
+                    content="# Valid Slide"
                 )
             ])
         ])
