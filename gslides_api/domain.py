@@ -398,7 +398,9 @@ class Image(GSlidesBaseModel):
                 self._original_properties_type = type(self.imageProperties).__name__
 
             try:
-                self.imageProperties = ImageProperties.model_validate(self.imageProperties)
+                self.imageProperties = ImageProperties.model_validate(
+                    self.imageProperties
+                )
             except (ValueError, TypeError):
                 # Keep as is if conversion fails
                 pass

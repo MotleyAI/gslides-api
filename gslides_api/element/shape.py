@@ -7,6 +7,7 @@ from gslides_api.client import api_client as default_api_client
 from gslides_api.domain import (Dimension, OutputUnit, PageElementProperties,
                                 Unit)
 from gslides_api.element.base import ElementKind, PageElementBase
+from gslides_api.markdown.element import TextElement as MarkdownTextElement
 from gslides_api.markdown.from_markdown import (markdown_to_text_elements,
                                                 text_elements_to_requests)
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
@@ -287,3 +288,122 @@ class ShapeElement(PageElementBase):
                     if len(out) > 0:
                         out.append("\n")
             return "".join(out)
+
+    def to_markdown_element(self, name: str = "Text") -> MarkdownTextElement:
+        """Convert ShapeElement to MarkdownTextElement for round-trip conversion."""
+        content = self.to_markdown() or ""
+
+        # Store position, size, and other properties in metadata for perfect reconstruction
+        metadata = {
+            "objectId": self.objectId,
+            "shape_type": self.shape.shapeType.value if self.shape.shapeType else None,
+        }
+
+        # Store element properties (position, size, etc.) if available
+        if hasattr(self, "size") and self.size:
+            metadata["size"] = {
+                "width": self.size.width.magnitude,
+                "height": self.size.height.magnitude,
+                "unit": self.size.width.unit.value,
+            }
+
+        if hasattr(self, "transform") and self.transform:
+            metadata["transform"] = (
+                self.transform.to_api_format()
+                if hasattr(self.transform, "to_api_format")
+                else None
+            )
+
+        # Store title and description if available
+        if hasattr(self, "title") and self.title:
+            metadata["title"] = self.title
+        if hasattr(self, "description") and self.description:
+            metadata["description"] = self.description
+
+        # Store text styles if available
+        if self.styles:
+            metadata["styles"] = [
+                style.to_api_format() if hasattr(style, "to_api_format") else str(style)
+                for style in self.styles
+            ]
+
+        return MarkdownTextElement(name=name, content=content, metadata=metadata)
+
+    @classmethod
+    def from_markdown_element(
+        cls,
+        markdown_elem: MarkdownTextElement,
+        parent_id: str,
+        shape_type: Optional[str] = None,
+        api_client: Optional[GoogleAPIClient] = None,
+    ) -> "ShapeElement":
+        """Create ShapeElement from MarkdownTextElement with preserved metadata."""
+
+        # Extract metadata
+        metadata = markdown_elem.metadata or {}
+        object_id = metadata.get("objectId")
+        stored_shape_type = metadata.get("shape_type") or shape_type or "TEXT_BOX"
+
+        # Create basic shape with text content
+        from gslides_api.text import Shape, ShapeProperties, Text
+        from gslides_api.text import Type as ShapeType
+
+        # Create a minimal shape - the actual content will be written via write_text
+        shape = Shape(
+            shapeProperties=ShapeProperties(),
+            shapeType=ShapeType(stored_shape_type),
+            text=Text(textElements=[]) if markdown_elem.content.strip() else None,
+        )
+
+        # Create element properties from metadata
+        element_props = PageElementProperties(pageObjectId=parent_id)
+
+        # Restore size if available, otherwise provide default
+        if "size" in metadata:
+            size_data = metadata["size"]
+            from gslides_api.domain import Dimension, Size, Unit
+
+            element_props.size = Size(
+                width=Dimension(
+                    magnitude=size_data["width"], unit=Unit(size_data["unit"])
+                ),
+                height=Dimension(
+                    magnitude=size_data["height"], unit=Unit(size_data["unit"])
+                ),
+            )
+        else:
+            # Provide default size for text boxes
+            from gslides_api.domain import Dimension, Size, Unit
+
+            element_props.size = Size(
+                width=Dimension(magnitude=300, unit=Unit.PT),
+                height=Dimension(magnitude=200, unit=Unit.PT),
+            )
+
+        # Restore transform if available, otherwise create default
+        if "transform" in metadata and metadata["transform"]:
+            from gslides_api.domain import Transform
+
+            transform_data = metadata["transform"]
+            element_props.transform = Transform(**transform_data)
+        else:
+            # Create a default identity transform
+            from gslides_api.domain import Transform
+
+            element_props.transform = Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            )
+
+        # Create the shape element
+        shape_element = cls(
+            objectId=object_id or "shape_" + str(hash(markdown_elem.content))[:8],
+            size=element_props.size,
+            transform=element_props.transform,
+            title=metadata.get("title"),
+            description=metadata.get("description"),
+            shape=shape,
+            slide_id=parent_id,
+            presentation_id="",  # Will need to be set by caller
+        )
+
+        return shape_element

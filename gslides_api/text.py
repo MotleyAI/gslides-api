@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from gslides_api.domain import Dimension, Outline, Shadow, ShapeBackgroundFill
-from gslides_api.domain import GSlidesBaseModel, OptionalColor
+from gslides_api.domain import (Dimension, GSlidesBaseModel, OptionalColor,
+                                Outline, Shadow, ShapeBackgroundFill)
 
 
 class Type(Enum):

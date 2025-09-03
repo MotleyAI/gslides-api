@@ -8,11 +8,14 @@ import requests
 from pydantic import Discriminator, Field, Tag, field_validator
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import (Group, Image, ImageData, ImageReplaceMethod, Line,
-                                SheetsChart, SpeakerSpotlight, Table, Video,
-                                WordArt)
+from gslides_api.domain import (Group, Image, ImageData, ImageReplaceMethod,
+                                Line, SheetsChart, SpeakerSpotlight, Table,
+                                Video, WordArt)
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.shape import ShapeElement
+from gslides_api.markdown.element import ImageElement as MarkdownImageElement
+from gslides_api.markdown.element import TableData
+from gslides_api.markdown.element import TableElement as MarkdownTableElement
 from gslides_api.request.request import (  # UpdateSheetsChartPropertiesRequest,; CreateWordArtRequest,
     CreateImageRequest, CreateLineRequest, CreateSheetsChartRequest,
     CreateVideoRequest, GSlidesAPIRequest, ReplaceImageRequest,
@@ -86,7 +89,7 @@ class TableElement(PageElementBase):
         """Convert a TableElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
         request = CreateTableRequest(
-            elementProperties=element_properties,
+            elementProperties=element_properties.to_api_format(),
             rows=self.table.rows,
             columns=self.table.columns,
         )
@@ -96,6 +99,201 @@ class TableElement(PageElementBase):
         """Convert a TableElement to an update request for the Google Slides API."""
         # Tables don't have specific properties to update beyond base properties
         return self.alt_text_update_request(element_id)
+
+    def extract_table_data(self) -> TableData:
+        """Extract table data from Google Slides Table structure into simple TableData format."""
+        if not self.table.tableRows or not self.table.rows or not self.table.columns:
+            raise ValueError("Table has no data to extract")
+
+        headers = []
+        rows = []
+
+        # Extract data from tableRows
+        for row_idx, table_row in enumerate(self.table.tableRows):
+            row_cells = []
+
+            # Each table row contains tableCells
+            if "tableCells" in table_row:
+                for cell in table_row["tableCells"]:
+                    # Extract text content from cell
+                    cell_text = ""
+                    if "text" in cell and "textElements" in cell["text"]:
+                        text_parts = []
+                        for text_element in cell["text"]["textElements"]:
+                            if (
+                                "textRun" in text_element
+                                and "content" in text_element["textRun"]
+                            ):
+                                text_parts.append(text_element["textRun"]["content"])
+                        cell_text = "".join(text_parts).strip()
+                    row_cells.append(cell_text)
+
+            # First row is typically headers
+            if row_idx == 0:
+                headers = row_cells
+            else:
+                # Pad row with empty strings if it's shorter than headers
+                while len(row_cells) < len(headers):
+                    row_cells.append("")
+                rows.append(row_cells[: len(headers)])  # Trim if longer than headers
+
+        if not headers:
+            raise ValueError("No headers found in table")
+
+        return TableData(headers=headers, rows=rows)
+
+    def to_markdown_element(self, name: str = "Table") -> MarkdownTableElement:
+        """Convert TableElement to MarkdownTableElement for round-trip conversion."""
+
+        # Check if we have stored table data from markdown conversion
+        if hasattr(self, "_markdown_table_data") and self._markdown_table_data:
+            table_data = self._markdown_table_data
+        else:
+            # Extract table data from Google Slides structure
+            try:
+                table_data = self.extract_table_data()
+            except ValueError as e:
+                # If we can't extract data, create an empty table
+                table_data = TableData(headers=["Column 1"], rows=[])
+
+        # Store all necessary metadata for perfect reconstruction
+        metadata = {
+            "objectId": self.objectId,
+            "rows": self.table.rows,
+            "columns": self.table.columns,
+        }
+
+        # Store element properties (position, size, etc.) if available
+        if hasattr(self, "size") and self.size:
+            metadata["size"] = {
+                "width": self.size.width.magnitude,
+                "height": self.size.height.magnitude,
+                "unit": self.size.width.unit.value,
+            }
+
+        if hasattr(self, "transform") and self.transform:
+            metadata["transform"] = (
+                self.transform.to_api_format()
+                if hasattr(self.transform, "to_api_format")
+                else None
+            )
+
+        # Store title and description if available
+        if hasattr(self, "title") and self.title:
+            metadata["title"] = self.title
+        if hasattr(self, "description") and self.description:
+            metadata["description"] = self.description
+
+        # Store raw table structure for perfect reconstruction
+        if self.table.tableRows:
+            metadata["tableRows"] = self.table.tableRows
+        if self.table.tableColumns:
+            metadata["tableColumns"] = self.table.tableColumns
+        if self.table.horizontalBorderRows:
+            metadata["horizontalBorderRows"] = self.table.horizontalBorderRows
+        if self.table.verticalBorderRows:
+            metadata["verticalBorderRows"] = self.table.verticalBorderRows
+
+        return MarkdownTableElement(name=name, content=table_data, metadata=metadata)
+
+    @classmethod
+    def from_markdown_element(
+        cls,
+        markdown_elem: MarkdownTableElement,
+        parent_id: str,
+        api_client: Optional[GoogleAPIClient] = None,
+    ) -> "TableElement":
+        """Create TableElement from MarkdownTableElement with preserved metadata."""
+
+        # Extract metadata
+        metadata = markdown_elem.metadata or {}
+        object_id = metadata.get("objectId")
+
+        # Get table data
+        table_data = markdown_elem.content
+
+        # Create the Table domain object
+        table = Table(
+            rows=metadata.get("rows", len(table_data.rows) + 1),  # +1 for header
+            columns=metadata.get("columns", len(table_data.headers)),
+        )
+
+        # Restore full table structure if available in metadata
+        if "tableRows" in metadata:
+            table.tableRows = metadata["tableRows"]
+        if "tableColumns" in metadata:
+            table.tableColumns = metadata["tableColumns"]
+        if "horizontalBorderRows" in metadata:
+            table.horizontalBorderRows = metadata["horizontalBorderRows"]
+        if "verticalBorderRows" in metadata:
+            table.verticalBorderRows = metadata["verticalBorderRows"]
+
+        # Create element properties from metadata
+        from gslides_api.domain import PageElementProperties
+
+        element_props = PageElementProperties(pageObjectId=parent_id)
+
+        # Restore size if available, otherwise provide default
+        if "size" in metadata:
+            size_data = metadata["size"]
+            from gslides_api.domain import Dimension, Size, Unit
+
+            element_props.size = Size(
+                width=Dimension(
+                    magnitude=size_data["width"], unit=Unit(size_data["unit"])
+                ),
+                height=Dimension(
+                    magnitude=size_data["height"], unit=Unit(size_data["unit"])
+                ),
+            )
+        else:
+            # Provide default size for tables
+            from gslides_api.domain import Dimension, Size, Unit
+
+            # Calculate size based on table dimensions
+            num_rows = len(table_data.rows) + 1  # +1 for header
+            num_cols = len(table_data.headers)
+
+            # Basic sizing: 100pt per column, 30pt per row
+            default_width = max(300, num_cols * 100)
+            default_height = max(150, num_rows * 30)
+
+            element_props.size = Size(
+                width=Dimension(magnitude=default_width, unit=Unit.PT),
+                height=Dimension(magnitude=default_height, unit=Unit.PT),
+            )
+
+        # Restore transform if available, otherwise create default
+        if "transform" in metadata and metadata["transform"]:
+            from gslides_api.domain import Transform
+
+            transform_data = metadata["transform"]
+            element_props.transform = Transform(**transform_data)
+        else:
+            # Create a default identity transform
+            from gslides_api.domain import Transform
+
+            element_props.transform = Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            )
+
+        # Create the table element
+        table_element = cls(
+            objectId=object_id
+            or "table_" + str(hash(str(markdown_elem.content.headers)))[:8],
+            size=element_props.size,
+            transform=element_props.transform,
+            title=metadata.get("title"),
+            description=metadata.get("description"),
+            table=table,
+            slide_id=parent_id,
+            presentation_id="",  # Will need to be set by caller
+        )
+
+        # Store the markdown table data for round-trip conversion
+        table_element._markdown_table_data = table_data
+
+        return table_element
 
 
 class ImageElement(PageElementBase):
@@ -267,79 +465,222 @@ class ImageElement(PageElementBase):
 
     def get_image_data(self) -> ImageData:
         """Retrieve the actual image data from Google Slides.
-        
+
         Returns:
             ImageData: Container with image bytes, MIME type, and optional filename.
-            
+
         Raises:
             ValueError: If no image URL is available.
             requests.RequestException: If the image download fails.
         """
         logger = logging.getLogger(__name__)
-        
+
         # Prefer contentUrl over sourceUrl as it's Google's cached version
         url = self.image.contentUrl or self.image.sourceUrl
-        
+
         if not url:
             logger.error("No image URL available for element %s", self.objectId)
-            raise ValueError("No image URL available (neither contentUrl nor sourceUrl)")
-        
+            raise ValueError(
+                "No image URL available (neither contentUrl nor sourceUrl)"
+            )
+
         logger.info("Downloading image from URL: %s", url)
-        
+
         try:
             # Download the image with retries for common network issues
             response = requests.get(url, timeout=30)
             response.raise_for_status()
-            
+
             content_length = len(response.content)
             logger.debug("Downloaded %d bytes from %s", content_length, url)
-            
+
             if content_length == 0:
                 logger.warning("Downloaded empty image content from %s", url)
                 raise ValueError("Downloaded image is empty")
-                
+
         except requests.exceptions.Timeout as e:
             logger.error("Timeout downloading image from %s: %s", url, e)
             raise requests.RequestException(f"Timeout downloading image: {e}") from e
         except requests.exceptions.RequestException as e:
             logger.error("Failed to download image from %s: %s", url, e)
             raise
-        
+
         # Determine MIME type
-        mime_type = response.headers.get('content-type', 'application/octet-stream')
+        mime_type = response.headers.get("content-type", "application/octet-stream")
         logger.debug("Content-Type header: %s", mime_type)
-        
+
         # If MIME type is not image-specific, try to guess from URL
-        if not mime_type.startswith('image/'):
+        if not mime_type.startswith("image/"):
             parsed_url = urlparse(url)
             path = parsed_url.path
             if path:
                 guessed_type, _ = mimetypes.guess_type(path)
-                if guessed_type and guessed_type.startswith('image/'):
-                    logger.debug("Guessed MIME type from URL: %s -> %s", path, guessed_type)
+                if guessed_type and guessed_type.startswith("image/"):
+                    logger.debug(
+                        "Guessed MIME type from URL: %s -> %s", path, guessed_type
+                    )
                     mime_type = guessed_type
                 else:
-                    logger.warning("Could not determine image MIME type, using default: %s", mime_type)
-        
+                    logger.warning(
+                        "Could not determine image MIME type, using default: %s",
+                        mime_type,
+                    )
+
         # Extract filename from URL if possible
         filename = None
         parsed_url = urlparse(url)
         if parsed_url.path:
-            filename = parsed_url.path.split('/')[-1]
+            filename = parsed_url.path.split("/")[-1]
             # Only keep if it looks like a filename with extension
-            if '.' not in filename:
+            if "." not in filename:
                 filename = None
             else:
                 logger.debug("Extracted filename from URL: %s", filename)
-        
-        logger.info("Successfully retrieved image: %d bytes, MIME type: %s", 
-                   content_length, mime_type)
-        
-        return ImageData(
-            content=response.content,
-            mime_type=mime_type,
-            filename=filename
+
+        logger.info(
+            "Successfully retrieved image: %d bytes, MIME type: %s",
+            content_length,
+            mime_type,
         )
+
+        return ImageData(
+            content=response.content, mime_type=mime_type, filename=filename
+        )
+
+    def to_markdown_element(self, name: str = "Image") -> MarkdownImageElement:
+        """Convert ImageElement to MarkdownImageElement for round-trip conversion."""
+
+        # Use sourceUrl preferentially, fallback to contentUrl
+        url = self.image.sourceUrl or self.image.contentUrl or ""
+        alt_text = self.title or self.description or ""
+
+        # Create the markdown image content
+        markdown_content = f"![{alt_text}]({url})"
+
+        # Store all necessary metadata for perfect reconstruction
+        metadata = {
+            "objectId": self.objectId,
+            "sourceUrl": self.image.sourceUrl,
+            "contentUrl": self.image.contentUrl,
+            "alt_text": alt_text,
+            "original_markdown": markdown_content,
+        }
+
+        # Store element properties (position, size, etc.) if available
+        if hasattr(self, "size") and self.size:
+            metadata["size"] = {
+                "width": self.size.width.magnitude,
+                "height": self.size.height.magnitude,
+                "unit": self.size.width.unit.value,
+            }
+
+        if hasattr(self, "transform") and self.transform:
+            metadata["transform"] = (
+                self.transform.to_api_format()
+                if hasattr(self.transform, "to_api_format")
+                else None
+            )
+
+        # Store title and description if available
+        if hasattr(self, "title") and self.title:
+            metadata["title"] = self.title
+        if hasattr(self, "description") and self.description:
+            metadata["description"] = self.description
+
+        # Store image properties if available
+        if hasattr(self.image, "imageProperties") and self.image.imageProperties:
+            metadata["imageProperties"] = (
+                self.image.imageProperties.to_api_format()
+                if hasattr(self.image.imageProperties, "to_api_format")
+                else None
+            )
+
+        return MarkdownImageElement(
+            name=name, content=markdown_content, metadata=metadata
+        )
+
+    @classmethod
+    def from_markdown_element(
+        cls,
+        markdown_elem: MarkdownImageElement,
+        parent_id: str,
+        api_client: Optional[GoogleAPIClient] = None,
+    ) -> "ImageElement":
+        """Create ImageElement from MarkdownImageElement with preserved metadata."""
+
+        # Extract metadata
+        metadata = markdown_elem.metadata or {}
+        object_id = metadata.get("objectId")
+
+        # Get the URL from the content (it's stored as URL in MarkdownImageElement.content)
+        url = markdown_elem.content
+
+        # Create the Image domain object
+        image = Image(
+            contentUrl=metadata.get("contentUrl"),
+            sourceUrl=metadata.get("sourceUrl") or url,  # Fallback to content URL
+        )
+
+        # Restore image properties if available
+        if "imageProperties" in metadata and metadata["imageProperties"]:
+            from gslides_api.domain import ImageProperties
+
+            image.imageProperties = ImageProperties(**metadata["imageProperties"])
+
+        # Create element properties from metadata
+        from gslides_api.domain import PageElementProperties
+
+        element_props = PageElementProperties(pageObjectId=parent_id)
+
+        # Restore size if available, otherwise provide default
+        if "size" in metadata:
+            size_data = metadata["size"]
+            from gslides_api.domain import Dimension, Size, Unit
+
+            element_props.size = Size(
+                width=Dimension(
+                    magnitude=size_data["width"], unit=Unit(size_data["unit"])
+                ),
+                height=Dimension(
+                    magnitude=size_data["height"], unit=Unit(size_data["unit"])
+                ),
+            )
+        else:
+            # Provide default size for images
+            from gslides_api.domain import Dimension, Size, Unit
+
+            element_props.size = Size(
+                width=Dimension(magnitude=200, unit=Unit.PT),
+                height=Dimension(magnitude=150, unit=Unit.PT),
+            )
+
+        # Restore transform if available, otherwise create default
+        if "transform" in metadata and metadata["transform"]:
+            from gslides_api.domain import Transform
+
+            transform_data = metadata["transform"]
+            element_props.transform = Transform(**transform_data)
+        else:
+            # Create a default identity transform
+            from gslides_api.domain import Transform
+
+            element_props.transform = Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            )
+
+        # Create the image element
+        image_element = cls(
+            objectId=object_id or "image_" + str(hash(markdown_elem.content))[:8],
+            size=element_props.size,
+            transform=element_props.transform,
+            title=metadata.get("title"),
+            description=metadata.get("description"),
+            image=image,
+            slide_id=parent_id,
+            presentation_id="",  # Will need to be set by caller
+        )
+
+        return image_element
 
 
 class VideoElement(PageElementBase):

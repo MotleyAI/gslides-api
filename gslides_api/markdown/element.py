@@ -148,7 +148,9 @@ class ImageElement(MarkdownSlideElement):
         """Create ImageElement from markdown, extracting URL and metadata."""
         image_match = re.search(r"!\[([^]]*)\]\(([^)]+)\)", markdown_content.strip())
         if not image_match:
-            raise ValueError("Image element must contain at least one markdown image (![alt](url))")
+            raise ValueError(
+                "Image element must contain at least one markdown image (![alt](url))"
+            )
 
         alt_text = image_match.group(1)
         url = image_match.group(2)
@@ -156,7 +158,10 @@ class ImageElement(MarkdownSlideElement):
         return cls(
             name=name,
             content=url,  # Store URL as content
-            metadata={"alt_text": alt_text, "original_markdown": markdown_content.strip()},
+            metadata={
+                "alt_text": alt_text,
+                "original_markdown": markdown_content.strip(),
+            },
         )
 
     def to_markdown(self) -> str:
@@ -233,14 +238,18 @@ class TableElement(MarkdownSlideElement):
             table_rows = [
                 child
                 for child in table_element.children
-                if hasattr(child, "__class__") and child.__class__.__name__ == "TableRow"
+                if hasattr(child, "__class__")
+                and child.__class__.__name__ == "TableRow"
             ]
 
             if table_rows:
                 # Extract headers from first row
                 header_row = table_rows[0]
                 for cell in header_row.children:
-                    if hasattr(cell, "__class__") and cell.__class__.__name__ == "TableCell":
+                    if (
+                        hasattr(cell, "__class__")
+                        and cell.__class__.__name__ == "TableCell"
+                    ):
                         cell_text = cls._extract_text_from_node(cell)
                         headers.append(cell_text.strip())
 
@@ -248,7 +257,10 @@ class TableElement(MarkdownSlideElement):
                 for row in table_rows[1:]:
                     row_data = []
                     for cell in row.children:
-                        if hasattr(cell, "__class__") and cell.__class__.__name__ == "TableCell":
+                        if (
+                            hasattr(cell, "__class__")
+                            and cell.__class__.__name__ == "TableCell"
+                        ):
                             cell_text = cls._extract_text_from_node(cell)
                             row_data.append(cell_text.strip())
                     if row_data:
@@ -265,7 +277,10 @@ class TableElement(MarkdownSlideElement):
         if hasattr(node, "children"):
             text_parts = []
             for child in node.children:
-                if hasattr(child, "__class__") and child.__class__.__name__ == "RawText":
+                if (
+                    hasattr(child, "__class__")
+                    and child.__class__.__name__ == "RawText"
+                ):
                     text_parts.append(str(child.children))
                 else:
                     text_parts.append(TableElement._extract_text_from_node(child))
