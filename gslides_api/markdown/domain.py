@@ -57,6 +57,25 @@ class TableData(BaseModel):
 
         return "\n".join(lines)
 
+    def to_dataframe(self):
+        """Convert table data to pandas DataFrame.
+        
+        Returns:
+            pandas.DataFrame: DataFrame with table headers as columns
+            
+        Raises:
+            ImportError: If pandas is not installed
+        """
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for DataFrame conversion. "
+                "Install it with: pip install 'gslides-api[tables]' or pip install pandas"
+            )
+        
+        return pd.DataFrame(self.rows, columns=self.headers)
+
 
 class ContentType(str, Enum):
     TEXT = "text"
@@ -78,8 +97,14 @@ class MarkdownSlideElement(BaseModel, ABC):
         """Convert element back to markdown format."""
         pass
 
-    def _base_to_markdown(self) -> str:
-        """Generate base markdown with HTML comment (if needed) and content."""
+
+class TextElement(MarkdownSlideElement):
+    """Text element containing any markdown text content."""
+
+    content_type: Literal[ContentType.TEXT] = ContentType.TEXT
+
+    def to_markdown(self) -> str:
+        """Convert element back to markdown format."""
         lines = []
 
         # Add HTML comment for element type and name (except for default text)
@@ -90,15 +115,6 @@ class MarkdownSlideElement(BaseModel, ABC):
         lines.append(self.content.rstrip())
 
         return "\n".join(lines)
-
-
-class TextElement(MarkdownSlideElement):
-    """Text element containing any markdown text content."""
-
-    content_type: Literal[ContentType.TEXT] = ContentType.TEXT
-
-    def to_markdown(self) -> str:
-        return self._base_to_markdown()
 
 
 class ImageElement(MarkdownSlideElement):
@@ -275,6 +291,19 @@ class TableElement(MarkdownSlideElement):
 
         return "\n".join(lines)
 
+    def to_df(self):
+        """Convert table to pandas DataFrame.
+        
+        Convenience method that delegates to TableData.to_dataframe().
+        
+        Returns:
+            pandas.DataFrame: DataFrame with table headers as columns
+            
+        Raises:
+            ImportError: If pandas is not installed
+        """
+        return self.content.to_dataframe()
+
 
 class ChartElement(MarkdownSlideElement):
     """Chart element containing a JSON code block."""
@@ -314,7 +343,16 @@ class ChartElement(MarkdownSlideElement):
         return self
 
     def to_markdown(self) -> str:
-        return self._base_to_markdown()
+        """Convert element back to markdown format."""
+        lines = []
+
+        # Add HTML comment for element type and name
+        lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
+
+        # Add content
+        lines.append(self.content.rstrip())
+
+        return "\n".join(lines)
 
 
 # Union type for all element types

@@ -176,6 +176,76 @@ class TestTableElement:
         assert "<!-- table: Test -->" in result
         assert "| A | B |" in result
 
+    def test_table_to_dataframe_functionality(self):
+        """Test DataFrame conversion functionality."""
+        table_data = TableData(headers=["Name", "Age", "City"], rows=[
+            ["Alice", "25", "NYC"], 
+            ["Bob", "30", "SF"],
+            ["Carol", "35", "LA"]
+        ])
+        
+        try:
+            df = table_data.to_dataframe()
+            
+            # Test DataFrame properties
+            assert list(df.columns) == ["Name", "Age", "City"]
+            assert len(df) == 3
+            
+            # Test specific values
+            assert df.loc[0, "Name"] == "Alice"
+            assert df.loc[0, "Age"] == "25"
+            assert df.loc[1, "City"] == "SF"
+            assert df.loc[2, "Name"] == "Carol"
+            
+            # Test that all data is string type (as expected from markdown tables)
+            assert all(df.dtypes == 'object'), "All columns should be object/string type"
+            
+        except ImportError:
+            pytest.skip("pandas not available")
+
+    def test_table_element_to_df_functionality(self):
+        """Test TableElement.to_df() method."""
+        table_md = """| Product | Price | Stock |
+|---------|-------|-------|
+| Widget  | $10   | 50    |
+| Gadget  | $25   | 30    |"""
+        
+        element = TableElement(name="Products", content=table_md)
+        
+        try:
+            df = element.to_df()
+            
+            # Test DataFrame properties
+            assert list(df.columns) == ["Product", "Price", "Stock"]
+            assert len(df) == 2
+            
+            # Test values
+            assert df.loc[0, "Product"] == "Widget"
+            assert df.loc[0, "Price"] == "$10"
+            assert df.loc[1, "Stock"] == "30"
+            
+        except ImportError:
+            pytest.skip("pandas not available")
+
+    def test_table_with_empty_cells(self):
+        """Test DataFrame conversion with empty/missing cells."""
+        table_data = TableData(headers=["A", "B", "C"], rows=[
+            ["1", "2", "3"],
+            ["4", "", "6"],  # Empty cell
+            ["7"]           # Missing cells
+        ])
+        
+        try:
+            df = table_data.to_dataframe()
+            
+            # Check that empty cells are handled correctly
+            assert df.loc[1, "B"] == ""
+            # Missing cells should be filled with empty strings by pandas
+            assert len(df) == 3
+            
+        except ImportError:
+            pytest.skip("pandas not available")
+
 
 class TestChartElement:
     def test_create_valid_chart(self):
