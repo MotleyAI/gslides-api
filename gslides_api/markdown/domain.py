@@ -59,10 +59,10 @@ class TableData(BaseModel):
 
     def to_dataframe(self):
         """Convert table data to pandas DataFrame.
-        
+
         Returns:
             pandas.DataFrame: DataFrame with table headers as columns
-            
+
         Raises:
             ImportError: If pandas is not installed
         """
@@ -73,7 +73,7 @@ class TableData(BaseModel):
                 "pandas is required for DataFrame conversion. "
                 "Install it with: pip install 'gslides-api[tables]' or pip install pandas"
             )
-        
+
         return pd.DataFrame(self.rows, columns=self.headers)
 
 
@@ -293,16 +293,55 @@ class TableElement(MarkdownSlideElement):
 
     def to_df(self):
         """Convert table to pandas DataFrame.
-        
+
         Convenience method that delegates to TableData.to_dataframe().
-        
+
         Returns:
             pandas.DataFrame: DataFrame with table headers as columns
-            
+
         Raises:
             ImportError: If pandas is not installed
         """
         return self.content.to_dataframe()
+
+    @classmethod
+    def from_df(cls, df, name: str, metadata: dict[str, Any] = None) -> "TableElement":
+        """Create TableElement from pandas DataFrame.
+
+        Args:
+            df: pandas DataFrame to convert
+            name: Name for the table element
+            metadata: Optional metadata dictionary
+
+        Returns:
+            TableElement: New table element with data from DataFrame
+
+        Raises:
+            ImportError: If pandas is not installed
+        """
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for DataFrame conversion. "
+                "Install it with: pip install 'gslides-api[tables]' or pip install pandas"
+            )
+
+        if not isinstance(df, pd.DataFrame):
+            raise ValueError("Input must be a pandas DataFrame")
+
+        # Convert DataFrame to TableData
+        headers = df.columns.tolist()
+        # Convert all values to strings (as expected from markdown tables)
+        rows = df.astype(str).values.tolist()
+        
+        table_data = TableData(headers=headers, rows=rows)
+        
+        return cls(
+            name=name,
+            content=table_data,
+            metadata=metadata or {}
+        )
 
 
 class ChartElement(MarkdownSlideElement):
@@ -361,10 +400,22 @@ MarkdownSlideElementUnion = Union[TextElement, ImageElement, TableElement, Chart
 
 class MarkdownSlide(BaseModel):
     elements: list[MarkdownSlideElementUnion] = Field(default_factory=list)
+    name: str | None = None
 
     def to_markdown(self) -> str:
         """Convert slide back to markdown format."""
-        return "\n\n".join(element.to_markdown() for element in self.elements)
+        lines = []
+
+        # Add slide name comment if present
+        if self.name:
+            lines.append(f"<!-- slide: {self.name} -->")
+
+        # Add element content
+        element_content = "\n\n".join(element.to_markdown() for element in self.elements)
+        if element_content:
+            lines.append(element_content)
+
+        return "\n".join(lines)
 
     @classmethod
     def _create_element(
@@ -391,6 +442,14 @@ class MarkdownSlide(BaseModel):
     ) -> "MarkdownSlide":
         """Parse a single slide's markdown content into elements."""
         elements = []
+        slide_name = None
+
+        # Check for slide name comment at the beginning
+        slide_name_match = re.match(r"^\s*<!--\s*slide:\s*([^>]+)\s*-->\s*", slide_content)
+        if slide_name_match:
+            slide_name = slide_name_match.group(1).strip()
+            # Remove the slide name comment from content
+            slide_content = slide_content[slide_name_match.end() :]
 
         # Split content by HTML comments
         parts = re.split(r"(<!-- *(\w+): *([^>]+) *-->)", slide_content)
@@ -445,7 +504,7 @@ class MarkdownSlide(BaseModel):
             else:
                 i += 1
 
-        return cls(elements=elements)
+        return cls(elements=elements, name=slide_name)
 
 
 class MarkdownDeck(BaseModel):
@@ -480,7 +539,7 @@ class MarkdownDeck(BaseModel):
             slide_content = slide_content.strip()
             if slide_content:
                 slide = MarkdownSlide.from_markdown(slide_content, on_invalid_element)
-                if slide.elements:  # Only add slides with content
+                if slide.elements or slide.name:  # Add slides with content or name
                     slides.append(slide)
 
         return cls(slides=slides)
@@ -517,6 +576,7 @@ More content...
 | Cell 1   | Cell 2   |
 
 ---
+<!-- slide: Next Slide -->
 # Next Slide
 
 <!-- text: Summary -->
@@ -526,4 +586,23 @@ Final thoughts
 """
 
     deck = MarkdownDeck.loads(example_md)
+    print("=== Loaded and dumped example ===")
     print(deck.dumps())
+    
+    # Demonstrate from_df functionality
+    try:
+        import pandas as pd
+        
+        print("\n=== DataFrame to TableElement example ===")
+        df = pd.DataFrame({
+            'Name': ['Alice', 'Bob'],
+            'Age': [25, 30],
+            'City': ['NYC', 'SF']
+        })
+        
+        table_element = TableElement.from_df(df, name='People')
+        print("Generated markdown:")
+        print(table_element.to_markdown())
+        
+    except ImportError:
+        print("\n=== pandas not available, skipping DataFrame example ===")

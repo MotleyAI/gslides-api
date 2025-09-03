@@ -227,6 +227,87 @@ class TestTableElement:
         except ImportError:
             pytest.skip("pandas not available")
 
+    def test_table_element_from_df_functionality(self):
+        """Test TableElement.from_df() method."""
+        try:
+            import pandas as pd
+            
+            # Create a DataFrame
+            data = {
+                "Name": ["Alice", "Bob", "Carol"],
+                "Age": [25, 30, 35],
+                "City": ["NYC", "SF", "LA"]
+            }
+            df = pd.DataFrame(data)
+            
+            # Create TableElement from DataFrame
+            element = TableElement.from_df(df, name="People")
+            
+            # Test element properties
+            assert element.name == "People"
+            assert element.content_type == ContentType.TABLE
+            assert element.content.headers == ["Name", "Age", "City"]
+            assert element.content.rows == [
+                ["Alice", "25", "NYC"],
+                ["Bob", "30", "SF"],
+                ["Carol", "35", "LA"]
+            ]
+            assert element.metadata == {}
+            
+            # Test round-trip conversion
+            df_roundtrip = element.to_df()
+            assert list(df_roundtrip.columns) == ["Name", "Age", "City"]
+            assert len(df_roundtrip) == 3
+            assert df_roundtrip.loc[0, "Name"] == "Alice"
+            assert df_roundtrip.loc[2, "City"] == "LA"
+            
+        except ImportError:
+            pytest.skip("pandas not available")
+
+    def test_table_element_from_df_with_metadata(self):
+        """Test TableElement.from_df() with custom metadata."""
+        try:
+            import pandas as pd
+            
+            df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+            metadata = {"source": "test_data", "created": "2024"}
+            
+            element = TableElement.from_df(df, name="TestTable", metadata=metadata)
+            
+            assert element.metadata == {"source": "test_data", "created": "2024"}
+            
+        except ImportError:
+            pytest.skip("pandas not available")
+
+    def test_table_element_from_df_invalid_input(self):
+        """Test TableElement.from_df() with invalid input."""
+        try:
+            import pandas as pd
+            
+            # Test with non-DataFrame input
+            with pytest.raises(ValueError, match="Input must be a pandas DataFrame"):
+                TableElement.from_df("not a dataframe", name="Test")
+                
+        except ImportError:
+            pytest.skip("pandas not available")
+
+    def test_table_element_from_df_without_pandas(self):
+        """Test TableElement.from_df() when pandas is not available."""
+        import sys
+        from unittest.mock import patch
+        
+        # Mock pandas import to raise ImportError
+        with patch.dict('sys.modules', {'pandas': None}):
+            with patch('builtins.__import__') as mock_import:
+                def side_effect(name, *args, **kwargs):
+                    if name == 'pandas':
+                        raise ImportError("No module named 'pandas'")
+                    return __import__(name, *args, **kwargs)
+                mock_import.side_effect = side_effect
+                
+                with pytest.raises(ImportError, match="pandas is required"):
+                    TableElement.from_df(None, name="Test")
+
     def test_table_with_empty_cells(self):
         """Test DataFrame conversion with empty/missing cells."""
         table_data = TableData(headers=["A", "B", "C"], rows=[
@@ -512,6 +593,196 @@ Content"""
         
         with pytest.raises(ValueError):
             MarkdownDeck.loads(markdown, on_invalid_element="raise")
+
+
+class TestSlideNames:
+    """Test slide name functionality."""
+    
+    def test_slide_with_name(self):
+        """Test parsing slide name from comment."""
+        markdown = """<!-- slide: Summary -->
+# Summary Slide
+
+This is a summary slide with a name."""
+        
+        slide = MarkdownSlide.from_markdown(markdown)
+        
+        assert slide.name == "Summary"
+        assert len(slide.elements) == 1
+        assert slide.elements[0].name == "Default"
+        assert slide.elements[0].content == "# Summary Slide\n\nThis is a summary slide with a name."
+    
+    def test_slide_without_name(self):
+        """Test slide without name comment."""
+        markdown = """# Regular Slide
+
+This slide has no name."""
+        
+        slide = MarkdownSlide.from_markdown(markdown)
+        
+        assert slide.name is None
+        assert len(slide.elements) == 1
+        assert slide.elements[0].content == "# Regular Slide\n\nThis slide has no name."
+    
+    def test_slide_name_with_whitespace(self):
+        """Test slide name parsing with various whitespace."""
+        markdown = """<!--   slide:   My Slide Name   -->
+# Slide Content"""
+        
+        slide = MarkdownSlide.from_markdown(markdown)
+        
+        assert slide.name == "My Slide Name"
+        assert len(slide.elements) == 1
+    
+    def test_slide_name_only_no_content(self):
+        """Test slide with only name comment and no other content."""
+        markdown = """<!-- slide: Empty Named Slide -->"""
+        
+        slide = MarkdownSlide.from_markdown(markdown)
+        
+        assert slide.name == "Empty Named Slide"
+        assert len(slide.elements) == 0
+    
+    def test_slide_name_to_markdown(self):
+        """Test serialization of slide name to markdown."""
+        slide = MarkdownSlide(
+            name="Test Slide",
+            elements=[
+                TextElement(name="Default", content="# Content")
+            ]
+        )
+        
+        result = slide.to_markdown()
+        expected = "<!-- slide: Test Slide -->\n# Content"
+        assert result == expected
+    
+    def test_slide_name_to_markdown_no_content(self):
+        """Test serialization of slide with name but no elements."""
+        slide = MarkdownSlide(name="Empty Slide")
+        
+        result = slide.to_markdown()
+        expected = "<!-- slide: Empty Slide -->"
+        assert result == expected
+    
+    def test_slide_name_to_markdown_no_name(self):
+        """Test serialization of slide without name."""
+        slide = MarkdownSlide(elements=[
+            TextElement(name="Default", content="# Content")
+        ])
+        
+        result = slide.to_markdown()
+        expected = "# Content"
+        assert result == expected
+    
+    def test_deck_with_named_slides(self):
+        """Test deck with multiple named slides."""
+        markdown = """---
+<!-- slide: Introduction -->
+# Welcome
+
+Introduction content
+
+---
+<!-- slide: Details -->
+# Details
+
+Detail content
+
+---
+# Unnamed Slide
+
+Regular content"""
+        
+        deck = MarkdownDeck.loads(markdown)
+        
+        assert len(deck.slides) == 3
+        assert deck.slides[0].name == "Introduction"
+        assert deck.slides[1].name == "Details"
+        assert deck.slides[2].name is None
+    
+    def test_deck_with_empty_named_slide(self):
+        """Test that empty named slides are preserved."""
+        markdown = """---
+<!-- slide: Empty -->
+
+---
+# Regular Slide
+
+Content"""
+        
+        deck = MarkdownDeck.loads(markdown)
+        
+        assert len(deck.slides) == 2
+        assert deck.slides[0].name == "Empty"
+        assert len(deck.slides[0].elements) == 0
+        assert deck.slides[1].name is None
+        assert len(deck.slides[1].elements) == 1
+
+
+class TestSlideNameRoundTrip:
+    """Test round-trip conversion preserves slide names exactly."""
+    
+    def test_named_slide_round_trip(self):
+        """Test that named slides round-trip exactly."""
+        original = """---
+<!-- slide: Summary -->
+# Summary
+
+This is the summary.
+
+---
+<!-- slide: Details -->
+# Details
+
+These are the details.
+"""
+        
+        deck = MarkdownDeck.loads(original)
+        output = deck.dumps()
+        
+        assert original == output
+    
+    def test_mixed_named_unnamed_slides_round_trip(self):
+        """Test mixed named and unnamed slides."""
+        original = """---
+<!-- slide: First -->
+# First Slide
+
+Named slide content
+
+---
+# Second Slide
+
+Unnamed slide content
+
+---
+<!-- slide: Third -->
+# Third Slide
+
+Another named slide
+"""
+        
+        deck = MarkdownDeck.loads(original)
+        output = deck.dumps()
+        
+        assert original == output
+    
+    def test_empty_named_slide_round_trip(self):
+        """Test empty named slide round-trip."""
+        original = """---
+<!-- slide: Empty -->
+
+---
+<!-- slide: Not Empty -->
+# Content
+
+Some content
+"""
+        
+        deck = MarkdownDeck.loads(original)
+        output = deck.dumps()
+        
+        assert original == output
 
 
 class TestFullCycleRoundTrip:
