@@ -299,15 +299,6 @@ class Shadow(GSlidesBaseModel):
     alignment: Optional[RectanglePosition] = None
 
 
-class Table(GSlidesBaseModel):
-    """Represents a table in a slide."""
-
-    rows: Optional[int] = None
-    columns: Optional[int] = None
-    tableRows: Optional[List[Dict[str, Any]]] = None
-    tableColumns: Optional[List[Dict[str, Any]]] = None
-    horizontalBorderRows: Optional[List[Dict[str, Any]]] = None
-    verticalBorderRows: Optional[List[Dict[str, Any]]] = None
 
 
 class CropProperties(GSlidesBaseModel):

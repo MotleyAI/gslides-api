@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient
-from gslides_api.domain import Table
+from gslides_api.table import Table
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import TableElement as MarkdownTableElement
@@ -51,8 +51,25 @@ class TableElement(PageElementBase):
         for row_idx, table_row in enumerate(self.table.tableRows):
             row_cells = []
 
-            # Each table row contains tableCells
-            if "tableCells" in table_row:
+            # Handle both old dict format and new Pydantic models
+            if hasattr(table_row, 'tableCells') and table_row.tableCells:
+                # New Pydantic model format
+                for cell in table_row.tableCells:
+                    cell_text = ""
+                    if hasattr(cell, 'text') and cell.text:
+                        # Handle the text field which is now Dict[str, Any]
+                        if isinstance(cell.text, dict) and "textElements" in cell.text:
+                            text_parts = []
+                            for text_element in cell.text["textElements"]:
+                                if (
+                                    "textRun" in text_element
+                                    and "content" in text_element["textRun"]
+                                ):
+                                    text_parts.append(text_element["textRun"]["content"])
+                            cell_text = "".join(text_parts).strip()
+                    row_cells.append(cell_text)
+            elif isinstance(table_row, dict) and "tableCells" in table_row:
+                # Legacy dict format for backward compatibility
                 for cell in table_row["tableCells"]:
                     # Extract text content from cell
                     cell_text = ""
