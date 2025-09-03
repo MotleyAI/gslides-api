@@ -2,19 +2,16 @@ from typing import Annotated, Any, List, Union
 
 from pydantic import Discriminator, Field, Tag, field_validator
 
-from gslides_api.domain import Group, Line, SheetsChart, SpeakerSpotlight, Video, WordArt
+from gslides_api.domain import (Group, Line, SheetsChart, SpeakerSpotlight,
+                                Video, WordArt)
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.image import ImageElement
 from gslides_api.element.shape import ShapeElement
 from gslides_api.element.table import TableElement
 from gslides_api.request.request import (  # UpdateSheetsChartPropertiesRequest,; CreateWordArtRequest,
-    CreateLineRequest,
-    CreateSheetsChartRequest,
-    CreateVideoRequest,
-    GSlidesAPIRequest,
-    UpdateLinePropertiesRequest,
-    UpdateVideoPropertiesRequest,
-)
+    CreateLineRequest, CreateSheetsChartRequest, CreateVideoRequest,
+    GSlidesAPIRequest, UpdateLinePropertiesRequest,
+    UpdateVideoPropertiesRequest)
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 
@@ -95,7 +92,10 @@ class VideoElement(PageElementBase):
         """Convert a VideoElement to an update request for the Google Slides API."""
         requests = self.alt_text_update_request(element_id)
 
-        if hasattr(self.video, "videoProperties") and self.video.videoProperties is not None:
+        if (
+            hasattr(self.video, "videoProperties")
+            and self.video.videoProperties is not None
+        ):
             video_properties = self.video.videoProperties.to_api_format()
             video_request = UpdateVideoPropertiesRequest(
                 objectId=element_id,
@@ -133,7 +133,10 @@ class LineElement(PageElementBase):
         """Convert a LineElement to an update request for the Google Slides API."""
         requests = self.alt_text_update_request(element_id)
 
-        if hasattr(self.line, "lineProperties") and self.line.lineProperties is not None:
+        if (
+            hasattr(self.line, "lineProperties")
+            and self.line.lineProperties is not None
+        ):
             line_properties = self.line.lineProperties.to_api_format()
             line_request = UpdateLinePropertiesRequest(
                 objectId=element_id,
@@ -199,7 +202,9 @@ class SheetsChartElement(PageElementBase):
         element_properties = self.element_properties(parent_id)
 
         if not self.sheetsChart.spreadsheetId or not self.sheetsChart.chartId:
-            raise ValueError("Spreadsheet ID and Chart ID are required for Sheets Chart")
+            raise ValueError(
+                "Spreadsheet ID and Chart ID are required for Sheets Chart"
+            )
 
         request = CreateSheetsChartRequest(
             elementProperties=element_properties,
@@ -273,7 +278,9 @@ class GroupElement(PageElementBase):
         """Convert a GroupElement to a create request for the Google Slides API."""
         # Note: Group creation is typically done by grouping existing elements
         # This is a placeholder implementation
-        raise NotImplementedError("Group creation should be done by grouping existing elements")
+        raise NotImplementedError(
+            "Group creation should be done by grouping existing elements"
+        )
 
     def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
         """Convert a GroupElement to an update request for the Google Slides API."""

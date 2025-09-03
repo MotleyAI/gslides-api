@@ -4,8 +4,9 @@ from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.domain import Table
-from gslides_api.element.base import PageElementBase, ElementKind
-from gslides_api.markdown.element import TableData, TableElement as MarkdownTableElement
+from gslides_api.element.base import ElementKind, PageElementBase
+from gslides_api.markdown.element import TableData
+from gslides_api.markdown.element import TableElement as MarkdownTableElement
 from gslides_api.request.request import GSlidesAPIRequest
 from gslides_api.request.table import CreateTableRequest
 
@@ -58,7 +59,10 @@ class TableElement(PageElementBase):
                     if "text" in cell and "textElements" in cell["text"]:
                         text_parts = []
                         for text_element in cell["text"]["textElements"]:
-                            if "textRun" in text_element and "content" in text_element["textRun"]:
+                            if (
+                                "textRun" in text_element
+                                and "content" in text_element["textRun"]
+                            ):
                                 text_parts.append(text_element["textRun"]["content"])
                         cell_text = "".join(text_parts).strip()
                     row_cells.append(cell_text)
@@ -108,7 +112,9 @@ class TableElement(PageElementBase):
 
         if hasattr(self, "transform") and self.transform:
             metadata["transform"] = (
-                self.transform.to_api_format() if hasattr(self.transform, "to_api_format") else None
+                self.transform.to_api_format()
+                if hasattr(self.transform, "to_api_format")
+                else None
             )
 
         # Store title and description if available
@@ -172,8 +178,12 @@ class TableElement(PageElementBase):
             from gslides_api.domain import Dimension, Size, Unit
 
             element_props.size = Size(
-                width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
-                height=Dimension(magnitude=size_data["height"], unit=Unit(size_data["unit"])),
+                width=Dimension(
+                    magnitude=size_data["width"], unit=Unit(size_data["unit"])
+                ),
+                height=Dimension(
+                    magnitude=size_data["height"], unit=Unit(size_data["unit"])
+                ),
             )
         else:
             # Provide default size for tables
@@ -208,7 +218,8 @@ class TableElement(PageElementBase):
 
         # Create the table element
         table_element = cls(
-            objectId=object_id or "table_" + str(hash(str(markdown_elem.content.headers)))[:8],
+            objectId=object_id
+            or "table_" + str(hash(str(markdown_elem.content.headers)))[:8],
             size=element_props.size,
             transform=element_props.transform,
             title=metadata.get("title"),

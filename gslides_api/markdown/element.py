@@ -99,6 +99,11 @@ class TextElement(MarkdownSlideElement):
 
     content_type: Literal[ContentType.TEXT] = ContentType.TEXT
 
+    @classmethod
+    def from_markdown(cls, name: str, markdown_content: str) -> "TextElement":
+        """Create TextElement from markdown content."""
+        return cls(name=name, content=markdown_content.strip())
+
     def to_markdown(self) -> str:
         """Convert element back to markdown format."""
         lines = []
@@ -316,6 +321,11 @@ class TableElement(MarkdownSlideElement):
         return self.content.to_dataframe()
 
     @classmethod
+    def from_markdown(cls, name: str, markdown_content: str) -> "TableElement":
+        """Create TableElement from markdown table content."""
+        return cls(name=name, content=markdown_content.strip())
+
+    @classmethod
     def from_df(cls, df, name: str, metadata: dict[str, Any] = None) -> "TableElement":
         """Create TableElement from pandas DataFrame.
 
@@ -387,6 +397,11 @@ class ChartElement(MarkdownSlideElement):
             except json.JSONDecodeError:
                 pass  # Let the field validator handle the error
         return self
+
+    @classmethod
+    def from_markdown(cls, name: str, markdown_content: str) -> "ChartElement":
+        """Create ChartElement from markdown content containing JSON code block."""
+        return cls(name=name, content=markdown_content.strip())
 
     def to_markdown(self) -> str:
         """Convert element back to markdown format."""
