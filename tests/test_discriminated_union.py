@@ -3,7 +3,8 @@
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from gslides_api.domain import Image, Size, Table, Transform, Video, VideoSourceType
+from gslides_api.domain import Image, Size, Transform, Video, VideoSourceType
+from gslides_api.table import Table
 from gslides_api.element.element import PageElement, VideoElement
 from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement

@@ -52,7 +52,7 @@ class TableCell(GSlidesBaseModel):
     location: Optional[TableCellLocation] = None
     rowSpan: Optional[int] = None
     columnSpan: Optional[int] = None
-    text: Optional[Dict[str, Any]] = None
+    text: Optional[Text] = None
     tableCellProperties: Optional[TableCellProperties] = None
 
 

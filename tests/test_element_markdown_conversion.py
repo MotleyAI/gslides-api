@@ -16,12 +16,12 @@ from gslides_api.domain import (
     Image,
     PageElementProperties,
     Size,
-    Table,
     Transform,
     Unit,
 )
 from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement
+from gslides_api.table import Table
 from gslides_api.element.shape import ShapeElement
 from gslides_api.markdown.element import ContentType
 from gslides_api.markdown.element import ImageElement as MarkdownImageElement

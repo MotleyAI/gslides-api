@@ -14,13 +14,13 @@ from gslides_api.domain import (
     Size,
     SpeakerSpotlight,
     SpeakerSpotlightProperties,
-    Table,
     Transform,
     Video,
     VideoProperties,
     WordArt,
 )
 from gslides_api.element.base import AltText, PageElementBase
+from gslides_api.table import Table
 from gslides_api.element.element import (
     GroupElement,
     LineElement,
