@@ -11,9 +11,11 @@ from typing import Optional
 import pytest
 
 from gslides_api.client import api_client, initialize_credentials
+
 # Note: Importing individual element types instead of union type
 from gslides_api.domain import Dimension, Size, Transform, Unit
-from gslides_api.element.element import ImageElement, TableElement
+from gslides_api.element.image import ImageElement
+from gslides_api.element.table import TableElement
 from gslides_api.element.shape import ShapeElement
 from gslides_api.markdown.element import ImageElement as MarkdownImageElement
 from gslides_api.markdown.element import TableData
@@ -56,9 +58,7 @@ class TestAPIRoundTrip:
                 api_client.drive_service.files().delete(
                     fileId=cls.test_presentation.presentationId
                 ).execute()
-                print(
-                    f"Deleted test presentation: {cls.test_presentation.presentationId}"
-                )
+                print(f"Deleted test presentation: {cls.test_presentation.presentationId}")
             except Exception as e:
                 print(f"Warning: Failed to delete test presentation: {e}")
 
@@ -86,9 +86,7 @@ class TestAPIRoundTrip:
 
         # Write the text content to the created element
         shape_element.objectId = new_element_id
-        shape_element.write_text(
-            markdown_text.content, as_markdown=True, api_client=api_client
-        )
+        shape_element.write_text(markdown_text.content, as_markdown=True, api_client=api_client)
 
         # Read the slide back from API to get the actual element
         updated_slide = self.test_slide.__class__.from_ids(
@@ -100,9 +98,7 @@ class TestAPIRoundTrip:
         # Find our created element
         created_element = updated_slide.get_element_by_id(new_element_id)
         assert created_element is not None, "Created element not found in slide"
-        assert isinstance(
-            created_element, ShapeElement
-        ), "Element is not a ShapeElement"
+        assert isinstance(created_element, ShapeElement), "Element is not a ShapeElement"
 
         # Convert back to markdown
         result_markdown_element = created_element.to_markdown_element("TestText")
@@ -161,9 +157,7 @@ class TestAPIRoundTrip:
         # Find our created element
         created_element = updated_slide.get_element_by_id(new_element_id)
         assert created_element is not None, "Created element not found in slide"
-        assert isinstance(
-            created_element, TableElement
-        ), "Element is not a TableElement"
+        assert isinstance(created_element, TableElement), "Element is not a TableElement"
 
         # Convert back to markdown
         result_markdown_element = created_element.to_markdown_element("TestTable")
@@ -181,9 +175,7 @@ class TestAPIRoundTrip:
         print(f"Result table data: {result_markdown_element.content}")
 
         # Verify that we can successfully extract and convert table data from the API
-        print(
-            "API round-trip successful: table created, read, and converted back to markdown"
-        )
+        print("API round-trip successful: table created, read, and converted back to markdown")
 
     @pytest.mark.skip(
         reason="ImageElement requires actual image upload - skipping for basic API test"
@@ -205,9 +197,7 @@ class TestAPIRoundTrip:
             content="## Multi-element Test\n\nThis slide has multiple elements.",
             metadata={"objectId": "multi_text_1"},
         )
-        shape = ShapeElement.from_markdown_element(
-            text_element, parent_id=self.test_slide.objectId
-        )
+        shape = ShapeElement.from_markdown_element(text_element, parent_id=self.test_slide.objectId)
         shape.presentation_id = self.test_presentation.presentationId
         shape.transform.translateX = 100000  # Offset position
         shape.transform.translateY = 100000
@@ -250,9 +240,7 @@ class TestAPIRoundTrip:
 
         for element_type, element_id in elements:
             found_element = updated_slide.get_element_by_id(element_id)
-            assert (
-                found_element is not None
-            ), f"{element_type} element {element_id} not found"
+            assert found_element is not None, f"{element_type} element {element_id} not found"
 
             if element_type == "text":
                 assert isinstance(found_element, ShapeElement)
@@ -264,6 +252,4 @@ class TestAPIRoundTrip:
                 assert markdown_elem.content is not None
                 assert len(markdown_elem.content.headers) > 0
 
-        print(
-            f"Successfully tested {len(elements)} elements in multi-element round-trip"
-        )
+        print(f"Successfully tested {len(elements)} elements in multi-element round-trip")

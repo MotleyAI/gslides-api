@@ -7,7 +7,7 @@ import requests
 
 from gslides_api.domain import Image, ImageData, Transform
 from gslides_api.element.base import ElementKind
-from gslides_api.element.element import ImageElement
+from gslides_api.element.image import ImageElement
 
 
 def test_image_data_creation():
@@ -92,7 +92,7 @@ def test_image_data_get_extension():
     assert image_data.get_extension() == ".bin"
 
 
-@patch("gslides_api.element.element.requests.get")
+@patch("gslides_api.element.image.requests.get")
 def test_image_element_get_image_data(mock_get):
     """Test ImageElement.get_image_data method."""
     # Mock the HTTP response
@@ -120,7 +120,7 @@ def test_image_element_get_image_data(mock_get):
     mock_get.assert_called_once_with("https://example.com/image.jpg", timeout=30)
 
 
-@patch("gslides_api.element.element.requests.get")
+@patch("gslides_api.element.image.requests.get")
 def test_image_element_get_image_data_fallback_to_source_url(mock_get):
     """Test ImageElement.get_image_data falls back to sourceUrl."""
     # Mock the HTTP response
@@ -160,7 +160,7 @@ def test_image_element_get_image_data_no_url():
         element.get_image_data()
 
 
-@patch("gslides_api.element.element.requests.get")
+@patch("gslides_api.element.image.requests.get")
 def test_image_element_get_image_data_http_error(mock_get):
     """Test ImageElement.get_image_data handles HTTP errors."""
     # Mock HTTP error
@@ -177,7 +177,7 @@ def test_image_element_get_image_data_http_error(mock_get):
         element.get_image_data()
 
 
-@patch("gslides_api.element.element.requests.get")
+@patch("gslides_api.element.image.requests.get")
 def test_image_element_get_image_data_empty_content(mock_get):
     """Test ImageElement.get_image_data handles empty content."""
     # Mock empty response
@@ -198,7 +198,7 @@ def test_image_element_get_image_data_empty_content(mock_get):
         element.get_image_data()
 
 
-@patch("gslides_api.element.element.requests.get")
+@patch("gslides_api.element.image.requests.get")
 def test_image_element_get_image_data_mime_type_fallback(mock_get):
     """Test ImageElement.get_image_data MIME type detection from URL."""
     # Mock response with generic content type

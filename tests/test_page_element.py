@@ -1,15 +1,34 @@
 import pytest
 from pydantic import TypeAdapter
 
-from gslides_api.domain import (Dimension, Group, Image, ImageProperties, Line,
-                                LineProperties, OutputUnit, SheetsChart,
-                                SheetsChartProperties, Size, SpeakerSpotlight,
-                                SpeakerSpotlightProperties, Table, Transform,
-                                Video, VideoProperties, WordArt)
+from gslides_api.domain import (
+    Dimension,
+    Group,
+    Image,
+    ImageProperties,
+    Line,
+    LineProperties,
+    OutputUnit,
+    SheetsChart,
+    SheetsChartProperties,
+    Size,
+    SpeakerSpotlight,
+    SpeakerSpotlightProperties,
+    Table,
+    Transform,
+    Video,
+    VideoProperties,
+    WordArt,
+)
 from gslides_api.element.base import AltText, PageElementBase
-from gslides_api.element.element import (GroupElement, ImageElement,
-                                         LineElement, PageElement,
-                                         SheetsChartElement, WordArtElement)
+from gslides_api.element.element import (
+    GroupElement,
+    LineElement,
+    PageElement,
+    SheetsChartElement,
+    WordArtElement,
+)
+from gslides_api.element.image import ImageElement
 from gslides_api.element.shape import ShapeElement
 from gslides_api.text import Shape, ShapeProperties, Type
 
@@ -173,10 +192,7 @@ def test_update_request_with_title_description():
     assert update_request is not None
     assert update_request["updatePageElementAltText"]["objectId"] == "element_id"
     assert update_request["updatePageElementAltText"]["title"] == "Updated Title"
-    assert (
-        update_request["updatePageElementAltText"]["description"]
-        == "Updated Description"
-    )
+    assert update_request["updatePageElementAltText"]["description"] == "Updated Description"
 
 
 def test_discriminated_union_with_type_adapter():
@@ -204,9 +220,7 @@ def test_absolute_size_with_dimension_objects():
             width=Dimension(magnitude=3000000, unit="EMU"),
             height=Dimension(magnitude=3000000, unit="EMU"),
         ),
-        transform=Transform(
-            translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"
-        ),
+        transform=Transform(translateX=0, translateY=0, scaleX=0.3, scaleY=0.12, unit="EMU"),
         shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
@@ -262,9 +276,7 @@ def test_absolute_size_invalid_units():
     )
 
     with pytest.raises(TypeError, match="units must be an OutputUnit enum value"):
-        element.absolute_size(
-            "px"
-        )  # String should cause TypeError since we expect OutputUnit
+        element.absolute_size("px")  # String should cause TypeError since we expect OutputUnit
 
 
 def test_absolute_size_no_size():
@@ -529,9 +541,7 @@ def test_absolute_position_invalid_units():
     )
 
     with pytest.raises(TypeError, match="units must be an OutputUnit enum value"):
-        element.absolute_position(
-            "px"
-        )  # String should cause TypeError since we expect OutputUnit
+        element.absolute_position("px")  # String should cause TypeError since we expect OutputUnit
 
 
 def test_absolute_position_returns_x_y_order():

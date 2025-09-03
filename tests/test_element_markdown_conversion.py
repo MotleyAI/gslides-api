@@ -10,10 +10,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from gslides_api.domain import (AffineTransform, Dimension, Image,
-                                PageElementProperties, Size, Table, Transform,
-                                Unit)
-from gslides_api.element.element import ImageElement, TableElement
+from gslides_api.domain import (
+    AffineTransform,
+    Dimension,
+    Image,
+    PageElementProperties,
+    Size,
+    Table,
+    Transform,
+    Unit,
+)
+from gslides_api.element.image import ImageElement
+from gslides_api.element.table import TableElement
 from gslides_api.element.shape import ShapeElement
 from gslides_api.markdown.element import ContentType
 from gslides_api.markdown.element import ImageElement as MarkdownImageElement
@@ -33,9 +41,7 @@ class TestTextElementConversion:
         """Test Level 1: markdown -> MarkdownTextElement -> ShapeElement -> MarkdownTextElement -> markdown"""
 
         # Original markdown content
-        original_markdown = (
-            "# Heading\n\nThis is **bold** text with *italics* and `code`."
-        )
+        original_markdown = "# Heading\n\nThis is **bold** text with *italics* and `code`."
 
         # Create MarkdownTextElement
         markdown_elem = MarkdownTextElement(name="Test Text", content=original_markdown)
@@ -45,9 +51,7 @@ class TestTextElementConversion:
             "gslides_api.element.shape.ShapeElement.to_markdown",
             return_value=original_markdown,
         ):
-            shape_elem = ShapeElement.from_markdown_element(
-                markdown_elem, parent_id="slide_123"
-            )
+            shape_elem = ShapeElement.from_markdown_element(markdown_elem, parent_id="slide_123")
 
         # Convert back to MarkdownTextElement
         with patch(
@@ -80,9 +84,7 @@ class TestTextElementConversion:
                 width=Dimension(magnitude=100, unit=Unit.PT),
                 height=Dimension(magnitude=50, unit=Unit.PT),
             ),
-            transform=Transform(
-                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
-            ),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
             title="Test Shape",
             description="Test Description",
             slide_id="slide_123",
@@ -122,9 +124,7 @@ class TestImageElementConversion:
         )
 
         # Convert to ImageElement
-        image_elem = ImageElement.from_markdown_element(
-            markdown_elem, parent_id="slide_123"
-        )
+        image_elem = ImageElement.from_markdown_element(markdown_elem, parent_id="slide_123")
 
         # Convert back to MarkdownImageElement
         converted_markdown_elem = image_elem.to_markdown_element(name="Test Image")
@@ -152,9 +152,7 @@ class TestImageElementConversion:
                 width=Dimension(magnitude=200, unit=Unit.PT),
                 height=Dimension(magnitude=150, unit=Unit.PT),
             ),
-            transform=Transform(
-                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
-            ),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
             title="Test Image",
             description="Test Description",
             slide_id="slide_123",
@@ -167,10 +165,7 @@ class TestImageElementConversion:
         # Check metadata preservation
         assert markdown_elem.metadata["objectId"] == "image_123"
         assert markdown_elem.metadata["sourceUrl"] == "https://example.com/image.jpg"
-        assert (
-            markdown_elem.metadata["contentUrl"]
-            == "https://cached.example.com/image.jpg"
-        )
+        assert markdown_elem.metadata["contentUrl"] == "https://cached.example.com/image.jpg"
         assert markdown_elem.metadata["title"] == "Test Image"
         assert markdown_elem.metadata["description"] == "Test Description"
         assert "size" in markdown_elem.metadata
@@ -190,14 +185,10 @@ class TestTableElementConversion:
 | Cell 4   | Cell 5   | Cell 6   |"""
 
         # Create MarkdownTableElement
-        markdown_elem = MarkdownTableElement(
-            name="Test Table", content=original_markdown
-        )
+        markdown_elem = MarkdownTableElement(name="Test Table", content=original_markdown)
 
         # Convert to TableElement
-        table_elem = TableElement.from_markdown_element(
-            markdown_elem, parent_id="slide_123"
-        )
+        table_elem = TableElement.from_markdown_element(markdown_elem, parent_id="slide_123")
 
         # Convert back to MarkdownTableElement
         converted_markdown_elem = table_elem.to_markdown_element(name="Test Table")
@@ -236,9 +227,7 @@ class TestTableElementConversion:
         table_elem = TableElement(
             objectId="table_123",
             table=table,
-            transform=Transform(
-                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
-            ),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
             slide_id="slide_123",
             presentation_id="pres_123",
         )
@@ -276,9 +265,7 @@ class TestTableElementConversion:
                 width=Dimension(magnitude=300, unit=Unit.PT),
                 height=Dimension(magnitude=200, unit=Unit.PT),
             ),
-            transform=Transform(
-                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
-            ),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
             title="Test Table",
             description="Test Description",
             slide_id="slide_123",
