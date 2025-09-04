@@ -28,7 +28,8 @@ from gslides_api.markdown.element import ImageElement as MarkdownImageElement
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import TableElement as MarkdownTableElement
 from gslides_api.markdown.element import TextElement as MarkdownTextElement
-from gslides_api.text import ParagraphMarker, Shape, ShapeProperties, TextContent
+from gslides_api.text import ParagraphMarker, ShapeProperties
+from gslides_api.element.text_container import Shape, TextContent
 from gslides_api.text import TextElement as GSlidesTextElement
 from gslides_api.text import TextRun, TextStyle
 from gslides_api.text import Type as ShapeType

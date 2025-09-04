@@ -13,7 +13,8 @@ from gslides_api.element.element import PageElement
 from gslides_api.element.image import ImageElement
 from gslides_api.element.shape import ShapeElement
 from gslides_api.presentation import Presentation
-from gslides_api.text import Shape, TextContent, Type
+from gslides_api.text import Type
+from gslides_api.element.text_container import Shape, TextContent
 
 
 @pytest.fixture

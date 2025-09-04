@@ -30,7 +30,8 @@ from gslides_api.element.element import (
 )
 from gslides_api.element.image import ImageElement
 from gslides_api.element.shape import ShapeElement
-from gslides_api.text import Shape, ShapeProperties, Type
+from gslides_api.text import ShapeProperties, Type
+from gslides_api.element.text_container import Shape
 
 
 def test_page_element_base_fields():

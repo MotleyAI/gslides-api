@@ -17,7 +17,8 @@ from gslides_api.request.request import (
     GSlidesAPIRequest,
     UpdateTextStyleRequest,
 )
-from gslides_api.text import Shape, TextStyle
+from gslides_api.text import TextStyle
+from gslides_api.element.text_container import Shape, TextContainer
 
 
 class ShapeElement(PageElementBase):
@@ -99,17 +100,8 @@ class ShapeElement(PageElementBase):
     def styles(self) -> List[TextStyle] | None:
         if not hasattr(self.shape, "text") or self.shape.text is None:
             return None
-        if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
-            return None
-        styles = []
-        for te in self.shape.text.textElements:
-            if te.textRun is None:
-                continue
-            if te.textRun.content.strip() == "":
-                continue
-            if te.textRun.style not in styles:
-                styles.append(te.textRun.style)
-        return styles
+
+        return self.shape.text.styles
 
     def to_markdown(self) -> str | None:
         """Convert the shape's text content back to markdown format.
@@ -117,22 +109,14 @@ class ShapeElement(PageElementBase):
         This method reconstructs markdown from the Google Slides API response,
         handling formatting like bold, italic, bullet points, nested lists, and code spans.
         """
-        if not hasattr(self.shape, "text") or self.shape.text is None:
-            return None
-        if not hasattr(self.shape.text, "textElements") or not self.shape.text.textElements:
+        if self.shape.text is None:
             return None
 
-        elements = self.shape.text.textElements
-        return text_elements_to_markdown(elements)
+        return self.shape.text.to_markdown()
 
     @property
     def has_text(self):
-        return (
-            self.shape.text is not None
-            and hasattr(self.shape.text, "textElements")
-            and len(self.shape.text.textElements) > 0
-            and self.shape.text.textElements[0].endIndex > 0
-        )
+        return self.shape.text is not None and self.shape.text.has_text
 
     def write_text(
         self,
@@ -161,6 +145,7 @@ class ShapeElement(PageElementBase):
                 style_args["base_style"] = styles[1]
 
         requests += markdown_to_text_elements(text, **style_args)
+
         for r in requests:
             r.objectId = self.objectId
 
@@ -320,7 +305,8 @@ class ShapeElement(PageElementBase):
         stored_shape_type = metadata.get("shape_type") or shape_type or "TEXT_BOX"
 
         # Create basic shape with text content
-        from gslides_api.text import Shape, ShapeProperties, TextContent
+        from gslides_api.text import ShapeProperties
+        from gslides_api.element.text_container import TextContent
         from gslides_api.text import Type as ShapeType
 
         # Create a minimal shape - the actual content will be written via write_text

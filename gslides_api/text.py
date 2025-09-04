@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import Field
 
@@ -355,19 +355,3 @@ class TextElement(GSlidesBaseModel):
     paragraphMarker: Optional[ParagraphMarker] = None
     textRun: Optional[TextRun] = None
     autoText: Optional[AutoText] = None
-
-
-class TextContent(GSlidesBaseModel):
-    """Represents text content with its elements and lists."""
-
-    textElements: List[TextElement]
-    lists: Optional[Dict[str, Any]] = None
-
-
-class Shape(GSlidesBaseModel):
-    """Represents a shape in a slide."""
-
-    shapeProperties: ShapeProperties
-    shapeType: Optional[Type] = None  # Make optional to preserve original JSON exactly
-    text: Optional[TextContent] = None
-    placeholder: Optional[Placeholder] = None

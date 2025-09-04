@@ -5,19 +5,22 @@ from typing import Optional
 from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import (LayoutReference, ThumbnailProperties,
-                                ThumbnailSize, Transform)
+from gslides_api.domain import LayoutReference, ThumbnailProperties, ThumbnailSize, Transform
 from gslides_api.element.shape import ShapeElement
 from gslides_api.page.base import BasePage, ElementKind, PageType
 from gslides_api.page.slide_properties import SlideProperties
 from gslides_api.request.domain import Range, RangeType
-from gslides_api.request.request import (CreateSlideRequest, DeleteTextRequest,
-                                         InsertTextRequest,
-                                         UpdatePagePropertiesRequest,
-                                         UpdateSlidePropertiesRequest,
-                                         UpdateSlidesPositionRequest)
+from gslides_api.request.request import (
+    CreateSlideRequest,
+    DeleteTextRequest,
+    InsertTextRequest,
+    UpdatePagePropertiesRequest,
+    UpdateSlidePropertiesRequest,
+    UpdateSlidesPositionRequest,
+)
 from gslides_api.response import ImageThumbnail
-from gslides_api.text import Shape, ShapeProperties
+from gslides_api.text import ShapeProperties
+from gslides_api.element.text_container import Shape
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)
@@ -27,9 +30,7 @@ class Slide(BasePage):
     """Represents a slide page in a presentation."""
 
     slideProperties: SlideProperties
-    pageType: PageType = Field(
-        default=PageType.SLIDE, description="The type of page", exclude=True
-    )
+    pageType: PageType = Field(default=PageType.SLIDE, description="The type of page", exclude=True)
 
     @field_validator("pageType")
     @classmethod
@@ -70,9 +71,7 @@ class Slide(BasePage):
         client = api_client or globals()["api_client"]
         return client.delete_object(self.objectId, self.presentation_id)
 
-    def move(
-        self, insertion_index: int, api_client: Optional[GoogleAPIClient] = None
-    ) -> None:
+    def move(self, insertion_index: int, api_client: Optional[GoogleAPIClient] = None) -> None:
         """
         Move the slide to a new position in the presentation.
 
@@ -107,9 +106,7 @@ class Slide(BasePage):
         new_slide = self.create_blank(
             presentation_id,
             insertion_index,
-            slide_layout_reference=LayoutReference(
-                layoutId=self.slideProperties.layoutObjectId
-            ),
+            slide_layout_reference=LayoutReference(layoutId=self.slideProperties.layoutObjectId),
             api_client=api_client,
         )
         slide_id = new_slide.objectId
@@ -151,9 +148,7 @@ class Slide(BasePage):
                         element_id = layout_elements[i].objectId
                     else:
                         element_id = element.create_copy(slide_id, presentation_id)
-                    element.update(
-                        presentation_id=presentation_id, element_id=element_id
-                    )
+                    element.update(presentation_id=presentation_id, element_id=element_id)
 
         return self.from_ids(presentation_id, slide_id, api_client=api_client)
 
@@ -217,17 +212,13 @@ class Slide(BasePage):
             insertionIndex=0,
         )
 
-        del_req = DeleteTextRequest(
-            objectId=notes_id, textRange=Range(type=RangeType.ALL)
-        )
+        del_req = DeleteTextRequest(objectId=notes_id, textRange=Range(type=RangeType.ALL))
 
         # Use the global api_client for this internal operation
         api_client.batch_update([req, del_req], self.presentation_id)
 
     def sync_from_cloud(self):
-        new_state = Slide.from_ids(
-            self.presentation_id, self.objectId, api_client=api_client
-        )
+        new_state = Slide.from_ids(self.presentation_id, self.objectId, api_client=api_client)
         self.__dict__ = new_state.__dict__
 
     def thumbnail(
