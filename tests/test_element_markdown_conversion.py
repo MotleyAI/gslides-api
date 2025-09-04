@@ -306,12 +306,17 @@ class TestIntegrationRoundTrip:
         converted = shape.to_markdown_element()
         assert converted.content == ""
 
-        # Empty table
+        # Empty table - test request generation
         empty_table_data = TableData(headers=["Col1"], rows=[])
         empty_table = MarkdownTableElement(name="Empty", content=empty_table_data)
-        table = TableElement.from_markdown_element(empty_table, "slide_123")
-        converted = table.to_markdown_element()
-        assert len(converted.content.headers) >= 1
+        
+        # Should generate valid API requests even for empty table
+        requests = TableElement.markdown_element_to_requests(empty_table, "slide_123")
+        from gslides_api.request.table import CreateTableRequest
+        assert len(requests) > 0
+        assert isinstance(requests[0], CreateTableRequest)
+        assert requests[0].rows == 1  # Just header row
+        assert requests[0].columns == 1
 
     def test_special_characters_handling(self):
         """Test handling of special characters and edge cases."""

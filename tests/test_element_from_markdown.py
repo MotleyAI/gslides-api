@@ -439,7 +439,7 @@ class TestTableElementMarkdownToRequests:
         custom_id = "my_custom_table_id"
         
         requests = GSlidesTableElement.markdown_element_to_requests(
-            markdown_elem, parent_id, custom_id
+            markdown_elem, parent_id, element_id=custom_id
         )
         
         # All requests should use the custom ID
@@ -575,7 +575,7 @@ class TestTableElementMarkdownToRequests:
         element_id = "test_table_123"
         
         requests = GSlidesTableElement.markdown_element_to_requests(
-            markdown_elem, parent_id, element_id
+            markdown_elem, parent_id, element_id=element_id
         )
         
         # First request should be CreateTableRequest

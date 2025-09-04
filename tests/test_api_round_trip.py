@@ -217,17 +217,14 @@ class TestAPIRoundTrip:
             content=table_data,  # Pass TableData object directly
             metadata={"objectId": "multi_table_1"},
         )
-        table = TableElement.from_markdown_element(
-            table_element, parent_id=self.test_slide.objectId
+        # Generate API requests to create the table
+        requests = TableElement.markdown_element_to_requests(
+            table_element, parent_id=self.test_slide.objectId, element_id="multi_table_1"
         )
-        table.presentation_id = self.test_presentation.presentationId
-        table.transform.translateX = 100000  # Offset position
-        table.transform.translateY = 300000
 
-        table_id = table.create_copy(
-            parent_id=self.test_slide.objectId,
-            presentation_id=self.test_presentation.presentationId,
-        )
+        # Execute the requests to create the table
+        api_client.batch_update(requests, self.test_presentation.presentationId)
+        table_id = "multi_table_1"
         elements.append(("table", table_id))
 
         # Read back and verify all elements
