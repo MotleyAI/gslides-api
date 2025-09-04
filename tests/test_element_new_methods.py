@@ -9,10 +9,12 @@ from pydantic import TypeAdapter
 
 from gslides_api import ShapeProperties
 from gslides_api.domain import Image, ImageReplaceMethod, Size, Transform
-from gslides_api.element.element import ImageElement, PageElement
+from gslides_api.element.element import PageElement
+from gslides_api.element.image import ImageElement
 from gslides_api.element.shape import ShapeElement
 from gslides_api.presentation import Presentation
-from gslides_api.text import Shape, Text, Type
+from gslides_api.text import Type
+from gslides_api.element.text_container import Shape, TextContent
 
 
 @pytest.fixture
@@ -40,9 +42,7 @@ def slide_3_shape_element(presentation_object):
     page_element_adapter = TypeAdapter(PageElement)
     element = page_element_adapter.validate_python(page_element_data.model_dump())
 
-    assert isinstance(
-        element, ShapeElement
-    ), f"Expected ShapeElement, got {type(element)}"
+    assert isinstance(element, ShapeElement), f"Expected ShapeElement, got {type(element)}"
     return element
 
 
@@ -83,7 +83,7 @@ class TestShapeElementToMarkdown:
             shape=Shape(
                 shapeType=Type.TEXT_BOX,
                 shapeProperties=ShapeProperties(),
-                text=Text(textElements=[]),  # Empty text elements
+                text=TextContent(textElements=[]),  # Empty text elements
             ),
         )
 
@@ -136,7 +136,7 @@ class TestImageElementToMarkdown:
 class TestImageElementReplaceImageRequests:
     """Test ImageElement._replace_image_requests() method."""
 
-    @patch("gslides_api.element.element.image_url_is_valid")
+    @patch("gslides_api.element.image.image_url_is_valid")
     def test_replace_image_requests_success(self, mock_validate):
         """Test successful image replacement request generation."""
         mock_validate.return_value = True
@@ -168,14 +168,10 @@ class TestImageElementReplaceImageRequests:
             image=Image(contentUrl="https://example.com/image.jpg"),
         )
 
-        with pytest.raises(
-            ValueError, match="Image URL must start with http:// or https://"
-        ):
-            ImageElement._replace_image_requests(
-                "test_image", "ftp://example.com/image.jpg"
-            )
+        with pytest.raises(ValueError, match="Image URL must start with http:// or https://"):
+            ImageElement._replace_image_requests("test_image", "ftp://example.com/image.jpg")
 
-    @patch("gslides_api.element.element.image_url_is_valid")
+    @patch("gslides_api.element.image.image_url_is_valid")
     def test_replace_image_requests_url_not_accessible(self, mock_validate):
         """Test _replace_image_requests with URL that's not accessible."""
         mock_validate.return_value = False
@@ -188,11 +184,9 @@ class TestImageElementReplaceImageRequests:
         )
 
         with pytest.raises(ValueError, match="Image URL is not accessible or invalid"):
-            ImageElement._replace_image_requests(
-                "test_image", "https://invalid-url.com/image.jpg"
-            )
+            ImageElement._replace_image_requests("test_image", "https://invalid-url.com/image.jpg")
 
-    @patch("gslides_api.element.element.image_url_is_valid")
+    @patch("gslides_api.element.image.image_url_is_valid")
     def test_replace_image_requests_with_method(self, mock_validate):
         """Test _replace_image_requests with ImageReplaceMethod."""
         mock_validate.return_value = True
@@ -228,12 +222,8 @@ class TestElementsFromPresentationData:
         page_element_adapter = TypeAdapter(PageElement)
 
         for i, page_element_data in enumerate(slide_3.pageElements):
-            element = page_element_adapter.validate_python(
-                page_element_data.model_dump()
-            )
-            assert isinstance(
-                element, ShapeElement
-            ), f"Element {i} should be a ShapeElement"
+            element = page_element_adapter.validate_python(page_element_data.model_dump())
+            assert isinstance(element, ShapeElement), f"Element {i} should be a ShapeElement"
             assert element.shape is not None
             assert element.shape.shapeType == Type.TEXT_BOX
 
@@ -249,12 +239,8 @@ class TestElementsFromPresentationData:
         ]
 
         for i, page_element_data in enumerate(slide_3.pageElements):
-            element = page_element_adapter.validate_python(
-                page_element_data.model_dump()
-            )
+            element = page_element_adapter.validate_python(page_element_data.model_dump())
             result = element.to_markdown()
 
             assert result is not None, f"Element {i} should have markdown content"
-            assert (
-                expected_texts[i] in result
-            ), f"Element {i} should contain '{expected_texts[i]}'"
+            assert expected_texts[i] in result, f"Element {i} should contain '{expected_texts[i]}'"

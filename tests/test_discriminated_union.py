@@ -3,10 +3,11 @@
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from gslides_api.domain import (Image, Size, Table, Transform, Video,
-                                VideoSourceType)
-from gslides_api.element.element import (ImageElement, PageElement,
-                                         TableElement, VideoElement)
+from gslides_api.domain import Image, Size, Transform, Video, VideoSourceType
+from gslides_api.table import Table
+from gslides_api.element.element import PageElement, VideoElement
+from gslides_api.element.image import ImageElement
+from gslides_api.element.table import TableElement
 
 
 def test_discriminated_union():
@@ -122,7 +123,4 @@ def test_discriminated_union_validation_error():
         page_element_adapter.validate_python(base_data)
 
     # Check that the error is related to discriminator
-    assert (
-        "discriminator" in str(exc_info.value).lower()
-        or "tag" in str(exc_info.value).lower()
-    )
+    assert "discriminator" in str(exc_info.value).lower() or "tag" in str(exc_info.value).lower()

@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import Field
 
-from gslides_api.text import ShapeProperties
 from gslides_api.domain import (AffineTransform, BulletGlyphPreset,
                                 GSlidesBaseModel, ImageProperties,
                                 LayoutReference, LineProperties,
@@ -10,7 +9,7 @@ from gslides_api.domain import (AffineTransform, BulletGlyphPreset,
 from gslides_api.request.domain import (PlaceholderIdMapping, Range,
                                         SubstringMatchCriteria,
                                         TableCellLocation)
-from gslides_api.text import ParagraphStyle, TextStyle, Type
+from gslides_api.text import ParagraphStyle, ShapeProperties, TextStyle, Type
 
 if TYPE_CHECKING:
     from gslides_api.page.base import PageProperties

@@ -9,12 +9,13 @@ import os
 import threading
 import time
 from pathlib import Path
-from typing import Optional, List, Union
+from typing import List, Optional, Union
 
 import google.auth
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials as OAuth2Credentials
-from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+from google.oauth2.service_account import \
+    Credentials as ServiceAccountCredentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from pydantic import BaseModel, Field
 
@@ -98,14 +99,18 @@ class CredentialManager:
             raise AuthenticationError("Unsafe file path")
 
         if not os.path.exists(service_account_file):
-            raise AuthenticationError(f"Service account file not found: {service_account_file}")
+            raise AuthenticationError(
+                f"Service account file not found: {service_account_file}"
+            )
 
         try:
             service_credentials = ServiceAccountCredentials.from_service_account_file(
                 service_account_file, scopes=self.scopes
             )
 
-            logger.info(f"Loaded service account credentials from {service_account_file}")
+            logger.info(
+                f"Loaded service account credentials from {service_account_file}"
+            )
             return Credentials(service_credentials, auth_method="service_account")
 
         except Exception as e:
@@ -139,7 +144,9 @@ class CredentialManager:
                 logger.warning(f"Token file missing required fields: {token_file}")
                 return None
 
-            api_client = OAuth2Credentials.from_authorized_user_info(token_data, self.scopes)
+            api_client = OAuth2Credentials.from_authorized_user_info(
+                token_data, self.scopes
+            )
 
             if api_client:
                 if not api_client.valid:
@@ -195,10 +202,14 @@ class CredentialManager:
             raise AuthenticationError("Unsafe credentials file path")
 
         if not os.path.exists(client_secrets_file):
-            raise AuthenticationError(f"OAuth credentials file not found: {client_secrets_file}")
+            raise AuthenticationError(
+                f"OAuth credentials file not found: {client_secrets_file}"
+            )
 
         try:
-            flow = InstalledAppFlow.from_client_secrets_file(client_secrets_file, self.scopes)
+            flow = InstalledAppFlow.from_client_secrets_file(
+                client_secrets_file, self.scopes
+            )
 
             if use_local_server:
                 print("Opening browser for authentication...")
@@ -259,7 +270,9 @@ class CredentialManager:
                 "client_id": credentials.client_id,
                 "client_secret": credentials.client_secret,
                 "scopes": credentials.scopes,
-                "expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+                "expiry": (
+                    credentials.expiry.isoformat() if credentials.expiry else None
+                ),
             }
 
             with open(token_file, "w", encoding="utf-8") as f:
@@ -323,7 +336,10 @@ class Credentials:
             if not self.expired:
                 return False
 
-            if not hasattr(self.credentials, "refresh_token") or not self.credentials.refresh_token:
+            if (
+                not hasattr(self.credentials, "refresh_token")
+                or not self.credentials.refresh_token
+            ):
                 logger.warning("Cannot refresh credentials: no refresh token")
                 return False
 
@@ -518,7 +534,9 @@ def create_service_account_template(output_file: str = "service_account_template
         json.dump(template, f, indent=2)
 
     print(f"Service account template created: {output_file}")
-    print("Please replace placeholder values with actual credentials from Google Cloud Console")
+    print(
+        "Please replace placeholder values with actual credentials from Google Cloud Console"
+    )
 
 
 def create_oauth_template(output_file: str = "oauth_credentials_template.json"):
@@ -547,7 +565,9 @@ def create_oauth_template(output_file: str = "oauth_credentials_template.json"):
         json.dump(template, f, indent=2)
 
     print(f"OAuth credentials template created: {output_file}")
-    print("Please replace placeholder values with actual credentials from Google Cloud Console")
+    print(
+        "Please replace placeholder values with actual credentials from Google Cloud Console"
+    )
 
 
 def check_credentials_file(file_path: str) -> dict:
@@ -580,7 +600,11 @@ def check_credentials_file(file_path: str) -> dict:
             cred_type = "saved_token"
             required_fields = ["token", "refresh_token", "client_id", "client_secret"]
         else:
-            return {"exists": True, "type": "unknown", "error": "Unknown credentials format"}
+            return {
+                "exists": True,
+                "type": "unknown",
+                "error": "Unknown credentials format",
+            }
 
         missing_fields = []
         if cred_type == "service_account":

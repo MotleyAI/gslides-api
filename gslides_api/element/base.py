@@ -1,13 +1,14 @@
+import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import (GSlidesBaseModel, OutputUnit,
-                                PageElementProperties, Size, Transform)
-from gslides_api.request.request import (GSlidesAPIRequest,
-                                         UpdatePageElementAltTextRequest)
+from gslides_api.domain import GSlidesBaseModel, OutputUnit, PageElementProperties, Size, Transform
+from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
+
+logger = logging.getLogger(__name__)
 
 
 class ElementKind(Enum):
@@ -62,10 +63,13 @@ class PageElementBase(GSlidesBaseModel):
         Raises:
             TypeError: If units is not an OutputUnit enum value.
         """
+        try:
+            units = OutputUnit(units)
+        except Exception as e:
+            raise TypeError(f"units must be an OutputUnit enum value, got {units}") from e
+
         if not isinstance(units, OutputUnit):
-            raise TypeError(
-                f"units must be an OutputUnit enum value, got {type(units)}"
-            )
+            raise TypeError(f"units must be an OutputUnit enum value, got {type(units)}")
 
         if units == OutputUnit.CM:
             return value_emu / self._EMU_PER_CM
@@ -134,8 +138,8 @@ class PageElementBase(GSlidesBaseModel):
             return [
                 UpdatePageElementAltTextRequest(
                     objectId=element_id,
-                    title=title or self.title,
-                    description=description or self.description,
+                    title=title if title is not None else self.title,
+                    description=(description if description is not None else self.description),
                 )
             ]
         else:
@@ -148,6 +152,12 @@ class PageElementBase(GSlidesBaseModel):
         api_client: Optional[GoogleAPIClient] = None,
     ):
         client = api_client or globals()["api_client"]
+        if not title and not description:
+            logger.warning(
+                "No alt text provided, skipping update. \n "
+                "Remember that Google Slides API won't allow to write empty strings."
+            )
+            return
         client.batch_update(
             self.alt_text_update_request(
                 title=title, description=description, element_id=self.objectId
@@ -192,9 +202,7 @@ class PageElementBase(GSlidesBaseModel):
 
         This method should be overridden by subclasses.
         """
-        raise NotImplementedError(
-            "Subclasses must implement element_to_update_request method"
-        )
+        raise NotImplementedError("Subclasses must implement element_to_update_request method")
 
     def to_markdown(self) -> str | None:
         """Convert a PageElement to markdown.
@@ -247,7 +255,7 @@ class PageElementBase(GSlidesBaseModel):
 
         return width_result, height_result
 
-    def absolute_position(self, units: OutputUnit) -> Tuple[float, float]:
+    def absolute_position(self, units: OutputUnit = OutputUnit.CM) -> Tuple[float, float]:
         """Calculate the absolute position of the element on the page in the specified units.
 
         Position represents the distance of the top-left corner of the element

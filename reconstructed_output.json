@@ -5818,8 +5818,14 @@
             "tableRows": [
               {
                 "rowHeight": {
-                  "magnitude": 381000,
+                  "magnitude": 381000.0,
                   "unit": "EMU"
+                },
+                "tableRowProperties": {
+                  "minRowHeight": {
+                    "magnitude": 381000.0,
+                    "unit": "EMU"
+                  }
                 },
                 "tableCells": [
                   {
@@ -5832,25 +5838,25 @@
                           "endIndex": 7,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -5869,7 +5875,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -5887,17 +5893,17 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
@@ -5914,25 +5920,25 @@
                           "endIndex": 7,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -5951,7 +5957,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -5969,33 +5975,33 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
                   }
-                ],
-                "tableRowProperties": {
-                  "minRowHeight": {
-                    "magnitude": 381000,
-                    "unit": "EMU"
-                  }
-                }
+                ]
               },
               {
                 "rowHeight": {
-                  "magnitude": 381000,
+                  "magnitude": 381000.0,
                   "unit": "EMU"
+                },
+                "tableRowProperties": {
+                  "minRowHeight": {
+                    "magnitude": 381000.0,
+                    "unit": "EMU"
+                  }
                 },
                 "tableCells": [
                   {
@@ -6010,25 +6016,25 @@
                           "endIndex": 5,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -6047,7 +6053,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -6065,17 +6071,17 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
@@ -6093,25 +6099,25 @@
                           "endIndex": 12,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -6130,7 +6136,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -6148,33 +6154,33 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
                   }
-                ],
-                "tableRowProperties": {
-                  "minRowHeight": {
-                    "magnitude": 381000,
-                    "unit": "EMU"
-                  }
-                }
+                ]
               },
               {
                 "rowHeight": {
-                  "magnitude": 381000,
+                  "magnitude": 381000.0,
                   "unit": "EMU"
+                },
+                "tableRowProperties": {
+                  "minRowHeight": {
+                    "magnitude": 381000.0,
+                    "unit": "EMU"
+                  }
                 },
                 "tableCells": [
                   {
@@ -6189,25 +6195,25 @@
                           "endIndex": 5,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -6226,7 +6232,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -6244,17 +6250,17 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
@@ -6272,25 +6278,25 @@
                           "endIndex": 11,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -6309,7 +6315,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -6327,33 +6333,33 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
                   }
-                ],
-                "tableRowProperties": {
-                  "minRowHeight": {
-                    "magnitude": 381000,
-                    "unit": "EMU"
-                  }
-                }
+                ]
               },
               {
                 "rowHeight": {
-                  "magnitude": 381000,
+                  "magnitude": 381000.0,
                   "unit": "EMU"
+                },
+                "tableRowProperties": {
+                  "minRowHeight": {
+                    "magnitude": 381000.0,
+                    "unit": "EMU"
+                  }
                 },
                 "tableCells": [
                   {
@@ -6368,25 +6374,25 @@
                           "endIndex": 5,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -6405,7 +6411,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -6423,17 +6429,17 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
@@ -6451,25 +6457,25 @@
                           "endIndex": 11,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -6488,7 +6494,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -6506,33 +6512,33 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
                   }
-                ],
-                "tableRowProperties": {
-                  "minRowHeight": {
-                    "magnitude": 381000,
-                    "unit": "EMU"
-                  }
-                }
+                ]
               },
               {
                 "rowHeight": {
-                  "magnitude": 381000,
+                  "magnitude": 381000.0,
                   "unit": "EMU"
+                },
+                "tableRowProperties": {
+                  "minRowHeight": {
+                    "magnitude": 381000.0,
+                    "unit": "EMU"
+                  }
                 },
                 "tableCells": [
                   {
@@ -6547,25 +6553,25 @@
                           "endIndex": 6,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -6584,7 +6590,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -6602,17 +6608,17 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
@@ -6630,25 +6636,25 @@
                           "endIndex": 11,
                           "paragraphMarker": {
                             "style": {
-                              "lineSpacing": 100,
-                              "alignment": "START",
+                              "direction": "LEFT_TO_RIGHT",
                               "indentStart": {
+                                "unit": "PT"
+                              },
+                              "indentFirstLine": {
                                 "unit": "PT"
                               },
                               "indentEnd": {
                                 "unit": "PT"
                               },
+                              "spacingMode": "COLLAPSE_LISTS",
+                              "lineSpacing": 100.0,
                               "spaceAbove": {
                                 "unit": "PT"
                               },
                               "spaceBelow": {
                                 "unit": "PT"
                               },
-                              "indentFirstLine": {
-                                "unit": "PT"
-                              },
-                              "direction": "LEFT_TO_RIGHT",
-                              "spacingMode": "COLLAPSE_LISTS"
+                              "alignment": "START"
                             }
                           }
                         },
@@ -6667,7 +6673,7 @@
                               "italic": false,
                               "fontFamily": "Arial",
                               "fontSize": {
-                                "magnitude": 14,
+                                "magnitude": 14.0,
                                 "unit": "PT"
                               },
                               "baselineOffset": "NONE",
@@ -6685,40 +6691,34 @@
                     },
                     "tableCellProperties": {
                       "tableCellBackgroundFill": {
-                        "propertyState": "NOT_RENDERED",
                         "solidFill": {
                           "color": {
                             "rgbColor": {
-                              "red": 1,
-                              "green": 1,
-                              "blue": 1
+                              "red": 1.0,
+                              "green": 1.0,
+                              "blue": 1.0
                             }
                           },
-                          "alpha": 1
-                        }
+                          "alpha": 1.0
+                        },
+                        "propertyState": "NOT_RENDERED"
                       },
                       "contentAlignment": "TOP"
                     }
                   }
-                ],
-                "tableRowProperties": {
-                  "minRowHeight": {
-                    "magnitude": 381000,
-                    "unit": "EMU"
-                  }
-                }
+                ]
               }
             ],
             "tableColumns": [
               {
                 "columnWidth": {
-                  "magnitude": 3619500,
+                  "magnitude": 3619500.0,
                   "unit": "EMU"
                 }
               },
               {
                 "columnWidth": {
-                  "magnitude": 3619500,
+                  "magnitude": 3619500.0,
                   "unit": "EMU"
                 }
               }
@@ -6738,11 +6738,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6762,11 +6762,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6790,11 +6790,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6815,11 +6815,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6843,11 +6843,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6868,11 +6868,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6896,11 +6896,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6921,11 +6921,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6949,11 +6949,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -6974,11 +6974,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7002,11 +7002,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7027,11 +7027,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7055,11 +7055,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7079,11 +7079,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7103,11 +7103,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7131,11 +7131,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7156,11 +7156,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7181,11 +7181,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7209,11 +7209,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7234,11 +7234,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7259,11 +7259,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7287,11 +7287,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7312,11 +7312,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7337,11 +7337,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7365,11 +7365,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7390,11 +7390,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"
@@ -7415,11 +7415,11 @@
                               "blue": 0.61960787
                             }
                           },
-                          "alpha": 1
+                          "alpha": 1.0
                         }
                       },
                       "weight": {
-                        "magnitude": 9525,
+                        "magnitude": 9525.0,
                         "unit": "EMU"
                       },
                       "dashStyle": "SOLID"

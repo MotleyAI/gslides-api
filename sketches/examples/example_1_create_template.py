@@ -8,13 +8,14 @@ This example shows how to:
 - Save to JSON file
 """
 
-import sys
 import os
+import sys
 
 # Add path to our package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sketches import create_templater, AuthConfig, SlidesAPIError, AuthenticationError
+from sketches import (AuthConfig, AuthenticationError, SlidesAPIError,
+                      create_templater)
 
 
 def main():
@@ -39,7 +40,9 @@ def main():
             return
 
         # Create auth config using new structure
-        auth_config = AuthConfig(credentials_path=credentials_file, token_path="token.json")
+        auth_config = AuthConfig(
+            credentials_path=credentials_file, token_path="token.json"
+        )
 
         templater = create_templater(auth_config=auth_config)
         print("   ✓ Authentication successful")
@@ -78,7 +81,9 @@ def main():
             print(f"   The presentation may not contain replaceable elements")
             return
 
-        print(f"   ✓ Found replaceable elements: {len(template_config.get('placeholders', {}))}")
+        print(
+            f"   ✓ Found replaceable elements: {len(template_config.get('placeholders', {}))}"
+        )
         print(f"   ✓ Processed slides: {len(template_config.get('slides', []))}")
 
         # Show slide size and layout info
@@ -150,7 +155,9 @@ def main():
         print(f"   Name: {template_config['name']}")
         print(f"   Source presentation: {template_config['source_presentation_id']}")
         print(f"   Created at: {template_config.get('created_at')}")
-        print(f"   Slides with replaceable elements: {len(template_config.get('slides', []))}")
+        print(
+            f"   Slides with replaceable elements: {len(template_config.get('slides', []))}"
+        )
         print(f"   Total placeholders: {len(template_config.get('placeholders', {}))}")
 
         # Show layout configuration
@@ -171,7 +178,9 @@ def main():
             if example_count >= 3:
                 break
             if info["type"] == "text":
-                print(f'       "{name}": "# New Header\\n\\nNew **text** with formatting",')
+                print(
+                    f'       "{name}": "# New Header\\n\\nNew **text** with formatting",'
+                )
             elif info["type"] == "image":
                 print(f'       "{name}": "https://example.com/new-image.jpg",')
             example_count += 1
@@ -216,7 +225,9 @@ def main():
             print(f"   1. Check presentation ID is correct")
             print(f"   2. Make sure you have access to the presentation")
             print(f"   3. Presentation must be created in Google Slides")
-            print(f"   4. ID should look like: 1KNhH44DjD72rjgx1EadpP43zOgpZGYIScMfnOYyzLys")
+            print(
+                f"   4. ID should look like: 1KNhH44DjD72rjgx1EadpP43zOgpZGYIScMfnOYyzLys"
+            )
 
         elif "403" in error_msg or "permission" in error_msg.lower():
             print(f"\n🔧 Access denied:")

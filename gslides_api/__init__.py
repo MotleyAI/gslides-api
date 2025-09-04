@@ -19,7 +19,11 @@ from .page.page import (Layout, LayoutProperties, Master, MasterProperties,
 from .page.slide import Slide
 from .page.slide_properties import SlideProperties
 from .presentation import Presentation
-from .request.domain import Range, RangeType, TableCellLocation
+from .request.domain import Range, RangeType
+from .table import (ContentAlignment, Table, TableBorderCell, TableBorderFill,
+                    TableBorderProperties, TableBorderRow, TableCell,
+                    TableCellBackgroundFill, TableCellLocation, TableCellProperties,
+                    TableColumnProperties, TableRow, TableRowProperties)
 from .request.request import (CreateParagraphBulletsRequest,
                               CreateShapeRequest, CreateSlideRequest,
                               DeleteObjectRequest, DeleteTextRequest,
@@ -83,6 +87,19 @@ __all__ = [
     "Group",
     "Unit",
     "AffineTransform",
+    # Table objects
+    "Table",
+    "TableBorderCell",
+    "TableBorderFill",
+    "TableBorderProperties",
+    "TableBorderRow",
+    "TableCell",
+    "TableCellBackgroundFill",
+    "TableCellProperties",
+    "TableColumnProperties",
+    "TableRow",
+    "TableRowProperties",
+    "ContentAlignment",
     # Presentation
     "Presentation",
     # Pages
@@ -128,3 +145,7 @@ UpdateSlidePropertiesRequest.model_rebuild()
 UpdatePagePropertiesRequest.model_rebuild()
 UpdateShapePropertiesRequest.model_rebuild()
 UpdateImagePropertiesRequest.model_rebuild()
+
+# Rebuild table models that have forward references
+TableCell.model_rebuild()
+TableBorderCell.model_rebuild()
