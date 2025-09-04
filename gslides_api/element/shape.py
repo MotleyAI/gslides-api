@@ -53,7 +53,7 @@ class ShapeElement(TextContainer):
         """
 
         # Update title and description if provided
-        requests = self.alt_text_update_request(element_id)
+        requests: list[GSlidesAPIRequest] = self.alt_text_update_request(element_id)
 
         # shape_properties = self.shape.shapeProperties.to_api_format()
         ## TODO: fix the below, now causes error
@@ -68,8 +68,10 @@ class ShapeElement(TextContainer):
         #     }
         # ]
         if self.shape.text is not None:
-            text_requests = text_elements_to_requests(self.shape.text.textElements, element_id)
-            requests.extend(text_requests)
+            text_requests = text_elements_to_requests(
+                self.shape.text.textElements, [], objectId=element_id
+            )
+            requests.extend(text_requests[0])
 
         return requests
 

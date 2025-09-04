@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from gslides_api.client import GoogleAPIClient, api_client as default_api_client
 from gslides_api.domain import GSlidesBaseModel, OutputUnit, Dimension, Unit
 from gslides_api.element.base import PageElementBase
-from gslides_api.markdown.from_markdown import markdown_to_text_elements
+from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.request.domain import Range, RangeType, TableCellLocation
 from gslides_api.request.request import (
     DeleteParagraphBulletsRequest,
@@ -47,6 +47,16 @@ class TextContent(GSlidesBaseModel):
             return None
 
         return text_elements_to_markdown(self.textElements)
+
+    def to_requests(
+        self, element_id: str, location: TableCellLocation | None = None
+    ) -> List[GSlidesAPIRequest]:
+        """Convert the text content to a list of requests to update the text in the element."""
+        requests, _ = text_elements_to_requests(self.textElements, [], element_id)
+        for r in requests:
+            if hasattr(r, "cellLocation"):
+                r.cellLocation = location
+        return requests
 
     @property
     def has_text(self):
