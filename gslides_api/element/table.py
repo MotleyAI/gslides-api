@@ -195,6 +195,10 @@ class TableElement(TextContainer):
 
         return MarkdownTableElement(name=name, content=table_data, metadata=metadata)
 
+    def to_markdown(self) -> str | None:
+        """Convert the table's content back to markdown format."""
+        return self.to_markdown_element("Table").to_markdown()
+
     @classmethod
     def from_markdown_element(
         cls,
