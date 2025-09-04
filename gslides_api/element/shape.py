@@ -21,7 +21,7 @@ from gslides_api.text import TextStyle
 from gslides_api.element.text_container import Shape, TextContainer
 
 
-class ShapeElement(PageElementBase):
+class ShapeElement(TextContainer):
     """Represents a shape element on a slide."""
 
     shape: Shape
@@ -74,23 +74,7 @@ class ShapeElement(PageElementBase):
         return requests
 
     def delete_text_request(self) -> List[GSlidesAPIRequest]:
-        if self.shape.text is None:
-            return []
-        # If there are any bullets, need to delete them first
-        if self.shape.text.lists is not None and len(self.shape.text.lists) > 0:
-            out = [
-                DeleteParagraphBulletsRequest(
-                    objectId=self.objectId, textRange=Range(type=RangeType.ALL)
-                ),
-            ]
-        else:
-            out = []
-
-        if (not self.shape.text.textElements) or self.shape.text.textElements[0].endIndex == 0:
-            return out
-
-        out.append(DeleteTextRequest(objectId=self.objectId, textRange=Range(type=RangeType.ALL)))
-        return out
+        return self._delete_text_request()
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
         client = api_client or default_api_client
@@ -127,129 +111,23 @@ class ShapeElement(PageElementBase):
         autoscale: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
     ):
-        styles = styles or self.styles
-
-        if autoscale:
-            styles = self.autoscale_text(text, styles)
-
-        if self.has_text and overwrite:
-            requests = self.delete_text_request()
-        else:
-            requests = []
-        style_args = {}
-        if styles is not None:
-            if len(styles) == 1:
-                style_args["base_style"] = styles[0]
-            elif len(styles) > 1:
-                style_args["heading_style"] = styles[0]
-                style_args["base_style"] = styles[1]
-
-        requests += markdown_to_text_elements(text, **style_args)
-
-        for r in requests:
-            r.objectId = self.objectId
-
-        # TODO: this is broken, we should use different logic to just dump raw text, asterisks, hashes and all
-        if not as_markdown:
-            requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
+        requests = self.write_text_requests(
+            text=text,
+            as_markdown=as_markdown,
+            styles=styles,
+            overwrite=overwrite,
+            autoscale=autoscale,
+            location=None,
+        )
 
         if requests:
             client = api_client or default_api_client
             return client.batch_update(requests, self.presentation_id)
 
-    def autoscale_text(self, text: str, styles: List[TextStyle] | None = None) -> List[TextStyle]:
-        # Unfortunately, GS
-
-        # For now, just derive the scaling factor based on first style
-        if not styles or len(styles) == 0:
-            return styles or []
-
-        first_style = styles[0]
-        my_width_in, my_height_in = self.absolute_size(OutputUnit.IN)
-
-        # Get current font size in points (default to 12pt if not specified)
-        current_font_size_pt = 12.0
-        if first_style.fontSize and first_style.fontSize.magnitude:
-            if first_style.fontSize.unit.value == "PT":
-                current_font_size_pt = first_style.fontSize.magnitude
-            elif first_style.fontSize.unit.value == "EMU":
-                # Convert EMU to points: 1 point = 12,700 EMUs
-                current_font_size_pt = first_style.fontSize.magnitude / 12700.0
-
-        # Determine the estimated width of the text based on font size and length
-        # Rough approximation: average character width is about 0.6 * font_size_pt / 72 inches
-        avg_char_width_in = (current_font_size_pt * 0.6) / 72.0
-        line_height_in = (current_font_size_pt * 1.2) / 72.0  # 1.2 line spacing factor
-
-        # Account for some padding/margins (assume 10% on each side)
-        usable_width_in = my_width_in * 0.8
-        usable_height_in = my_height_in * 0.8
-
-        # Determine how many characters would fit per line at current size
-        chars_per_line = int(usable_width_in / avg_char_width_in)
-
-        # Determine how many lines of text would fit in the shape at current size
-        lines_that_fit = int(usable_height_in / line_height_in)
-
-        # Calculate total characters that would fit in the box
-        total_chars_that_fit = chars_per_line * lines_that_fit
-
-        # Count actual text length (excluding markdown formatting)
-        # Simple approximation: remove common markdown characters
-        clean_text = text.replace("*", "").replace("_", "").replace("#", "").replace("`", "")
-        actual_text_length = len(clean_text)
-
-        # Determine the scaling factor based on the number of characters that would fit in the box overall
-        if actual_text_length <= total_chars_that_fit:
-            # Text fits, no scaling needed
-            scaling_factor = 1.0
-        else:
-            # Text doesn't fit, scale down
-            scaling_factor = (
-                total_chars_that_fit / actual_text_length
-            ) ** 0.5  # Square root for more gradual scaling
-
-        # Apply minimum scaling factor to ensure text remains readable
-        scaling_factor = max(scaling_factor, 0.3)  # Don't scale below 30% of original size
-
-        # Apply the scaling factor to the font size of ALL styles
-
-        scaled_styles = []
-
-        for style in styles:
-            scaled_style = style.model_copy()  # Create a copy to avoid modifying the original
-
-            # Get the current font size for this style
-            style_font_size_pt = 12.0  # default
-            if scaled_style.fontSize and scaled_style.fontSize.magnitude:
-                if scaled_style.fontSize.unit.value == "PT":
-                    style_font_size_pt = scaled_style.fontSize.magnitude
-                elif scaled_style.fontSize.unit.value == "EMU":
-                    # Convert EMU to points: 1 point = 12,700 EMUs
-                    style_font_size_pt = scaled_style.fontSize.magnitude / 12700.0
-
-            # Apply scaling factor to this style's font size
-            new_font_size_pt = style_font_size_pt * scaling_factor
-            scaled_style.fontSize = Dimension(magnitude=new_font_size_pt, unit=Unit.PT)
-
-            scaled_styles.append(scaled_style)
-
-        return scaled_styles
-
     def read_text(self, as_markdown: bool = True):
         if not self.has_text:
             return ""
-        if as_markdown:
-            return self.to_markdown()
-        else:
-            out = []
-            for te in self.shape.text.textElements:
-                if te.textRun is not None:
-                    out.append(te.textRun.content)
-                elif te.paragraphMarker is not None:
-                    if len(out) > 0:
-                        out.append("\n")
-            return "".join(out)
+        return self.shape.text.read_text(as_markdown)
 
     def to_markdown_element(self, name: str = "Text") -> MarkdownTextElement:
         """Convert ShapeElement to MarkdownTextElement for round-trip conversion."""
