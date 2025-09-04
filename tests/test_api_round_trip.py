@@ -135,18 +135,14 @@ class TestAPIRoundTrip:
             metadata={"objectId": "test_table_1"},
         )
 
-        # Convert to TableElement
-        table_element = TableElement.from_markdown_element(
-            markdown_table, parent_id=self.test_slide.objectId, api_client=api_client
+        # Generate API requests to create the table
+        requests = TableElement.markdown_element_to_requests(
+            markdown_table, parent_id=self.test_slide.objectId, element_id="test_table_1"
         )
-        table_element.presentation_id = self.test_presentation.presentationId
 
-        # Create the element in Google Slides
-        new_element_id = table_element.create_copy(
-            parent_id=self.test_slide.objectId,
-            presentation_id=self.test_presentation.presentationId,
-            api_client=api_client,
-        )
+        # Execute the requests to create the table
+        api_client.batch_update(requests, self.test_presentation.presentationId)
+        new_element_id = "test_table_1"
 
         # Read the slide back from API
         updated_slide = self.test_slide.__class__.from_ids(

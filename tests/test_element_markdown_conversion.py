@@ -176,8 +176,8 @@ class TestImageElementConversion:
 class TestTableElementConversion:
     """Test TableElement ↔ TableElement conversion."""
 
-    def test_markdown_to_table_to_markdown_roundtrip(self):
-        """Test Level 1: markdown -> MarkdownTableElement -> TableElement -> MarkdownTableElement -> markdown"""
+    def test_markdown_to_requests_generation(self):
+        """Test: markdown -> MarkdownTableElement -> API requests"""
 
         # Original markdown table
         original_markdown = """| Header 1 | Header 2 | Header 3 |
@@ -188,21 +188,21 @@ class TestTableElementConversion:
         # Create MarkdownTableElement
         markdown_elem = MarkdownTableElement(name="Test Table", content=original_markdown)
 
-        # Convert to TableElement
-        table_elem = TableElement.from_markdown_element(markdown_elem, parent_id="slide_123")
+        # Convert to API requests
+        requests = TableElement.markdown_element_to_requests(
+            markdown_elem, parent_id="slide_123", element_id="test_table"
+        )
 
-        # Convert back to MarkdownTableElement
-        converted_markdown_elem = table_elem.to_markdown_element(name="Test Table")
-
-        # Convert back to markdown string
-        final_markdown = converted_markdown_elem.to_markdown()
-
-        # Should preserve the table structure
-        assert "Header 1" in final_markdown
-        assert "Header 2" in final_markdown
-        assert "Header 3" in final_markdown
-        assert "Cell 1" in final_markdown
-        assert "Cell 6" in final_markdown
+        # Should have at least a CreateTableRequest
+        assert len(requests) > 0
+        from gslides_api.request.table import CreateTableRequest
+        assert isinstance(requests[0], CreateTableRequest)
+        
+        # Verify table dimensions
+        create_request = requests[0]
+        assert create_request.rows == 3  # 2 data rows + 1 header
+        assert create_request.columns == 3
+        assert create_request.objectId == "test_table"
 
     def test_table_data_extraction(self):
         """Test extraction of table data from Google Slides table structure."""
@@ -337,12 +337,19 @@ class TestIntegrationRoundTrip:
         large_table_data = TableData(headers=headers, rows=rows)
 
         large_table = MarkdownTableElement(name="Large", content=large_table_data)
-        table = TableElement.from_markdown_element(large_table, "slide_123")
-        converted = table.to_markdown_element()
+        
+        # Convert to API requests
+        requests = TableElement.markdown_element_to_requests(
+            large_table, parent_id="slide_123", element_id="large_table"
+        )
 
-        assert len(converted.content.headers) == 10
-        assert len(converted.content.rows) == 20
-        assert converted.content.rows[19][9] == "Cell 19-9"
+        # Verify table creation request
+        from gslides_api.request.table import CreateTableRequest
+        assert isinstance(requests[0], CreateTableRequest)
+        create_request = requests[0]
+        assert create_request.rows == 21  # 20 data rows + 1 header
+        assert create_request.columns == 10
+        assert create_request.objectId == "large_table"
 
 
 # Integration test fixtures and helpers

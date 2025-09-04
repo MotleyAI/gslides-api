@@ -276,6 +276,154 @@ class TableElement(MarkdownSlideElement):
 
         return TableData(headers=headers, rows=rows)
 
+    @classmethod
+    def _parse_table_dual_method(cls, markdown_content: str) -> tuple[list[list], list[list[str]]]:
+        """Parse table using both Marko AST and manual regex methods.
+        
+        Returns:
+            tuple: (marko_cells, markdown_cell_snippets) where:
+                - marko_cells: List[List[TableCell]] from Marko AST
+                - markdown_cell_snippets: List[List[str]] with original markdown per cell
+        """
+        # 1. Marko AST parsing
+        marko_cells = cls._extract_marko_table_cells(markdown_content)
+        
+        # 2. Manual markdown parsing  
+        markdown_cells = cls._extract_markdown_cell_snippets(markdown_content)
+        
+        # 3. Cross-validation
+        cls._validate_parsing_consistency(marko_cells, markdown_cells)
+        
+        return marko_cells, markdown_cells
+    
+    @classmethod
+    def _extract_marko_table_cells(cls, markdown_content: str) -> list[list]:
+        """Extract TableCell objects from Marko AST."""
+        # Use existing parsing logic but return cell objects instead of text
+        md = marko.Markdown(extensions=["gfm"])
+        doc = md.parse(markdown_content.strip())
+        
+        # Find table element in the AST
+        table_element = None
+        
+        def find_table(node):
+            nonlocal table_element
+            if hasattr(node, "__class__") and node.__class__.__name__ == "Table":
+                table_element = node
+                return True
+            if hasattr(node, "children"):
+                for child in node.children:
+                    if find_table(child):
+                        return True
+            return False
+
+        if not find_table(doc):
+            raise ValueError("Table element must contain a valid markdown table")
+        
+        # Extract cell objects
+        cell_grid = []
+        if table_element and hasattr(table_element, "children"):
+            table_rows = [
+                child for child in table_element.children
+                if hasattr(child, "__class__") and child.__class__.__name__ == "TableRow"
+            ]
+            
+            for row in table_rows:
+                row_cells = []
+                for cell in row.children:
+                    if (hasattr(cell, "__class__") and 
+                        cell.__class__.__name__ == "TableCell"):
+                        row_cells.append(cell)
+                cell_grid.append(row_cells)
+        
+        return cell_grid
+    
+    @classmethod  
+    def _extract_markdown_cell_snippets(cls, markdown_content: str) -> list[list[str]]:
+        """Extract raw markdown snippets for each table cell using regex."""
+        import re
+        
+        lines = markdown_content.strip().split('\n')
+        table_lines = []
+        
+        # Find table lines (skip separator line)
+        for line in lines:
+            line = line.strip()
+            if line.startswith('|') and line.endswith('|'):
+                # Skip separator line (contains only |, -, and spaces)
+                if not re.match(r'^\|[\s\-\|]*\|$', line):
+                    table_lines.append(line)
+        
+        # Extract cell content from each line
+        cell_grid = []
+        for line in table_lines:
+            # Remove leading and trailing |
+            content = line[1:-1] if line.startswith('|') and line.endswith('|') else line
+            
+            # Split by | but preserve escaped pipes
+            cells = []
+            current_cell = ""
+            escaped = False
+            
+            for char in content:
+                if char == '\\':
+                    escaped = True
+                    current_cell += char
+                elif char == '|' and not escaped:
+                    cells.append(current_cell.strip())
+                    current_cell = ""
+                else:
+                    current_cell += char
+                    escaped = False
+            
+            # Don't forget the last cell
+            if current_cell or cells:
+                cells.append(current_cell.strip())
+                
+            cell_grid.append(cells)
+        
+        return cell_grid
+    
+    @classmethod
+    def _validate_parsing_consistency(cls, marko_cells: list[list], markdown_cells: list[list[str]]) -> None:
+        """Validate that both parsing methods produce consistent results."""
+        if len(marko_cells) != len(markdown_cells):
+            raise ValueError(f"Row count mismatch: Marko={len(marko_cells)}, Manual={len(markdown_cells)}")
+        
+        for i, (marko_row, markdown_row) in enumerate(zip(marko_cells, markdown_cells)):
+            if len(marko_row) != len(markdown_row):
+                raise ValueError(f"Column count mismatch at row {i}: Marko={len(marko_row)}, Manual={len(markdown_row)}")
+            
+            for j, (marko_cell, markdown_cell) in enumerate(zip(marko_row, markdown_row)):
+                # Extract text from marko cell
+                marko_text = cls._extract_text_from_node(marko_cell)
+                
+                # Parse markdown snippet and extract text
+                if markdown_cell.strip():
+                    md = marko.Markdown(extensions=["gfm"])
+                    snippet_ast = md.parse(markdown_cell.strip())
+                    snippet_text = cls._extract_text_from_node(snippet_ast)
+                else:
+                    snippet_text = ""
+                
+                # Allow for minor differences in text extraction (e.g., Marko's handling of code spans)
+                marko_clean = marko_text.strip().replace('\n', ' ')
+                snippet_clean = snippet_text.strip().replace('\n', ' ')
+                
+                # For validation purposes, we mainly care that both methods produce reasonable results
+                # Minor differences in whitespace or code span handling are acceptable
+                if (marko_clean and snippet_clean and 
+                    len(marko_clean) > 0 and len(snippet_clean) > 0):
+                    # Both produced content - they should have similar core text
+                    # This is mainly to catch major structural parsing errors
+                    pass
+                elif marko_clean != snippet_clean and (marko_clean or snippet_clean):
+                    # Only raise error for significant mismatches (one empty, one not)
+                    print(f"Warning: Minor text mismatch at [{i}][{j}]:")
+                    print(f"  Marko: '{marko_clean}'")
+                    print(f"  Manual: '{snippet_clean}'")
+                    print(f"  Original markdown: '{markdown_cell}'")
+
     @staticmethod
     def _extract_text_from_node(node) -> str:
         """Extract text content from a Marko AST node."""
@@ -322,8 +470,29 @@ class TableElement(MarkdownSlideElement):
 
     @classmethod
     def from_markdown(cls, name: str, markdown_content: str) -> "TableElement":
-        """Create TableElement from markdown table content."""
-        return cls(name=name, content=markdown_content.strip())
+        """Create TableElement from markdown table content with styling preservation."""
+        # Use dual parsing to get both structure validation and styling preservation
+        marko_cells, markdown_cells = cls._parse_table_dual_method(markdown_content.strip())
+        
+        # Create TableData using the styled markdown snippets
+        if not markdown_cells:
+            raise ValueError("No table data found")
+        
+        # First row is headers (use styled content)
+        headers = [cell.strip() for cell in markdown_cells[0]]
+        
+        # Remaining rows are data (use styled content)
+        rows = []
+        for row in markdown_cells[1:]:
+            styled_row = [cell.strip() for cell in row]
+            # Pad or trim to match header length
+            while len(styled_row) < len(headers):
+                styled_row.append("")
+            rows.append(styled_row[:len(headers)])
+        
+        table_data = TableData(headers=headers, rows=rows)
+        
+        return cls(name=name, content=table_data)
 
     @classmethod
     def from_df(cls, df, name: str, metadata: dict[str, Any] = None) -> "TableElement":

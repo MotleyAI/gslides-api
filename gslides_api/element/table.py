@@ -1,8 +1,8 @@
 from typing import List, Optional, Tuple
+import uuid
 
 from pydantic import Field, field_validator
 
-from gslides_api.client import GoogleAPIClient
 from gslides_api.domain import OutputUnit
 from gslides_api.element.text_container import TextContainer
 from gslides_api.request.domain import TableCellLocation
@@ -10,7 +10,7 @@ from gslides_api.table import Table
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import TableElement as MarkdownTableElement
-from gslides_api.request.request import GSlidesAPIRequest
+from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
 from gslides_api.request.table import CreateTableRequest
 
 
@@ -93,11 +93,17 @@ class TableElement(TextContainer):
                 out.append(this_row)
             return out
 
-    def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
+    def create_request(
+        self, parent_id: str, object_id: Optional[str] = None
+    ) -> List[GSlidesAPIRequest]:
         """Convert a TableElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
+        if object_id is None:
+            object_id = f"table_{uuid.uuid4().hex[:8]}"
+
         request = CreateTableRequest(
-            elementProperties=element_properties.to_api_format(),
+            objectId=object_id,
+            elementProperties=element_properties,
             rows=self.table.rows,
             columns=self.table.columns,
         )
@@ -200,95 +206,84 @@ class TableElement(TextContainer):
         return self.to_markdown_element("Table").to_markdown()
 
     @classmethod
-    def from_markdown_element(
+    def markdown_element_to_requests(
         cls,
         markdown_elem: MarkdownTableElement,
         parent_id: str,
-        api_client: Optional[GoogleAPIClient] = None,
-    ) -> "TableElement":
-        """Create TableElement from MarkdownTableElement with preserved metadata."""
+        description: Optional[str] = None,
+        element_id: Optional[str] = None,
+    ) -> List[GSlidesAPIRequest]:
+        """Convert MarkdownTableElement to a sequence of API requests that will create the table."""
 
-        # Extract metadata
-        metadata = markdown_elem.metadata or {}
-        object_id = metadata.get("objectId")
+        # Generate object_id if not provided
+        if element_id is None:
+            element_id = f"table_{uuid.uuid4().hex[:8]}"
 
         # Get table data
         table_data = markdown_elem.content
 
-        # Create the Table domain object
-        table = Table(
-            rows=metadata.get("rows", len(table_data.rows) + 1),  # +1 for header
-            columns=metadata.get("columns", len(table_data.headers)),
-        )
+        # Calculate table dimensions
+        num_rows = len(table_data.rows) + 1  # +1 for header
+        num_cols = len(table_data.headers)
 
-        # Restore full table structure if available in metadata
-        if "tableRows" in metadata:
-            table.tableRows = metadata["tableRows"]
-        if "tableColumns" in metadata:
-            table.tableColumns = metadata["tableColumns"]
-        if "horizontalBorderRows" in metadata:
-            table.horizontalBorderRows = metadata["horizontalBorderRows"]
-        if "verticalBorderRows" in metadata:
-            table.verticalBorderRows = metadata["verticalBorderRows"]
+        # Create temporary TableElement to generate the structure creation request
+        from gslides_api.domain import Dimension, Size, Unit, Transform
 
-        # Create element properties from metadata
-        from gslides_api.domain import PageElementProperties
+        # Basic sizing: 100pt per column, 30pt per row
+        default_width = max(300, num_cols * 100)
+        default_height = max(150, num_rows * 30)
 
-        element_props = PageElementProperties(pageObjectId=parent_id)
-
-        # Restore size if available, otherwise provide default
-        if "size" in metadata:
-            size_data = metadata["size"]
-            from gslides_api.domain import Dimension, Size, Unit
-
-            element_props.size = Size(
-                width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
-                height=Dimension(magnitude=size_data["height"], unit=Unit(size_data["unit"])),
-            )
-        else:
-            # Provide default size for tables
-            from gslides_api.domain import Dimension, Size, Unit
-
-            # Calculate size based on table dimensions
-            num_rows = len(table_data.rows) + 1  # +1 for header
-            num_cols = len(table_data.headers)
-
-            # Basic sizing: 100pt per column, 30pt per row
-            default_width = max(300, num_cols * 100)
-            default_height = max(150, num_rows * 30)
-
-            element_props.size = Size(
+        temp_table_element = cls(
+            objectId=element_id,
+            size=Size(
                 width=Dimension(magnitude=default_width, unit=Unit.PT),
                 height=Dimension(magnitude=default_height, unit=Unit.PT),
-            )
-
-        # Restore transform if available, otherwise create default
-        if "transform" in metadata and metadata["transform"]:
-            from gslides_api.domain import Transform
-
-            transform_data = metadata["transform"]
-            element_props.transform = Transform(**transform_data)
-        else:
-            # Create a default identity transform
-            from gslides_api.domain import Transform
-
-            element_props.transform = Transform(
-                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
-            )
-
-        # Create the table element
-        table_element = cls(
-            objectId=object_id or "table_" + str(hash(str(markdown_elem.content.headers)))[:8],
-            size=element_props.size,
-            transform=element_props.transform,
-            title=metadata.get("title"),
-            description=metadata.get("description"),
-            table=table,
+            ),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
+            table=Table(rows=num_rows, columns=num_cols),
             slide_id=parent_id,
-            presentation_id="",  # Will need to be set by caller
+            presentation_id="",
         )
 
-        # Store the markdown table data for round-trip conversion
-        table_element._markdown_table_data = table_data
+        # Start with table creation request
+        requests = temp_table_element.create_request(parent_id, element_id)
 
-        return table_element
+        requests.append(
+            UpdatePageElementAltTextRequest(
+                objectId=element_id, title=markdown_elem.name, description=description
+            )
+        )
+
+        # Generate text requests for each cell
+        from gslides_api.markdown.from_markdown import markdown_to_text_elements
+
+        # Process header row first (row 0)
+        for col_idx, header_content in enumerate(table_data.headers):
+            if header_content.strip():
+                cell_location = TableCellLocation(rowIndex=0, columnIndex=col_idx)
+                cell_requests = markdown_to_text_elements(header_content.strip())
+
+                # Set objectId and cellLocation for each request
+                for request in cell_requests:
+                    request.objectId = element_id
+                    if hasattr(request, "cellLocation"):
+                        request.cellLocation = cell_location
+
+                requests.extend(cell_requests)
+
+        # Process data rows (row 1+)
+        for row_idx, row_data in enumerate(table_data.rows):
+            for col_idx, cell_content in enumerate(row_data):
+                if cell_content.strip():
+                    cell_location = TableCellLocation(rowIndex=row_idx + 1, columnIndex=col_idx)
+                    cell_requests = markdown_to_text_elements(cell_content.strip())
+
+                    # Set objectId and cellLocation for each request
+                    for request in cell_requests:
+                        request.objectId = element_id
+                        if hasattr(request, "cellLocation"):
+                            request.cellLocation = cell_location
+
+                    requests.extend(cell_requests)
+
+        return requests
