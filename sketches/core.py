@@ -12,14 +12,14 @@ import time
 import uuid
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from pydantic import BaseModel, Field
 
-from .auth import authenticate, AuthConfig
-from .markdown_processor import MarkdownProcessor, MarkdownConfig
+from .auth import AuthConfig, authenticate
+from .markdown_processor import MarkdownConfig, MarkdownProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +232,9 @@ class SlidesTemplater:
             except HttpError as e:
                 if e.resp.status == 429:
                     if attempt == self.slides_config.max_retries - 1:
-                        raise RateLimitExceededError("Rate limit exceeded after maximum retries")
+                        raise RateLimitExceededError(
+                            "Rate limit exceeded after maximum retries"
+                        )
 
                     # Exponential backoff with jitter
                     wait_time = (2**attempt) + random.uniform(0, 1)
@@ -287,7 +289,9 @@ class SlidesTemplater:
             title = title[:1000]
 
         body = {"title": title.strip()}
-        result = self._make_request(self.slides_service.presentations().create, body=body)
+        result = self._make_request(
+            self.slides_service.presentations().create, body=body
+        )
 
         presentation_id = result["presentationId"]
         logger.info(f"Created presentation '{title}' with ID: {presentation_id}")
@@ -334,7 +338,9 @@ class SlidesTemplater:
         logger.info(f"Copied presentation {presentation_id} to {new_id}")
         return new_id
 
-    def batch_update(self, presentation_id: str, requests: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def batch_update(
+        self, presentation_id: str, requests: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """
         Execute batch update with automatic chunking and size limits.
 
@@ -368,7 +374,9 @@ class SlidesTemplater:
                     body=body,
                 )
                 all_replies.extend(result.get("replies", []))
-                logger.debug(f"Processed batch {i // batch_size + 1} ({len(batch)} requests)")
+                logger.debug(
+                    f"Processed batch {i // batch_size + 1} ({len(batch)} requests)"
+                )
 
             except Exception as e:
                 logger.error(f"Failed to process batch {i // batch_size + 1}: {e}")
@@ -388,7 +396,9 @@ class SlidesTemplater:
         """
         return f"https://docs.google.com/presentation/d/{presentation_id}/edit"
 
-    def calculate_layout(self, components: List[Dict[str, Any]]) -> List[ElementPosition]:
+    def calculate_layout(
+        self, components: List[Dict[str, Any]]
+    ) -> List[ElementPosition]:
         """
         Calculate layout positions for slide components.
 
@@ -423,12 +433,19 @@ class SlidesTemplater:
                 width = self.layout_config.default_width
 
             # Check if we exceed slide height
-            if current_y + height > self.layout_config.slide_height - self.layout_config.margin_y:
+            if (
+                current_y + height
+                > self.layout_config.slide_height - self.layout_config.margin_y
+            ):
                 # Could implement new slide logic here
                 current_y = self.layout_config.margin_y
 
             position = ElementPosition(
-                x=self.layout_config.margin_x, y=current_y, width=width, height=height, layer=0
+                x=self.layout_config.margin_x,
+                y=current_y,
+                width=width,
+                height=height,
+                layer=0,
             )
             positions.append(position)
             current_y += height + 20  # 20px spacing between elements
@@ -436,7 +453,10 @@ class SlidesTemplater:
         return positions
 
     def add_markdown_slide(
-        self, presentation_id: str, markdown_content: str, slide_index: Optional[int] = None
+        self,
+        presentation_id: str,
+        markdown_content: str,
+        slide_index: Optional[int] = None,
     ) -> str:
         """
         Add new slide with Markdown content using calculated layout.
@@ -545,7 +565,9 @@ class SlidesTemplater:
                     logger.error(f"Failed to add slide: {e}")
                     # Continue with other slides
 
-        logger.info(f"Created presentation {presentation_id} with {len(slides_content)} slides")
+        logger.info(
+            f"Created presentation {presentation_id} with {len(slides_content)} slides"
+        )
         return presentation_id
 
     def _split_markdown_to_slides(self, markdown_content: str) -> List[str]:
@@ -630,13 +652,21 @@ class SlidesTemplater:
 
         if text.strip():
             try:
-                text_requests = self.markdown_processor.create_slides_requests(element_id, text)
+                text_requests = self.markdown_processor.create_slides_requests(
+                    element_id, text
+                )
                 requests.extend(text_requests)
             except Exception as e:
                 logger.error(f"Failed to process markdown text: {e}")
                 # Fallback to plain text
                 requests.append(
-                    {"insertText": {"objectId": element_id, "insertionIndex": 0, "text": text}}
+                    {
+                        "insertText": {
+                            "objectId": element_id,
+                            "insertionIndex": 0,
+                            "text": text,
+                        }
+                    }
                 )
 
         self.batch_update(presentation_id, requests)
@@ -662,7 +692,9 @@ class SlidesTemplater:
             requests.append()
 
             # Add new text
-            text_requests = self.markdown_processor.create_slides_requests(element_id, text)
+            text_requests = self.markdown_processor.create_slides_requests(
+                element_id, text
+            )
             requests.extend(text_requests)
 
             if requests:
@@ -673,11 +705,19 @@ class SlidesTemplater:
             # Fallback: just try to insert text
             try:
                 fallback_requests = [
-                    {"insertText": {"objectId": element_id, "insertionIndex": 0, "text": text}}
+                    {
+                        "insertText": {
+                            "objectId": element_id,
+                            "insertionIndex": 0,
+                            "text": text,
+                        }
+                    }
                 ]
                 self.batch_update(presentation_id, fallback_requests)
             except Exception as fallback_error:
-                logger.error(f"Fallback text insertion failed for {element_id}: {fallback_error}")
+                logger.error(
+                    f"Fallback text insertion failed for {element_id}: {fallback_error}"
+                )
 
     def replace_image(self, presentation_id: str, image_id: str, new_url: str):
         """
@@ -710,7 +750,9 @@ class SlidesTemplater:
                 return match.group(3)  # Remove unsafe tags, keep content
 
         # Replace unsafe HTML comments
-        safe_text = re.sub(r"<!-- (\w+):([^>]+) -->([^<]*?)<!-- /\1 -->", replace_unsafe_tag, text)
+        safe_text = re.sub(
+            r"<!-- (\w+):([^>]+) -->([^<]*?)<!-- /\1 -->", replace_unsafe_tag, text
+        )
 
         return safe_text
 
@@ -731,7 +773,9 @@ class SlidesTemplater:
         if not template_name or len(template_name.strip()) == 0:
             raise TemplateValidationError("Template name cannot be empty")
 
-        logger.info(f"Creating template '{template_name}' from presentation {presentation_id}")
+        logger.info(
+            f"Creating template '{template_name}' from presentation {presentation_id}"
+        )
         presentation = self.get_presentation(presentation_id)
 
         template = {
@@ -774,7 +818,9 @@ class SlidesTemplater:
 
             # Get all page elements to determine layer order
             page_elements = slide.get("pageElements", [])
-            logger.debug(f"Processing slide {slide_idx + 1} with {len(page_elements)} elements")
+            logger.debug(
+                f"Processing slide {slide_idx + 1} with {len(page_elements)} elements"
+            )
 
             for element_idx, element in enumerate(page_elements):
                 total_elements_processed += 1
@@ -802,16 +848,22 @@ class SlidesTemplater:
                             f"w={element_position.width}, h={element_position.height}, layer={element_position.layer}"
                         )
                     else:
-                        logger.warning(f"Could not extract position for element {element_id}")
+                        logger.warning(
+                            f"Could not extract position for element {element_id}"
+                        )
 
                     # Convert to markdown if possible
-                    markdown_content = self._convert_element_to_markdown(element, original_content)
+                    markdown_content = self._convert_element_to_markdown(
+                        element, original_content
+                    )
 
                     element_info = {
                         "element_id": element_id,
                         "placeholder_name": placeholder_name,
                         "element_type": self._get_element_type(element),
-                        "position": element_position.dict() if element_position else None,
+                        "position": (
+                            element_position.dict() if element_position else None
+                        ),
                         "original_content": original_content,
                         "markdown_content": markdown_content,
                     }
@@ -821,8 +873,12 @@ class SlidesTemplater:
                     template["placeholders"][placeholder_name] = {
                         "type": element_info["element_type"],
                         "slide_index": slide_idx,
-                        "position": element_position.dict() if element_position else None,
-                        "layer": element_position.layer if element_position else element_idx,
+                        "position": (
+                            element_position.dict() if element_position else None
+                        ),
+                        "layer": (
+                            element_position.layer if element_position else element_idx
+                        ),
                         "position_units": "EMU",  # Google Slides uses EMU (English Metric Units)
                         "description": self._get_placeholder_description(
                             element_info["element_type"]
@@ -832,7 +888,9 @@ class SlidesTemplater:
                     }
 
                     placeholder_counter += 1
-                    logger.info(f"Added placeholder '{placeholder_name}' for element {element_id}")
+                    logger.info(
+                        f"Added placeholder '{placeholder_name}' for element {element_id}"
+                    )
                 else:
                     logger.debug(f"Element {element_id} is not replaceable, skipping")
 
@@ -860,9 +918,7 @@ class SlidesTemplater:
 
             if "size" in props:
                 size = props["size"]
-                debug_info += (
-                    f", size keys: {list(size.keys()) if isinstance(size, dict) else type(size)}"
-                )
+                debug_info += f", size keys: {list(size.keys()) if isinstance(size, dict) else type(size)}"
 
             if "transform" in props:
                 transform = props["transform"]
@@ -903,7 +959,8 @@ class SlidesTemplater:
 
             # Validate that we have valid numbers
             if not all(
-                isinstance(val, (int, float)) for val in [x, y, width_magnitude, height_magnitude]
+                isinstance(val, (int, float))
+                for val in [x, y, width_magnitude, height_magnitude]
             ):
                 return None
 
@@ -943,11 +1000,15 @@ class SlidesTemplater:
         if not validation_result["valid"]:
             missing = validation_result.get("missing_placeholders", [])
             invalid = validation_result.get("invalid_types", [])
-            error_msg = f"Template validation failed. Missing: {missing}, Invalid: {invalid}"
+            error_msg = (
+                f"Template validation failed. Missing: {missing}, Invalid: {invalid}"
+            )
             raise TemplateValidationError(error_msg)
 
         new_title = title or f"Copy of {template['title']} - {self._get_timestamp()}"
-        new_presentation_id = self.copy_presentation(template["source_presentation_id"], new_title)
+        new_presentation_id = self.copy_presentation(
+            template["source_presentation_id"], new_title
+        )
 
         # Collect all update requests for batch processing
         all_requests = []
@@ -958,7 +1019,9 @@ class SlidesTemplater:
 
                 if placeholder_name in data:
                     value = data[placeholder_name]
-                    requests = self._prepare_element_update_requests(element_info, value)
+                    requests = self._prepare_element_update_requests(
+                        element_info, value
+                    )
                     all_requests.extend(requests)
 
         # Process all updates in batches
@@ -993,11 +1056,18 @@ class SlidesTemplater:
             if element_type == "text" and isinstance(value, str):
                 # Clear existing text
                 requests.append(
-                    {"deleteText": {"objectId": element_id, "textRange": {"type": "ALL"}}}
+                    {
+                        "deleteText": {
+                            "objectId": element_id,
+                            "textRange": {"type": "ALL"},
+                        }
+                    }
                 )
 
                 # Add new text with markdown support
-                text_requests = self.markdown_processor.create_slides_requests(element_id, value)
+                text_requests = self.markdown_processor.create_slides_requests(
+                    element_id, value
+                )
                 requests.extend(text_requests)
 
             elif element_type == "image" and isinstance(value, str):
@@ -1005,10 +1075,17 @@ class SlidesTemplater:
                     # Validate image URL before adding to requests
                     if self._validate_image_url(value):
                         requests.append(
-                            {"replaceImage": {"imageObjectId": element_id, "url": value}}
+                            {
+                                "replaceImage": {
+                                    "imageObjectId": element_id,
+                                    "url": value,
+                                }
+                            }
                         )
                     else:
-                        logger.warning(f"Skipping invalid/inaccessible image URL: {value}")
+                        logger.warning(
+                            f"Skipping invalid/inaccessible image URL: {value}"
+                        )
 
         except Exception as e:
             logger.warning(f"Could not prepare update for element {element_id}: {e}")
@@ -1025,8 +1102,8 @@ class SlidesTemplater:
         Returns:
             True if URL appears to be valid and accessible
         """
-        import urllib.request
         import urllib.error
+        import urllib.request
 
         if not url or not url.startswith(("http://", "https://")):
             return False
@@ -1041,7 +1118,8 @@ class SlidesTemplater:
             try:
                 req = urllib.request.Request(url, method="HEAD")
                 req.add_header(
-                    "User-Agent", "Mozilla/5.0 (compatible; Google-Slides-Templater/1.0)"
+                    "User-Agent",
+                    "Mozilla/5.0 (compatible; Google-Slides-Templater/1.0)",
                 )
 
                 with urllib.request.urlopen(req, timeout=5) as response:
@@ -1095,11 +1173,15 @@ class SlidesTemplater:
         if not validation_result["valid"]:
             missing = validation_result.get("missing_placeholders", [])
             invalid = validation_result.get("invalid_types", [])
-            error_msg = f"Template validation failed. Missing: {missing}, Invalid: {invalid}"
+            error_msg = (
+                f"Template validation failed. Missing: {missing}, Invalid: {invalid}"
+            )
             raise TemplateValidationError(error_msg)
 
         new_title = title or f"Copy of {template['title']} - {self._get_timestamp()}"
-        new_presentation_id = self.copy_presentation(template["source_presentation_id"], new_title)
+        new_presentation_id = self.copy_presentation(
+            template["source_presentation_id"], new_title
+        )
 
         # Separate text and image updates for better error handling
         text_requests = []
@@ -1114,10 +1196,14 @@ class SlidesTemplater:
                     element_type = element_info["element_type"]
 
                     if element_type == "text":
-                        requests = self._prepare_element_update_requests(element_info, value)
+                        requests = self._prepare_element_update_requests(
+                            element_info, value
+                        )
                         text_requests.extend(requests)
                     elif element_type == "image":
-                        requests = self._prepare_element_update_requests(element_info, value)
+                        requests = self._prepare_element_update_requests(
+                            element_info, value
+                        )
                         image_requests.extend(requests)
 
         # Process text updates first (they're more reliable)
@@ -1216,7 +1302,9 @@ class SlidesTemplater:
 
         return result.strip()
 
-    def _convert_element_to_markdown(self, element: Dict[str, Any], content: str) -> str:
+    def _convert_element_to_markdown(
+        self, element: Dict[str, Any], content: str
+    ) -> str:
         """
         Convert Google Slides element to Markdown format.
 
@@ -1233,7 +1321,9 @@ class SlidesTemplater:
             if "shape" in element and "text" in element["shape"]:
                 text_elements = element["shape"]["text"].get("textElements", [])
                 if text_elements:
-                    return self.markdown_processor.slides_elements_to_markdown(text_elements)
+                    return self.markdown_processor.slides_elements_to_markdown(
+                        text_elements
+                    )
 
         elif element_type == "image":
             image_data = element.get("image", {})
@@ -1265,7 +1355,9 @@ class SlidesTemplater:
                 # Clean text and extract meaningful words - берем больше слов для лучших имен
                 clean_text = re.sub(r"[#*`~\[\]()]+", "", text_content)
                 clean_text = re.sub(r"<[^>]+>", "", clean_text)
-                words = re.findall(r"\w+", clean_text.lower())[:4]  # Увеличено до 4 слов
+                words = re.findall(r"\w+", clean_text.lower())[
+                    :4
+                ]  # Увеличено до 4 слов
                 if words and len(words[0]) > 2:
                     return "_".join(words)
 
@@ -1573,7 +1665,9 @@ This is **updated content** with various formatting:
         return sample_data
 
 
-def create_templater(auth_config: Optional[AuthConfig] = None, **kwargs) -> SlidesTemplater:
+def create_templater(
+    auth_config: Optional[AuthConfig] = None, **kwargs
+) -> SlidesTemplater:
     """
     Create SlidesTemplater instance with configuration.
 

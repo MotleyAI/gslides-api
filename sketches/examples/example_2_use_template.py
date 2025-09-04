@@ -8,20 +8,15 @@ IMPROVED VERSION with better image handling:
 - Enhanced diagnostics
 """
 
-import sys
 import os
+import sys
 import time
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sketches import (
-    create_templater,
-    AuthConfig,
-    SlidesAPIError,
-    AuthenticationError,
-    TemplateValidationError,
-    MarkdownProcessingError,
-)
+from sketches import (AuthConfig, AuthenticationError, MarkdownProcessingError,
+                      SlidesAPIError, TemplateValidationError,
+                      create_templater)
 
 
 def get_reliable_image_urls(count: int) -> list:
@@ -31,7 +26,16 @@ def get_reliable_image_urls(count: int) -> list:
     reliable_images = []
 
     # Different colors and sizes for variety
-    colors = ["4285f4", "ea4335", "34a853", "fbbc04", "9aa0a6", "f28b82", "aecbfa", "fdd663"]
+    colors = [
+        "4285f4",
+        "ea4335",
+        "34a853",
+        "fbbc04",
+        "9aa0a6",
+        "f28b82",
+        "aecbfa",
+        "fdd663",
+    ]
     sizes = ["800x600", "600x400", "400x300", "500x500"]
 
     for i in range(count):
@@ -63,7 +67,9 @@ def main():
             return
 
         # Create auth config using new structure
-        auth_config = AuthConfig(credentials_path=credentials_file, token_path="token.json")
+        auth_config = AuthConfig(
+            credentials_path=credentials_file, token_path="token.json"
+        )
 
         templater = create_templater(auth_config=auth_config)
         print("   ✓ Authentication successful")
@@ -85,7 +91,9 @@ def main():
 
         print(f"   ✓ Template loaded: {template_config['name']}")
         print(f"   ✓ Source presentation: {template_config['source_presentation_id']}")
-        print(f"   ✓ Placeholders in template: {len(template_config.get('placeholders', {}))}")
+        print(
+            f"   ✓ Placeholders in template: {len(template_config.get('placeholders', {}))}"
+        )
 
         # Show template structure info
         slide_size = template_config.get("slide_size", {})
@@ -132,7 +140,9 @@ def main():
                     f"layer:{info.get('layer', 0)}"
                 )
             else:
-                print(f"   • {name} ({info['type']}) - slide {info.get('slide_index', 0) + 1}")
+                print(
+                    f"   • {name} ({info['type']}) - slide {info.get('slide_index', 0) + 1}"
+                )
         if len(placeholders) > 5:
             print(f"   ... and {len(placeholders) - 5} more")
 
@@ -158,11 +168,15 @@ def main():
                 new_data[placeholder_name] = text_data_examples[placeholder_name]
                 print(f"   📝 {placeholder_name}: personalized content")
             else:
-                slide_num = text_placeholders[placeholder_name].get("slide_index", 0) + 1
+                slide_num = (
+                    text_placeholders[placeholder_name].get("slide_index", 0) + 1
+                )
                 new_data[placeholder_name] = (
                     f"""**New content for slide {slide_num}**\n\n- Enhanced with **bold** text\n- *Italic* formatting\n- `Code style` elements\n\n> This is a quote for better presentation"""
                 )
-                print(f"   📝 {placeholder_name}: generated Markdown (slide {slide_num})")
+                print(
+                    f"   📝 {placeholder_name}: generated Markdown (slide {slide_num})"
+                )
 
         # Get reliable images
         image_count = len(image_placeholders)
@@ -208,7 +222,9 @@ def main():
         # Validate template data before applying
         print(f"\n🔍 Validating template data...")
         try:
-            validation_result = templater.validate_template_data(template_config, new_data)
+            validation_result = templater.validate_template_data(
+                template_config, new_data
+            )
             if not validation_result["valid"]:
                 print(f"❌ Template validation failed:")
                 if validation_result["missing_placeholders"]:
@@ -257,7 +273,9 @@ def main():
         print(f"   📄 Title: {new_presentation.get('title')}")
         print(f"   🆔 ID: {new_presentation_id}")
         print(f"   📊 Number of slides: {len(new_presentation.get('slides', []))}")
-        print(f"   📦 Total elements: {presentation_info.get('total_elements', 'Unknown')}")
+        print(
+            f"   📦 Total elements: {presentation_info.get('total_elements', 'Unknown')}"
+        )
 
         # Element type breakdown
         element_types = presentation_info.get("element_types", {})
@@ -283,7 +301,10 @@ def main():
                 replacement_stats["text_replaced"] += 1
                 replacement_stats["total_characters"] += len(str(value))
                 # Count markdown elements
-                if any(marker in str(value) for marker in ["**", "*", "#", "`", ">", "-", "~~"]):
+                if any(
+                    marker in str(value)
+                    for marker in ["**", "*", "#", "`", ">", "-", "~~"]
+                ):
                     replacement_stats["markdown_elements"] += 1
             elif placeholder_type == "image":
                 replacement_stats["images_replaced"] += 1
@@ -293,8 +314,12 @@ def main():
         print(f"   📝 Text elements replaced: {replacement_stats['text_replaced']}")
         print(f"   🖼️ Images replaced: {replacement_stats['images_replaced']}")
         print(f"   📦 Other elements replaced: {replacement_stats['other_replaced']}")
-        print(f"   📊 Markdown characters processed: {replacement_stats['total_characters']:,}")
-        print(f"   🎨 Elements with Markdown formatting: {replacement_stats['markdown_elements']}")
+        print(
+            f"   📊 Markdown characters processed: {replacement_stats['total_characters']:,}"
+        )
+        print(
+            f"   🎨 Elements with Markdown formatting: {replacement_stats['markdown_elements']}"
+        )
         print(f"   📄 Slides processed: {len(template_config.get('slides', []))}")
 
         presentation_url = templater.get_presentation_url(new_presentation_id)
@@ -317,8 +342,12 @@ def main():
         print(f"   6. 💾 Save as PDF if needed")
 
         print(f"\n🔧 Technical information:")
-        print(f"   📅 Template creation date: {template_config.get('created_at', 'Unknown')}")
-        print(f"   🆔 Source presentation ID: {template_config['source_presentation_id']}")
+        print(
+            f"   📅 Template creation date: {template_config.get('created_at', 'Unknown')}"
+        )
+        print(
+            f"   🆔 Source presentation ID: {template_config['source_presentation_id']}"
+        )
         print(f"   📝 Template name: {template_config['name']}")
         print(f"   ⏱️ Processing time: {end_time - start_time:.2f} seconds")
 

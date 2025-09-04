@@ -1,10 +1,16 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import Field
 
-from gslides_api.domain import Dimension, Outline, Shadow, ShapeBackgroundFill
-from gslides_api.domain import GSlidesBaseModel, OptionalColor
+from gslides_api.domain import (
+    Dimension,
+    GSlidesBaseModel,
+    OptionalColor,
+    Outline,
+    Shadow,
+    ShapeBackgroundFill,
+)
 
 
 class Type(Enum):
@@ -186,15 +192,28 @@ class Type(Enum):
 
 
 class PlaceholderType(Enum):
-    """Enumeration of possible placeholder types."""
+    """Enumeration of possible placeholder types.
+    Called Type in the API, but there are others called Type so using PlaceholderType
+    https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/other#Page.Type_3
+    """
 
-    TITLE = "TITLE"
-    BODY = "BODY"
-    SUBTITLE = "SUBTITLE"
-    CENTERED_TITLE = "CENTERED_TITLE"
-    SLIDE_IMAGE = "SLIDE_IMAGE"
-    SLIDE_NUMBER = "SLIDE_NUMBER"
-    UNKNOWN = "UNKNOWN"
+    NONE = "NONE"  # Default value, signifies it is not a placeholder
+    BODY = "BODY"  # Body text
+    CHART = "CHART"  # Chart or graph
+    CLIP_ART = "CLIP_ART"  # Clip art image
+    CENTERED_TITLE = "CENTERED_TITLE"  # Title centered
+    DIAGRAM = "DIAGRAM"  # Diagram
+    DATE_AND_TIME = "DATE_AND_TIME"  # Date and time
+    FOOTER = "FOOTER"  # Footer text
+    HEADER = "HEADER"  # Header text
+    MEDIA = "MEDIA"  # Multimedia
+    OBJECT = "OBJECT"  # Any content type
+    PICTURE = "PICTURE"  # Picture
+    SLIDE_NUMBER = "SLIDE_NUMBER"  # Number of a slide
+    SUBTITLE = "SUBTITLE"  # Subtitle
+    TABLE = "TABLE"  # Table
+    TITLE = "TITLE"  # Slide title
+    SLIDE_IMAGE = "SLIDE_IMAGE"  # Slide image
 
 
 class BaselineOffset(Enum):
@@ -336,19 +355,3 @@ class TextElement(GSlidesBaseModel):
     paragraphMarker: Optional[ParagraphMarker] = None
     textRun: Optional[TextRun] = None
     autoText: Optional[AutoText] = None
-
-
-class Text(GSlidesBaseModel):
-    """Represents text content with its elements and lists."""
-
-    textElements: List[TextElement]
-    lists: Optional[Dict[str, Any]] = None
-
-
-class Shape(GSlidesBaseModel):
-    """Represents a shape in a slide."""
-
-    shapeProperties: ShapeProperties
-    shapeType: Optional[Type] = None  # Make optional to preserve original JSON exactly
-    text: Optional[Text] = None
-    placeholder: Optional[Placeholder] = None

@@ -5,7 +5,8 @@ from gslides_api.element.shape import ShapeElement
 from gslides_api.page.base import PageProperties
 from gslides_api.page.slide import Slide
 from gslides_api.page.slide_properties import SlideProperties
-from gslides_api.text import Shape, ShapeProperties, Type
+from gslides_api.text import ShapeProperties, Type
+from gslides_api.element.text_container import Shape
 
 
 def test_presentation_id_not_in_api_format():
@@ -83,9 +84,7 @@ def test_write_sets_presentation_id(monkeypatch):
 
     monkeypatch.setattr(Slide, "create_blank", mock_create_blank)
     monkeypatch.setattr(Slide, "from_ids", classmethod(mock_from_ids))
-    monkeypatch.setattr(
-        gslides_api.client.api_client, "batch_update", mock_slides_batch_update
-    )
+    monkeypatch.setattr(gslides_api.client.api_client, "batch_update", mock_slides_batch_update)
 
     # Call write_copy with a presentation_id
     result = slide.write_copy(presentation_id="test-presentation-id")
@@ -125,9 +124,7 @@ def test_duplicate_preserves_presentation_id(monkeypatch):
     import gslides_api.client
     import gslides_api.page
 
-    monkeypatch.setattr(
-        gslides_api.client.api_client, "duplicate_object", mock_duplicate_object
-    )
+    monkeypatch.setattr(gslides_api.client.api_client, "duplicate_object", mock_duplicate_object)
     monkeypatch.setattr(Slide, "from_ids", classmethod(mock_from_ids))
 
     # Call duplicate
@@ -292,10 +289,7 @@ def test_presentation_id_propagation_to_notes_page():
 
     # Verify that presentation_id was propagated to the notes page
     assert slide.presentation_id == "test-presentation-with-notes"
-    assert (
-        slide.slideProperties.notesPage.presentation_id
-        == "test-presentation-with-notes"
-    )
+    assert slide.slideProperties.notesPage.presentation_id == "test-presentation-with-notes"
 
 
 def test_presentation_id_propagation_to_notes_page_on_modification():
@@ -364,8 +358,5 @@ def test_presentation_id_propagation_to_notes_page_elements():
 
     # Verify that presentation_id was propagated to the notes page and its elements
     assert slide.presentation_id == "test-presentation-notes-elements"
-    assert (
-        slide.slideProperties.notesPage.presentation_id
-        == "test-presentation-notes-elements"
-    )
+    assert slide.slideProperties.notesPage.presentation_id == "test-presentation-notes-elements"
     assert notes_element.presentation_id == "test-presentation-notes-elements"

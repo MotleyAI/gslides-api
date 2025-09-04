@@ -2,6 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
+from gslides_api.domain import PageElementProperties
+from gslides_api.request.domain import TableCellLocation
 from gslides_api.request.request import GSlidesAPIRequest
 
 
@@ -13,7 +15,11 @@ class CreateTableRequest(GSlidesAPIRequest):
     Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#createtablerequest
     """
 
-    elementProperties: Dict[str, Any] = Field(
+    objectId: Optional[str] = Field(
+        default=None,
+        description="A user-supplied object ID. If specified, the ID must be unique among all pages and page elements in the presentation.",
+    )
+    elementProperties: PageElementProperties = Field(
         description="The element properties for the table"
     )
     rows: int = Field(description="Number of rows in the table")
@@ -27,7 +33,7 @@ class InsertTableRowsRequest(GSlidesAPIRequest):
     """
 
     tableObjectId: str = Field(description="The table to insert rows into")
-    cellLocation: Optional[Dict[str, Any]] = Field(
+    cellLocation: Optional[TableCellLocation] = Field(
         default=None,
         description="The reference table cell location from which rows will be inserted",
     )
@@ -45,7 +51,7 @@ class InsertTableColumnsRequest(GSlidesAPIRequest):
     """
 
     tableObjectId: str = Field(description="The table to insert columns into")
-    cellLocation: Optional[Dict[str, Any]] = Field(
+    cellLocation: Optional[TableCellLocation] = Field(
         default=None,
         description="The reference table cell location from which columns will be inserted",
     )
@@ -90,9 +96,7 @@ class UpdateTableCellPropertiesRequest(GSlidesAPIRequest):
     tableRange: Dict[str, Any] = Field(
         description="The table range representing the subset of the table to which the updates are applied"
     )
-    tableCellProperties: Dict[str, Any] = Field(
-        description="The table cell properties to update"
-    )
+    tableCellProperties: Dict[str, Any] = Field(description="The table cell properties to update")
     fields: str = Field(description="The fields that should be updated")
 
 
@@ -145,9 +149,7 @@ class UpdateTableRowPropertiesRequest(GSlidesAPIRequest):
         default=None,
         description="The list of zero-based indices specifying which rows to update",
     )
-    tableRowProperties: Dict[str, Any] = Field(
-        description="The table row properties to update"
-    )
+    tableRowProperties: Dict[str, Any] = Field(description="The table row properties to update")
     fields: str = Field(description="The fields that should be updated")
 
 
