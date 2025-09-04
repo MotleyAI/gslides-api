@@ -114,6 +114,18 @@ class BasePage(GSlidesBaseModel):
             return None
         return next((e for e in self.page_elements_flat if e.objectId == element_id), None)
 
+    def get_element_by_alt_title(self, title: str) -> PageElement | None:
+        """Get first element by alt title. Deprecated - use get_elements_by_alt_title."""
+        import warnings
+
+        warnings.warn(
+            "get_element_by_alt_title is deprecated, use get_elements_by_alt_title",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        elements = self.get_elements_by_alt_title(title)
+        return elements[0] if elements else None
+
     def get_elements_by_alt_title(self, title: str) -> List[PageElement]:
         if self.pageElements is None:
             return []

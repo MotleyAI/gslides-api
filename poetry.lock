@@ -788,6 +788,21 @@ files = [
 pyasn1 = ">=0.1.3"
 
 [[package]]
+name = "typeguard"
+version = "4.4.4"
+description = "Run-time type checker for Python"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "typeguard-4.4.4-py3-none-any.whl", hash = "sha256:b5f562281b6bfa1f5492470464730ef001646128b180769880468bd84b68b09e"},
+    {file = "typeguard-4.4.4.tar.gz", hash = "sha256:3a7fd2dffb705d4d0efaed4306a704c89b9dee850b688f060a8b1615a79e5f74"},
+]
+
+[package.dependencies]
+typing_extensions = ">=4.14.0"
+
+[[package]]
 name = "typing-extensions"
 version = "4.14.1"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -850,4 +865,4 @@ image = ["pillow"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "5fdbe5de3ef0651cd97fb14dc07bd06aee0ec13641e54ec93c18cc8668ec88e9"
+content-hash = "44035dbbfcc76b5179ab70b69e8ada9846729660f1db647e7ff5c923ca01819a"
