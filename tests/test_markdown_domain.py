@@ -3,9 +3,15 @@ import logging
 import pytest
 
 from gslides_api.markdown.domain import MarkdownDeck, MarkdownSlide
-from gslides_api.markdown.element import (ChartElement, ContentType,
-                                          ImageElement, MarkdownSlideElement,
-                                          TableData, TableElement, TextElement)
+from gslides_api.markdown.element import (
+    MarkdownChartElement,
+    ContentType,
+    MarkdownImageElement,
+    MarkdownSlideElement,
+    TableData,
+    MarkdownTableElement,
+    MarkdownTextElement,
+)
 
 
 @pytest.fixture
@@ -59,34 +65,32 @@ class TestContentType:
 
 class TestTextElement:
     def test_create_element(self):
-        element = TextElement(name="Test", content="Some content")
+        element = MarkdownTextElement(name="Test", content="Some content")
         assert element.name == "Test"
         assert element.content == "Some content"
         assert element.content_type == ContentType.TEXT
         assert element.metadata == {}
 
     def test_element_with_metadata(self):
-        element = TextElement(
+        element = MarkdownTextElement(
             name="Test", content="Some content", metadata={"key": "value"}
         )
         assert element.metadata == {"key": "value"}
 
     def test_to_markdown_with_comment(self):
-        element = TextElement(name="TestElement", content="## Header\n\nSome content")
+        element = MarkdownTextElement(name="TestElement", content="## Header\n\nSome content")
         result = element.to_markdown()
         expected = "<!-- text: TestElement -->\n## Header\n\nSome content"
         assert result == expected
 
     def test_to_markdown_default_text_no_comment(self):
-        element = TextElement(name="Default", content="# Title\n\nDefault content")
+        element = MarkdownTextElement(name="Default", content="# Title\n\nDefault content")
         result = element.to_markdown()
         expected = "# Title\n\nDefault content"
         assert result == expected
 
     def test_to_markdown_strips_trailing_whitespace(self):
-        element = TextElement(
-            name="Test", content="Content with trailing spaces   \n  "
-        )
+        element = MarkdownTextElement(name="Test", content="Content with trailing spaces   \n  ")
         result = element.to_markdown()
         expected = "<!-- text: Test -->\nContent with trailing spaces"
         assert result == expected
@@ -94,20 +98,17 @@ class TestTextElement:
 
 class TestImageElement:
     def test_create_valid_image_from_markdown(self):
-        element = ImageElement.from_markdown(
+        element = MarkdownImageElement.from_markdown(
             name="Image1", markdown_content="![alt text](https://example.com/image.jpg)"
         )
         assert element.name == "Image1"
         assert element.content_type == ContentType.IMAGE
         assert element.content == "https://example.com/image.jpg"  # URL in content
         assert element.metadata["alt_text"] == "alt text"  # Alt text in metadata
-        assert (
-            element.metadata["original_markdown"]
-            == "![alt text](https://example.com/image.jpg)"
-        )
+        assert element.metadata["original_markdown"] == "![alt text](https://example.com/image.jpg)"
 
     def test_create_valid_image_direct(self):
-        element = ImageElement(
+        element = MarkdownImageElement(
             name="Image1", content="![alt text](https://example.com/image.jpg)"
         )
         assert element.name == "Image1"
@@ -117,7 +118,7 @@ class TestImageElement:
 
     def test_image_round_trip(self):
         original = "![alt text](https://example.com/image.jpg)"
-        element = ImageElement.from_markdown("Test", original)
+        element = MarkdownImageElement.from_markdown("Test", original)
         reconstructed = element.to_markdown()
         assert "<!-- image: Test -->" in reconstructed
         assert original in reconstructed
@@ -126,7 +127,7 @@ class TestImageElement:
         with pytest.raises(
             ValueError, match="Image element must contain at least one markdown image"
         ):
-            ImageElement.from_markdown(
+            MarkdownImageElement.from_markdown(
                 name="BadImage", markdown_content="This is not an image"
             )
 
@@ -137,21 +138,19 @@ class TestTableElement:
 |----------|----------|
 | Cell 1   | Cell 2   |"""
 
-        element = TableElement(name="Table1", content=table_md)
+        element = MarkdownTableElement(name="Table1", content=table_md)
         assert element.name == "Table1"
         assert element.content_type == ContentType.TABLE
         assert element.content.headers == ["Header 1", "Header 2"]
         assert element.content.rows == [["Cell 1", "Cell 2"]]
 
     def test_invalid_table_content_raises(self):
-        with pytest.raises(
-            ValueError, match="Table element must contain a valid markdown table"
-        ):
-            TableElement(name="BadTable", content="This is not a table")
+        with pytest.raises(ValueError, match="Table element must contain a valid markdown table"):
+            MarkdownTableElement(name="BadTable", content="This is not a table")
 
     def test_table_to_markdown(self):
         table_data = TableData(headers=["A", "B"], rows=[["1", "2"]])
-        element = TableElement(name="Test", content=table_data)
+        element = MarkdownTableElement(name="Test", content=table_data)
         result = element.to_markdown()
         assert "<!-- table: Test -->" in result
         assert "| A | B |" in result
@@ -177,9 +176,7 @@ class TestTableElement:
             assert df.loc[2, "Name"] == "Carol"
 
             # Test that all data is string type (as expected from markdown tables)
-            assert all(
-                df.dtypes == "object"
-            ), "All columns should be object/string type"
+            assert all(df.dtypes == "object"), "All columns should be object/string type"
 
         except ImportError:
             pytest.skip("pandas not available")
@@ -191,7 +188,7 @@ class TestTableElement:
 | Widget  | $10   | 50    |
 | Gadget  | $25   | 30    |"""
 
-        element = TableElement(name="Products", content=table_md)
+        element = MarkdownTableElement(name="Products", content=table_md)
 
         try:
             df = element.to_df()
@@ -222,7 +219,7 @@ class TestTableElement:
             df = pd.DataFrame(data)
 
             # Create TableElement from DataFrame
-            element = TableElement.from_df(df, name="People")
+            element = MarkdownTableElement.from_df(df, name="People")
 
             # Test element properties
             assert element.name == "People"
@@ -253,7 +250,7 @@ class TestTableElement:
             df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
             metadata = {"source": "test_data", "created": "2024"}
 
-            element = TableElement.from_df(df, name="TestTable", metadata=metadata)
+            element = MarkdownTableElement.from_df(df, name="TestTable", metadata=metadata)
 
             assert element.metadata == {"source": "test_data", "created": "2024"}
 
@@ -267,7 +264,7 @@ class TestTableElement:
 
             # Test with non-DataFrame input
             with pytest.raises(ValueError, match="Input must be a pandas DataFrame"):
-                TableElement.from_df("not a dataframe", name="Test")
+                MarkdownTableElement.from_df("not a dataframe", name="Test")
 
         except ImportError:
             pytest.skip("pandas not available")
@@ -289,7 +286,7 @@ class TestTableElement:
                 mock_import.side_effect = side_effect
 
                 with pytest.raises(ImportError, match="pandas is required"):
-                    TableElement.from_df(None, name="Test")
+                    MarkdownTableElement.from_df(None, name="Test")
 
     def test_table_with_empty_cells(self):
         """Test DataFrame conversion with empty/missing cells."""
@@ -322,7 +319,7 @@ class TestChartElement:
 }
 ```"""
 
-        element = ChartElement(name="Chart1", content=chart_md)
+        element = MarkdownChartElement(name="Chart1", content=chart_md)
         assert element.name == "Chart1"
         assert element.content_type == ContentType.CHART
         assert element.metadata["chart_data"] == {"data": [1, 2, 3]}
@@ -331,11 +328,11 @@ class TestChartElement:
         with pytest.raises(
             ValueError, match="Chart element must contain only a ```json code block"
         ):
-            ChartElement(name="BadChart", content="This is not a JSON code block")
+            MarkdownChartElement(name="BadChart", content="This is not a JSON code block")
 
     def test_invalid_json_raises(self):
         with pytest.raises(ValueError, match="Chart element must contain valid JSON"):
-            ChartElement(name="BadJSON", content="```json\n{invalid json\n```")
+            MarkdownChartElement(name="BadJSON", content="```json\n{invalid json\n```")
 
 
 class TestMarkdownSlide:
@@ -345,16 +342,16 @@ class TestMarkdownSlide:
 
     def test_slide_with_elements(self):
         elements = [
-            TextElement(name="Default", content="# Title"),
-            ImageElement(name="Image1", content="![alt](url)"),
+            MarkdownTextElement(name="Default", content="# Title"),
+            MarkdownImageElement(name="Image1", content="![alt](url)"),
         ]
         slide = MarkdownSlide(elements=elements)
         assert len(slide.elements) == 2
 
     def test_to_markdown(self):
         elements = [
-            TextElement(name="Default", content="# Slide Title"),
-            TextElement(name="Description", content="Some description text"),
+            MarkdownTextElement(name="Default", content="# Slide Title"),
+            MarkdownTextElement(name="Description", content="Some description text"),
         ]
         slide = MarkdownSlide(elements=elements)
         result = slide.to_markdown()
@@ -447,7 +444,7 @@ class TestMarkdownDeck:
 
     def test_deck_with_slides(self):
         slides = [
-            MarkdownSlide(elements=[TextElement(name="Default", content="# Slide 1")])
+            MarkdownSlide(elements=[MarkdownTextElement(name="Default", content="# Slide 1")])
         ]
         deck = MarkdownDeck(slides=slides)
         assert len(deck.slides) == 1
@@ -455,7 +452,7 @@ class TestMarkdownDeck:
     def test_dumps_single_slide(self):
         deck = MarkdownDeck(
             slides=[
-                MarkdownSlide(elements=[TextElement(name="Default", content="# Title")])
+                MarkdownSlide(elements=[MarkdownTextElement(name="Default", content="# Title")])
             ]
         )
         result = deck.dumps()
@@ -465,12 +462,8 @@ class TestMarkdownDeck:
     def test_dumps_multiple_slides(self):
         deck = MarkdownDeck(
             slides=[
-                MarkdownSlide(
-                    elements=[TextElement(name="Default", content="# Slide 1")]
-                ),
-                MarkdownSlide(
-                    elements=[TextElement(name="Default", content="# Slide 2")]
-                ),
+                MarkdownSlide(elements=[MarkdownTextElement(name="Default", content="# Slide 1")]),
+                MarkdownSlide(elements=[MarkdownTextElement(name="Default", content="# Slide 2")]),
             ]
         )
         result = deck.dumps()
@@ -482,7 +475,7 @@ class TestMarkdownDeck:
             slides=[
                 MarkdownSlide(elements=[]),  # Empty slide
                 MarkdownSlide(
-                    elements=[TextElement(name="Default", content="# Valid Slide")]
+                    elements=[MarkdownTextElement(name="Default", content="# Valid Slide")]
                 ),
             ]
         )
@@ -565,8 +558,7 @@ This is a summary slide with a name."""
         assert len(slide.elements) == 1
         assert slide.elements[0].name == "Default"
         assert (
-            slide.elements[0].content
-            == "# Summary Slide\n\nThis is a summary slide with a name."
+            slide.elements[0].content == "# Summary Slide\n\nThis is a summary slide with a name."
         )
 
     def test_slide_without_name(self):
@@ -604,7 +596,7 @@ This slide has no name."""
         """Test serialization of slide name to markdown."""
         slide = MarkdownSlide(
             name="Test Slide",
-            elements=[TextElement(name="Default", content="# Content")],
+            elements=[MarkdownTextElement(name="Default", content="# Content")],
         )
 
         result = slide.to_markdown()
@@ -621,9 +613,7 @@ This slide has no name."""
 
     def test_slide_name_to_markdown_no_name(self):
         """Test serialization of slide without name."""
-        slide = MarkdownSlide(
-            elements=[TextElement(name="Default", content="# Content")]
-        )
+        slide = MarkdownSlide(elements=[MarkdownTextElement(name="Default", content="# Content")])
 
         result = slide.to_markdown()
         expected = "# Content"

@@ -10,12 +10,14 @@ from pydantic import Field, field_validator
 from gslides_api.client import GoogleAPIClient
 from gslides_api.domain import Image, ImageData, ImageReplaceMethod
 from gslides_api.element.base import ElementKind, PageElementBase
-from gslides_api.markdown.element import ImageElement as MarkdownImageElement
-from gslides_api.request.request import (CreateImageRequest, GSlidesAPIRequest,
-                                         ReplaceImageRequest,
-                                         UpdateImagePropertiesRequest)
-from gslides_api.utils import (dict_to_dot_separated_field_list,
-                               image_url_is_valid)
+from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
+from gslides_api.request.request import (
+    CreateImageRequest,
+    GSlidesAPIRequest,
+    ReplaceImageRequest,
+    UpdateImagePropertiesRequest,
+)
+from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 
 
 class ImageElement(PageElementBase):
@@ -39,10 +41,7 @@ class ImageElement(PageElementBase):
         parent_id: str | None = None,
     ) -> List[GSlidesAPIRequest]:
         """Create a request to create an image element like the given element."""
-        url = (
-            url
-            or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
-        )
+        url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
         element_properties = e.element_properties(parent_id or e.slide_id)
         request = CreateImageRequest(
             objectId=image_id,
@@ -86,10 +85,7 @@ class ImageElement(PageElementBase):
         """Convert an ImageElement to an update request for the Google Slides API."""
         requests = self.alt_text_update_request(element_id)
 
-        if (
-            hasattr(self.image, "imageProperties")
-            and self.image.imageProperties is not None
-        ):
+        if hasattr(self.image, "imageProperties") and self.image.imageProperties is not None:
             image_properties = self.image.imageProperties.to_api_format()
             # "fields": "*" causes an error
             request = UpdateImagePropertiesRequest(
@@ -201,9 +197,7 @@ class ImageElement(PageElementBase):
 
         if not url:
             logger.error("No image URL available for element %s", self.objectId)
-            raise ValueError(
-                "No image URL available (neither contentUrl nor sourceUrl)"
-            )
+            raise ValueError("No image URL available (neither contentUrl nor sourceUrl)")
 
         logger.info("Downloading image from URL: %s", url)
 
@@ -237,9 +231,7 @@ class ImageElement(PageElementBase):
             if path:
                 guessed_type, _ = mimetypes.guess_type(path)
                 if guessed_type and guessed_type.startswith("image/"):
-                    logger.debug(
-                        "Guessed MIME type from URL: %s -> %s", path, guessed_type
-                    )
+                    logger.debug("Guessed MIME type from URL: %s -> %s", path, guessed_type)
                     mime_type = guessed_type
                 else:
                     logger.warning(
@@ -264,9 +256,7 @@ class ImageElement(PageElementBase):
             mime_type,
         )
 
-        return ImageData(
-            content=response.content, mime_type=mime_type, filename=filename
-        )
+        return ImageData(content=response.content, mime_type=mime_type, filename=filename)
 
     def to_markdown_element(self, name: str = "Image") -> MarkdownImageElement:
         """Convert ImageElement to MarkdownImageElement for round-trip conversion."""
@@ -297,9 +287,7 @@ class ImageElement(PageElementBase):
 
         if hasattr(self, "transform") and self.transform:
             metadata["transform"] = (
-                self.transform.to_api_format()
-                if hasattr(self.transform, "to_api_format")
-                else None
+                self.transform.to_api_format() if hasattr(self.transform, "to_api_format") else None
             )
 
         # Store title and description if available
@@ -316,9 +304,7 @@ class ImageElement(PageElementBase):
                 else None
             )
 
-        return MarkdownImageElement(
-            name=name, content=markdown_content, metadata=metadata
-        )
+        return MarkdownImageElement(name=name, content=markdown_content, metadata=metadata)
 
     @classmethod
     def from_markdown_element(
@@ -359,12 +345,8 @@ class ImageElement(PageElementBase):
             from gslides_api.domain import Dimension, Size, Unit
 
             element_props.size = Size(
-                width=Dimension(
-                    magnitude=size_data["width"], unit=Unit(size_data["unit"])
-                ),
-                height=Dimension(
-                    magnitude=size_data["height"], unit=Unit(size_data["unit"])
-                ),
+                width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
+                height=Dimension(magnitude=size_data["height"], unit=Unit(size_data["unit"])),
             )
         else:
             # Provide default size for images

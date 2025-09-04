@@ -9,7 +9,7 @@ from gslides_api.request.domain import TableCellLocation
 from gslides_api.table import Table
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import TableData
-from gslides_api.markdown.element import TableElement as MarkdownTableElement
+from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
 from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
 from gslides_api.request.table import CreateTableRequest
 

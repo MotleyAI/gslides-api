@@ -24,10 +24,10 @@ from gslides_api.element.table import TableElement
 from gslides_api.table import Table
 from gslides_api.element.shape import ShapeElement
 from gslides_api.markdown.element import ContentType
-from gslides_api.markdown.element import ImageElement as MarkdownImageElement
+from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.markdown.element import TableData
-from gslides_api.markdown.element import TableElement as MarkdownTableElement
-from gslides_api.markdown.element import TextElement as MarkdownTextElement
+from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
+from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.text import ParagraphMarker, ShapeProperties
 from gslides_api.element.text_container import Shape, TextContent
 from gslides_api.text import TextElement as GSlidesTextElement
@@ -196,8 +196,9 @@ class TestTableElementConversion:
         # Should have at least a CreateTableRequest
         assert len(requests) > 0
         from gslides_api.request.table import CreateTableRequest
+
         assert isinstance(requests[0], CreateTableRequest)
-        
+
         # Verify table dimensions
         create_request = requests[0]
         assert create_request.rows == 3  # 2 data rows + 1 header
@@ -309,10 +310,11 @@ class TestIntegrationRoundTrip:
         # Empty table - test request generation
         empty_table_data = TableData(headers=["Col1"], rows=[])
         empty_table = MarkdownTableElement(name="Empty", content=empty_table_data)
-        
+
         # Should generate valid API requests even for empty table
         requests = TableElement.markdown_element_to_requests(empty_table, "slide_123")
         from gslides_api.request.table import CreateTableRequest
+
         assert len(requests) > 0
         assert isinstance(requests[0], CreateTableRequest)
         assert requests[0].rows == 1  # Just header row
@@ -342,7 +344,7 @@ class TestIntegrationRoundTrip:
         large_table_data = TableData(headers=headers, rows=rows)
 
         large_table = MarkdownTableElement(name="Large", content=large_table_data)
-        
+
         # Convert to API requests
         requests = TableElement.markdown_element_to_requests(
             large_table, parent_id="slide_123", element_id="large_table"
@@ -350,6 +352,7 @@ class TestIntegrationRoundTrip:
 
         # Verify table creation request
         from gslides_api.request.table import CreateTableRequest
+
         assert isinstance(requests[0], CreateTableRequest)
         create_request = requests[0]
         assert create_request.rows == 21  # 20 data rows + 1 header

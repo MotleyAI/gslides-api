@@ -6,7 +6,7 @@ from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
 from gslides_api.domain import Dimension, OutputUnit, PageElementProperties, Unit
 from gslides_api.element.base import ElementKind, PageElementBase
-from gslides_api.markdown.element import TextElement as MarkdownTextElement
+from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
 from gslides_api.request.domain import Range, RangeType
