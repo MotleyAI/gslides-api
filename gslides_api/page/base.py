@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
+import gslides_api
 from gslides_api.client import GoogleAPIClient
 from gslides_api.domain import ColorScheme, GSlidesBaseModel, PageBackgroundFill
 from gslides_api.element.base import ElementKind
@@ -94,7 +95,7 @@ class BasePage(GSlidesBaseModel):
         api_client: Optional[GoogleAPIClient] = None,
     ) -> "BasePage":
         # To avoid circular imports
-        client = api_client or globals()["api_client"]
+        client = api_client or gslides_api.client.api_client
         json = client.get_slide_json(presentation_id, slide_id)
         new_slide = cls.model_validate(json)
         new_slide.presentation_id = presentation_id
