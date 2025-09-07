@@ -22,14 +22,14 @@ from gslides_api.domain import (
 from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement
 from gslides_api.table import Table
-from gslides_api.element.shape import ShapeElement
+from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.markdown.element import ContentType
 from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.text import ParagraphMarker, ShapeProperties
-from gslides_api.element.text_container import Shape, TextContent
+from gslides_api.element.text_content import TextContent
 from gslides_api.text import TextElement as GSlidesTextElement
 from gslides_api.text import TextRun, TextStyle
 from gslides_api.text import Type as ShapeType

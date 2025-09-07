@@ -2,10 +2,12 @@ from typing import List, Optional
 
 from pydantic import Field, field_validator
 
+from gslides_api.text import ShapeProperties
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
-from gslides_api.domain import Dimension, OutputUnit, PageElementProperties, Unit
+from gslides_api.domain import Dimension, GSlidesBaseModel, OutputUnit, PageElementProperties
 from gslides_api.element.base import ElementKind, PageElementBase
+from gslides_api.element.text_content import TextContent
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
@@ -17,11 +19,19 @@ from gslides_api.request.request import (
     GSlidesAPIRequest,
     UpdateTextStyleRequest,
 )
-from gslides_api.text import TextStyle
-from gslides_api.element.text_container import Shape, TextContainer
+from gslides_api.text import Placeholder, TextStyle, Type
 
 
-class ShapeElement(TextContainer):
+class Shape(GSlidesBaseModel):
+    """Represents a shape in a slide."""
+
+    shapeProperties: ShapeProperties
+    shapeType: Optional[Type] = None  # Make optional to preserve original JSON exactly
+    text: Optional[TextContent] = None
+    placeholder: Optional[Placeholder] = None
+
+
+class ShapeElement(PageElementBase):
     """Represents a shape element on a slide."""
 
     shape: Shape
@@ -76,7 +86,9 @@ class ShapeElement(TextContainer):
         return requests
 
     def delete_text_request(self) -> List[GSlidesAPIRequest]:
-        return self._delete_text_request()
+        out = self.shape.text.delete_text_request()
+        out.objectId = self.objectId
+        return out
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
         client = api_client or default_api_client
@@ -113,14 +125,18 @@ class ShapeElement(TextContainer):
         autoscale: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
     ):
-        requests = self.write_text_requests(
+        size_inches = self.absolute_size(OutputUnit.IN)
+        requests = self.shape.text.write_text_requests(
             text=text,
             as_markdown=as_markdown,
             styles=styles,
             overwrite=overwrite,
             autoscale=autoscale,
-            location=None,
+            size_inches=size_inches,
         )
+
+        for r in requests:
+            r.objectId = self.objectId
 
         if requests:
             client = api_client or default_api_client
@@ -186,7 +202,7 @@ class ShapeElement(TextContainer):
 
         # Create basic shape with text content
         from gslides_api.text import ShapeProperties
-        from gslides_api.element.text_container import TextContent
+        from gslides_api.element.text_content import TextContent
         from gslides_api.text import Type as ShapeType
 
         # Create a minimal shape - the actual content will be written via write_text

@@ -6,7 +6,7 @@ from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient, api_client
 from gslides_api.domain import LayoutReference, ThumbnailProperties, ThumbnailSize, Transform
-from gslides_api.element.shape import ShapeElement
+from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.page.base import BasePage, ElementKind, PageType
 from gslides_api.page.slide_properties import SlideProperties
 from gslides_api.request.domain import Range, RangeType
@@ -20,7 +20,6 @@ from gslides_api.request.request import (
 )
 from gslides_api.response import ImageThumbnail
 from gslides_api.text import ShapeProperties
-from gslides_api.element.text_container import Shape
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)

@@ -16,14 +16,13 @@ from gslides_api.client import api_client, initialize_credentials
 from gslides_api.domain import Dimension, Size, Transform, Unit
 from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement
-from gslides_api.element.shape import ShapeElement
+from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.presentation import Presentation
 from gslides_api.text import ShapeProperties
-from gslides_api.element.text_container import Shape
 from gslides_api.text import Type as ShapeType
 
 

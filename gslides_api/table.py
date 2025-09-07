@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Optional
 
 from gslides_api.domain import Dimension, GSlidesBaseModel, SolidFill, DashStyle
-from gslides_api.element.text_container import TextContent
+from gslides_api.element.text_content import TextContent
 
 
 class TableCellLocation(GSlidesBaseModel):
@@ -54,6 +54,16 @@ class TableCell(GSlidesBaseModel):
     columnSpan: Optional[int] = None
     text: Optional[TextContent] = None
     tableCellProperties: Optional[TableCellProperties] = None
+
+    def read_text(self) -> str:
+        if self.text is None:
+            return ""
+        return self.text.read_text()
+
+    def write_text(self, text: str) -> None:
+        if self.text is None:
+            self.text = TextContent()
+        self.text.textElements = [TextElement(textRun=TextRun(content=text))]
 
 
 class TableRow(GSlidesBaseModel):
