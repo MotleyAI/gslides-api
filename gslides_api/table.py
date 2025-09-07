@@ -1,8 +1,10 @@
 from enum import Enum
 from typing import List, Optional
 
+from gslides_api.client import GoogleAPIClient, api_client as default_api_client
 from gslides_api.domain import Dimension, GSlidesBaseModel, SolidFill, DashStyle
 from gslides_api.element.text_content import TextContent
+from gslides_api.text import TextStyle
 
 
 class TableCellLocation(GSlidesBaseModel):
@@ -60,10 +62,33 @@ class TableCell(GSlidesBaseModel):
             return ""
         return self.text.read_text()
 
-    def write_text(self, text: str) -> None:
-        if self.text is None:
-            self.text = TextContent()
-        self.text.textElements = [TextElement(textRun=TextRun(content=text))]
+    # TODO: implement; problem is that autoscale doesn't work because the cell
+    # is not aware of its size, which is stored in its Table ancestor
+    # def write_text(
+    #     self,
+    #     text: str,
+    #     as_markdown: bool = True,
+    #     styles: List[TextStyle] | None = None,
+    #     overwrite: bool = True,
+    #     autoscale: bool = False,
+    #     api_client: Optional[GoogleAPIClient] = None,
+    # ) -> None:
+    #     if self.text is None:
+    #         self.text = TextContent()
+    #     requests = self.text.write_text_requests(
+    #         text=text,
+    #         as_markdown=as_markdown,
+    #         styles=styles,
+    #         overwrite=overwrite,
+    #         autoscale=autoscale,
+    #     )
+    #     for r in requests:
+    #         r.objectId = self.objectId
+    #         if hasattr(r, "cellLocation"):
+    #             r.cellLocation = self.location
+    #     if requests:
+    #         client = api_client or default_api_client
+    #         return client.batch_update(requests, self.presentation_id)
 
 
 class TableRow(GSlidesBaseModel):

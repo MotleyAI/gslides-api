@@ -86,9 +86,7 @@ class ShapeElement(PageElementBase):
         return requests
 
     def delete_text_request(self) -> List[GSlidesAPIRequest]:
-        out = self.shape.text.delete_text_request()
-        out.objectId = self.objectId
-        return out
+        return self.shape.text.delete_text_request(self.objectId)
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
         client = api_client or default_api_client

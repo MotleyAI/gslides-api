@@ -80,10 +80,11 @@ class TextContent(GSlidesBaseModel):
                         out.append("\n")
             return "".join(out)
 
-    def delete_text_request(self) -> List[GSlidesAPIRequest]:
+    def delete_text_request(self, object_id: str = "") -> List[GSlidesAPIRequest]:
         """Convert the text content to a list of requests to delete the text in the element.
-        IMPORTANT: This does not set the objectId on the requests as the container doesn't know it,
-        so the caller must set it before sending the requests, ditto for CellLocation if needed.
+        
+        Args:
+            object_id: The objectId to set on the requests. If empty, caller must set it later.
         """
 
         # If there are any bullets, need to delete them first
@@ -91,6 +92,7 @@ class TextContent(GSlidesBaseModel):
         if self.lists is not None and len(self.lists) > 0:
             out.append(
                 DeleteParagraphBulletsRequest(
+                    objectId=object_id,
                     textRange=Range(type=RangeType.ALL),
                 ),
             )
@@ -98,7 +100,10 @@ class TextContent(GSlidesBaseModel):
         if (not self.textElements) or self.textElements[0].endIndex == 0:
             return out
 
-        out.append(DeleteTextRequest(textRange=Range(type=RangeType.ALL)))
+        out.append(DeleteTextRequest(
+            objectId=object_id,
+            textRange=Range(type=RangeType.ALL)
+        ))
         return out
 
     def write_text_requests(

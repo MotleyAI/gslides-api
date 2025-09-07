@@ -1,8 +1,9 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 import uuid
 
 from pydantic import Field, field_validator
 
+from gslides_api.client import GoogleAPIClient
 from gslides_api.domain import OutputUnit
 from gslides_api.request.domain import TableCellLocation
 from gslides_api.table import Table
@@ -93,8 +94,21 @@ class TableElement(PageElementBase):
                 out.append(this_row)
             return out
 
-    def __getitem__(self, rowIndex: int, columnIndex: int):
-        return self.table.tableRows[rowIndex].tableCells[columnIndex]
+    def __getitem__(self, key):
+        """Get a table cell by row/column indices or TableCellLocation.
+
+        Supports multiple access patterns:
+        - table[row, col] - tuple syntax (most common)
+        - table[location] - TableCellLocation object
+        """
+        if isinstance(key, TableCellLocation):
+            row_idx, col_idx = key.rowIndex, key.columnIndex
+        elif isinstance(key, tuple) and len(key) == 2:
+            row_idx, col_idx = key
+        else:
+            raise TypeError("Table indexing requires either (row, col) tuple or TableCellLocation")
+
+        return self.table.tableRows[row_idx].tableCells[col_idx]
 
     def write_text_to_cell_requests(
         self,
@@ -105,27 +119,116 @@ class TableElement(PageElementBase):
         overwrite: bool = True,
         autoscale: bool = False,
     ) -> List[GSlidesAPIRequest]:
-        cell = self[location.rowIndex, location.columnIndex]
-        size_inches = self.absolute_size(OutputUnit.IN, location)
-        requests = cell.text.write_text_requests(
-            text=text,
-            as_markdown=as_markdown,
-            styles=styles,
-            overwrite=overwrite,
-            autoscale=autoscale,
-            size_inches=size_inches,
-        )
+        # Validate cell location is within table bounds
+        if (
+            location.rowIndex >= self.table.rows
+            or location.columnIndex >= self.table.columns
+            or location.rowIndex < 0
+            or location.columnIndex < 0
+        ):
+            raise ValueError(
+                f"Cell location ({location.rowIndex}, {location.columnIndex}) "
+                f"is outside table bounds ({self.table.rows}, {self.table.columns})"
+            )
+
+        # If table structure is populated, use the existing cell's text content
+        if (
+            self.table.tableRows is not None
+            and location.rowIndex < len(self.table.tableRows)
+            and self.table.tableRows[location.rowIndex].tableCells is not None
+            and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
+        ):
+            cell = self[location.rowIndex, location.columnIndex]
+            size_inches = self.absolute_size(OutputUnit.IN, location)
+            requests = cell.text.write_text_requests(
+                text=text,
+                as_markdown=as_markdown,
+                styles=styles,
+                overwrite=overwrite,
+                autoscale=autoscale,
+                size_inches=size_inches,
+            )
+        else:
+            # Table structure not populated yet (e.g., during creation from markdown)
+            # Create a temporary TextContent to generate the requests
+            from gslides_api.element.text_content import TextContent
+
+            temp_text_content = TextContent(textElements=[])
+
+            # Calculate size if possible, otherwise use default
+            try:
+                size_inches = self.absolute_size(OutputUnit.IN, location)
+            except (ValueError, AttributeError):
+                size_inches = (4.0, 1.0) if autoscale else None
+
+            requests = temp_text_content.write_text_requests(
+                text=text,
+                as_markdown=as_markdown,
+                styles=styles,
+                overwrite=overwrite,
+                autoscale=autoscale,
+                size_inches=size_inches,
+            )
+
+        # Set objectId and cellLocation on all requests
         for r in requests:
             r.objectId = self.objectId
             if hasattr(r, "cellLocation"):
                 r.cellLocation = location
         return requests
 
+    def write_text_to_cell(
+        self,
+        text: str,
+        location: TableCellLocation = None,
+        as_markdown: bool = True,
+        styles: List[TextStyle] | None = None,
+        overwrite: bool = True,
+        autoscale: bool = False,
+        api_client: Optional[GoogleAPIClient] = None,
+    ) -> dict[str, Any]:
+        requests = self.write_text_to_cell_requests(
+            text=text,
+            location=location,
+            as_markdown=as_markdown,
+            styles=styles,
+            overwrite=overwrite,
+            autoscale=autoscale,
+        )
+        if requests:
+            client = api_client or globals()["api_client"]
+            return client.batch_update(requests, self.presentation_id)
+
     def delete_text_in_cell_requests(self, location: TableCellLocation) -> List[GSlidesAPIRequest]:
-        cell = self[location.rowIndex, location.columnIndex]
-        requests = cell.text.delete_text_request()
+        # Validate cell location is within table bounds
+        if (
+            location.rowIndex >= self.table.rows
+            or location.columnIndex >= self.table.columns
+            or location.rowIndex < 0
+            or location.columnIndex < 0
+        ):
+            raise ValueError(
+                f"Cell location ({location.rowIndex}, {location.columnIndex}) "
+                f"is outside table bounds ({self.table.rows}, {self.table.columns})"
+            )
+
+        # If table structure is populated, use the existing cell's text content
+        if (
+            self.table.tableRows is not None
+            and location.rowIndex < len(self.table.tableRows)
+            and self.table.tableRows[location.rowIndex].tableCells is not None
+            and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
+        ):
+            cell = self[location.rowIndex, location.columnIndex]
+            requests = cell.text.delete_text_request(self.objectId)
+        else:
+            # Table structure not populated yet - create generic delete requests
+            from gslides_api.element.text_content import TextContent
+
+            temp_text_content = TextContent(textElements=[])
+            requests = temp_text_content.delete_text_request(self.objectId)
+
         for r in requests:
-            r.objectId = self.objectId
             if hasattr(r, "cellLocation"):
                 r.cellLocation = location
         return requests
