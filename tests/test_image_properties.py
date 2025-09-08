@@ -1,6 +1,6 @@
 import pytest
 
-from gslides_api.domain_old import (
+from gslides_api.domain.domain import (
     Color,
     ColorStop,
     CropProperties,

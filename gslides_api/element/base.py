@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import Field
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain_old import (
+from gslides_api.domain.domain import (
     GSlidesBaseModel,
     OutputUnit,
     PageElementProperties,

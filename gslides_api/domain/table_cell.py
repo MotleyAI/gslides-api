@@ -1,6 +1,6 @@
 from typing import Optional
 
-from gslides_api.domain_old import GSlidesBaseModel
+from gslides_api.domain.domain import GSlidesBaseModel
 
 
 class TableCellLocation(GSlidesBaseModel):

@@ -3,7 +3,7 @@ from io import BytesIO
 
 import requests
 
-from gslides_api.domain_old import GSlidesBaseModel
+from gslides_api.domain.domain import GSlidesBaseModel
 
 
 class ImageThumbnail(GSlidesBaseModel):

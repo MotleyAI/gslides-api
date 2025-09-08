@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from gslides_api.domain_old import Color, RgbColor, ThemeColorType
+from gslides_api.domain.domain import Color, RgbColor, ThemeColorType
 from gslides_api.json_diff import json_diff
 
 

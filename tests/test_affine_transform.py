@@ -2,7 +2,7 @@
 
 import pytest
 
-from gslides_api.domain_old import AffineTransform, Unit
+from gslides_api.domain.domain import AffineTransform, Unit
 
 
 class TestUnit:

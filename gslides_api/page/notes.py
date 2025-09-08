@@ -1,6 +1,6 @@
 from pydantic import Field, field_validator
 
-from gslides_api.domain_old import GSlidesBaseModel
+from gslides_api.domain.domain import GSlidesBaseModel
 from gslides_api.page.base import BasePage, PageType
 
 

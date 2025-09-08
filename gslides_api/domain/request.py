@@ -1,9 +1,9 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import Field, model_validator
 
-from gslides_api.domain_old import GSlidesBaseModel
+from gslides_api.domain.domain import GSlidesBaseModel
 
 
 class RangeType(Enum):
@@ -55,26 +55,6 @@ class Range(GSlidesBaseModel):
             if self.endIndex is not None:
                 raise ValueError("endIndex must be None when type is FROM_START_INDEX")
         return self
-
-
-# class TableCellLocation(GSlidesBaseModel):
-#     """Represents the location of a cell in a table.
-#
-#     Used to specify which table cell contains the text to be modified
-#     when the target object is a table rather than a shape.
-#     """
-#
-#     rowIndex: int = Field(description="The 0-based row index of the table cell")
-#     columnIndex: int = Field(description="The 0-based column index of the table cell")
-#
-#     @model_validator(mode="after")
-#     def validate_indexes(self) -> "TableCellLocation":
-#         """Validate that row and column indexes are non-negative."""
-#         if self.rowIndex < 0:
-#             raise ValueError("rowIndex must be non-negative")
-#         if self.columnIndex < 0:
-#             raise ValueError("columnIndex must be non-negative")
-#         return self
 
 
 class PlaceholderIdMapping(GSlidesBaseModel):

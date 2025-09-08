@@ -3,12 +3,15 @@ from typing import List, Optional
 
 import gslides_api
 from gslides_api.client import GoogleAPIClient
-from gslides_api.domain_old import ColorScheme, GSlidesBaseModel, PageBackgroundFill
+from gslides_api.domain.domain import ColorScheme, GSlidesBaseModel, PageBackgroundFill
 from gslides_api.element.base import ElementKind
 from gslides_api.element.element import PageElement
 from pydantic import Field, model_validator
 
 from gslides_api.request.parent import GSlidesAPIRequest
+
+# https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#pageelementproperties
+# Note: When you initially create a PageElement, the API may modify the values of both size and transform, but the visual size will be unchanged.
 
 
 class PageType(Enum):

@@ -1,6 +1,6 @@
 import pytest
 
-from gslides_api.domain_old import LayoutReference, PredefinedLayout
+from gslides_api.domain.domain import LayoutReference, PredefinedLayout
 
 
 def test_layout_reference_validation():

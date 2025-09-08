@@ -2,7 +2,7 @@
 
 import pytest
 
-from gslides_api.domain_old import MimeType, ThumbnailProperties, ThumbnailSize
+from gslides_api.domain.domain import MimeType, ThumbnailProperties, ThumbnailSize
 
 
 class TestMimeType:
@@ -108,7 +108,7 @@ class TestThumbnailProperties:
 
     def test_thumbnail_properties_inheritance(self):
         """Test that ThumbnailProperties inherits from GSlidesBaseModel."""
-        from gslides_api.domain_old import GSlidesBaseModel
+        from gslides_api.domain.domain import GSlidesBaseModel
 
         props = ThumbnailProperties()
         assert isinstance(props, GSlidesBaseModel)

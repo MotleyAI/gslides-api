@@ -13,7 +13,7 @@ import pytest
 from gslides_api.client import api_client, initialize_credentials
 
 # Note: Importing individual element types instead of union type
-from gslides_api.domain_old import Dimension, Size, Transform, Unit
+from gslides_api.domain.domain import Dimension, Size, Transform, Unit
 from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement
 from gslides_api.element.shape import Shape, ShapeElement

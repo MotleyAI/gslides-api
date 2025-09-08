@@ -5,8 +5,7 @@ Tests for the requests module, specifically CreateParagraphBulletsRequest and re
 import pytest
 from pydantic import ValidationError
 
-
-from gslides_api.domain_old import (
+from gslides_api.domain.domain import (
     BulletGlyphPreset,
     LayoutReference,
     PageElementProperties,
@@ -15,8 +14,8 @@ from gslides_api.domain_old import (
     Transform,
 )
 
-from gslides_api.table_cell import TableCellLocation
-from gslides_api.request.domain import Range, RangeType
+from gslides_api.domain.table_cell import TableCellLocation
+from gslides_api.domain.request import Range, RangeType
 from gslides_api.request.request import (
     CreateParagraphBulletsRequest,
     CreateShapeRequest,

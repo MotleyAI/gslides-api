@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain_old import GSlidesBaseModel, Size
+from gslides_api.domain.domain import GSlidesBaseModel, Size
 from gslides_api.page.page import Layout, Master, NotesMaster, Page
 from gslides_api.page.slide import Slide
 

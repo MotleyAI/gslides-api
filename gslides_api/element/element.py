@@ -2,7 +2,7 @@ from typing import Annotated, Any, List, Union
 
 from pydantic import Discriminator, Field, Tag, field_validator
 
-from gslides_api.domain_old import Group, Line, SheetsChart, SpeakerSpotlight, Video, WordArt
+from gslides_api.domain.domain import Group, Line, SheetsChart, SpeakerSpotlight, Video, WordArt
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.image import ImageElement
 from gslides_api.element.shape import ShapeElement

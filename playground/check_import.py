@@ -77,7 +77,7 @@ except Exception as e:
                 # Let's check the Group model specifically
                 if "elementGroup" in element:
                     print("\nTrying to validate just the elementGroup:")
-                    from gslides_api.domain_old import Group
+                    from gslides_api.domain.domain import Group
 
                     try:
                         group = Group.model_validate(element["elementGroup"])

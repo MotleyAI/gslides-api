@@ -1,9 +1,9 @@
 from enum import Enum
 from typing import List, Optional
 
-from gslides_api.table_cell import TableCellLocation
-from gslides_api.domain_old import Dimension, GSlidesBaseModel, SolidFill, DashStyle
+from gslides_api.domain.domain import DashStyle, Dimension, GSlidesBaseModel, SolidFill
 from gslides_api.element.text_content import TextContent
+from gslides_api.domain.table_cell import TableCellLocation
 
 
 class ContentAlignment(Enum):
@@ -56,36 +56,6 @@ class TableCell(GSlidesBaseModel):
 
     def write_text(self, *args, **kwargs):
         raise NotImplementedError("Use TableElement.write_text_to_cell instead.")
-
-    # def write_text(
-    #     self,
-    #     text: str,
-    #     as_markdown: bool = True,
-    #     styles: List[TextStyle] | None = None,
-    #     overwrite: bool = True,
-    #     autoscale: bool = False,
-    #     api_client: Optional[GoogleAPIClient] = None,
-    # ) -> None:
-    #     if autoscale:
-    #         raise NotImplementedError(
-    #             "Autoscale not implemented for table cells yet, call TableElement.write_text_to_cell instead."
-    #         )
-    #     if self.text is None:
-    #         self.text = TextContent()
-    #     requests = self.text.write_text_requests(
-    #         text=text,
-    #         as_markdown=as_markdown,
-    #         styles=styles,
-    #         overwrite=overwrite,
-    #         autoscale=autoscale,
-    #     )
-    #     for r in requests:
-    #         r.objectId = self.objectId
-    #         if hasattr(r, "cellLocation"):
-    #             r.cellLocation = self.location
-    #     if requests:
-    #         client = api_client or default_api_client
-    #         return client.batch_update(requests, self.presentation_id)
 
 
 class TableRow(GSlidesBaseModel):

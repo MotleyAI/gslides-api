@@ -1,6 +1,6 @@
 import pytest
 
-from gslides_api.domain_old import Size, Transform
+from gslides_api.domain.domain import Size, Transform
 from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.page.base import PageProperties
 from gslides_api.page.slide import Slide

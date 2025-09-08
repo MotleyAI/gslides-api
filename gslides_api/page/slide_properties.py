@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from gslides_api.domain_old import GSlidesBaseModel
+from gslides_api.domain.domain import GSlidesBaseModel
 from gslides_api.page.notes import Notes
 from gslides_api.request.parent import GSlidesAPIRequest
 

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import TypeAdapter
 
-from gslides_api.domain_old import (
+from gslides_api.domain.domain import (
     Dimension,
     Group,
     Image,
@@ -20,7 +20,7 @@ from gslides_api.domain_old import (
     WordArt,
 )
 from gslides_api.element.base import AltText, PageElementBase
-from gslides_api.table import Table
+from gslides_api.domain.table import Table
 from gslides_api.element.element import (
     GroupElement,
     LineElement,

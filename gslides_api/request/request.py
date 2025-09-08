@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 from pydantic import Field
 
-from gslides_api.domain_old import (
+from gslides_api.domain.domain import (
     AffineTransform,
     BulletGlyphPreset,
     ImageProperties,
@@ -11,13 +11,9 @@ from gslides_api.domain_old import (
     PageElementProperties,
     VideoProperties,
 )
-from gslides_api.request.domain import (
-    PlaceholderIdMapping,
-    Range,
-    SubstringMatchCriteria,
-)
+from gslides_api.domain.request import PlaceholderIdMapping, Range, SubstringMatchCriteria
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.table_cell import TableCellLocation
+from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.text import ParagraphStyle, ShapeProperties, TextStyle, Type
 
 

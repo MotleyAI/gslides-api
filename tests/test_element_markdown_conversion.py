@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from gslides_api.domain_old import (
+from gslides_api.domain.domain import (
     AffineTransform,
     Dimension,
     Image,
@@ -21,7 +21,7 @@ from gslides_api.domain_old import (
 )
 from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement
-from gslides_api.table import Table
+from gslides_api.domain.table import Table
 from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.markdown.element import ContentType
 from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement

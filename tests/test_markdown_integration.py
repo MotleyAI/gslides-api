@@ -14,7 +14,7 @@ import pytest
 from gslides_api.presentation import Presentation, Slide
 from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.element.text_content import TextContent
-from gslides_api.domain_old import Dimension, Size, Transform, Unit
+from gslides_api.domain.domain import Dimension, Size, Transform, Unit
 from gslides_api.domain.text import ShapeProperties, TextStyle, Type as ShapeType
 from gslides_api.client import api_client, initialize_credentials
 

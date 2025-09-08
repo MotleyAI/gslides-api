@@ -2,15 +2,15 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from gslides_api.table import (
-    TableColumnProperties,
-    TableRowProperties,
-    TableCellProperties,
+from gslides_api.domain.table import (
     TableBorderProperties,
+    TableCellProperties,
+    TableColumnProperties,
     TableRange,
+    TableRowProperties,
 )
-from gslides_api.domain_old import PageElementProperties
-from gslides_api.table_cell import TableCellLocation
+from gslides_api.domain.domain import PageElementProperties
+from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.request.parent import GSlidesAPIRequest
 
 

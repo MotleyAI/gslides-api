@@ -24,7 +24,7 @@ class TestImageThumbnail:
 
     def test_image_thumbnail_inheritance(self):
         """Test that ImageThumbnail inherits from GSlidesBaseModel."""
-        from gslides_api.domain_old import GSlidesBaseModel
+        from gslides_api.domain.domain import GSlidesBaseModel
 
         thumbnail = ImageThumbnail(contentUrl="https://example.com/test.jpg", width=100, height=100)
         assert isinstance(thumbnail, GSlidesBaseModel)

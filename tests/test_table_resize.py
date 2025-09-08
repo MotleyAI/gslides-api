@@ -6,9 +6,9 @@ import pytest
 from unittest.mock import Mock, patch
 
 from gslides_api.element.table import TableElement
-from gslides_api.table import Table, TableColumnProperties, TableRow, TableCell
-from gslides_api.table_cell import TableCellLocation
-from gslides_api.domain_old import Dimension, Unit, Size, Transform
+from gslides_api.domain.table import Table, TableCell, TableColumnProperties, TableRow
+from gslides_api.domain.table_cell import TableCellLocation
+from gslides_api.domain.domain import Dimension, Size, Transform, Unit
 from gslides_api.element.text_content import TextContent
 from gslides_api.request.table import (
     InsertTableColumnsRequest,

@@ -3,10 +3,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typeguard import typechecked
 
-from gslides_api.domain_old import GSlidesBaseModel, Dimension, Unit
+from gslides_api.domain.domain import Dimension, GSlidesBaseModel, Unit
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
-from gslides_api.request.domain import Range, RangeType
-from gslides_api.table_cell import TableCellLocation
+from gslides_api.domain.request import Range, RangeType
+from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.request.request import (
     DeleteParagraphBulletsRequest,
     DeleteTextRequest,

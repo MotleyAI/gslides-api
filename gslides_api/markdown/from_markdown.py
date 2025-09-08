@@ -7,8 +7,8 @@ from marko.ext.gfm.elements import Strikethrough
 from marko.inline import RawText
 from pydantic import BaseModel, field_validator
 
-from gslides_api.domain_old import BulletGlyphPreset
-from gslides_api.request.domain import Range, RangeType
+from gslides_api.domain.domain import BulletGlyphPreset
+from gslides_api.domain.request import Range, RangeType
 from gslides_api.request.request import (
     CreateParagraphBulletsRequest,
     InsertTextRequest,

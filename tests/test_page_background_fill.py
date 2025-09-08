@@ -1,6 +1,6 @@
 import unittest
 
-from gslides_api.domain_old import (
+from gslides_api.domain.domain import (
     Color,
     Dimension,
     PageBackgroundFill,

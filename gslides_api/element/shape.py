@@ -4,13 +4,21 @@ from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
-from gslides_api.domain_old import Dimension, GSlidesBaseModel, OutputUnit, PageElementProperties
+from gslides_api.domain.domain import (
+    Dimension,
+    GSlidesBaseModel,
+    OutputUnit,
+    PageElementProperties,
+    Size,
+    Transform,
+    Unit,
+)
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.text_content import TextContent
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
-from gslides_api.request.domain import Range, RangeType
+from gslides_api.domain.request import Range, RangeType
 from gslides_api.request.request import (
     CreateShapeRequest,
     DeleteParagraphBulletsRequest,
@@ -214,16 +222,11 @@ class ShapeElement(PageElementBase):
         # Restore size if available, otherwise provide default
         if "size" in metadata:
             size_data = metadata["size"]
-            from gslides_api.domain_old import Dimension, Size, Unit
-
             element_props.size = Size(
                 width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
                 height=Dimension(magnitude=size_data["height"], unit=Unit(size_data["unit"])),
             )
         else:
-            # Provide default size for text boxes
-            from gslides_api.domain_old import Dimension, Size, Unit
-
             element_props.size = Size(
                 width=Dimension(magnitude=300, unit=Unit.PT),
                 height=Dimension(magnitude=200, unit=Unit.PT),
@@ -231,14 +234,10 @@ class ShapeElement(PageElementBase):
 
         # Restore transform if available, otherwise create default
         if "transform" in metadata and metadata["transform"]:
-            from gslides_api.domain_old import Transform
 
             transform_data = metadata["transform"]
             element_props.transform = Transform(**transform_data)
         else:
-            # Create a default identity transform
-            from gslides_api.domain_old import Transform
-
             element_props.transform = Transform(
                 scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
             )

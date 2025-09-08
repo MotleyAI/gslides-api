@@ -5,11 +5,11 @@ from typing import Optional
 from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain_old import LayoutReference, ThumbnailProperties, ThumbnailSize, Transform
+from gslides_api.domain.domain import LayoutReference, ThumbnailProperties, ThumbnailSize, Transform
 from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.page.base import BasePage, ElementKind, PageType, UpdatePagePropertiesRequest
 from gslides_api.page.slide_properties import SlideProperties, UpdateSlidePropertiesRequest
-from gslides_api.request.domain import Range, RangeType
+from gslides_api.domain.request import Range, RangeType
 from gslides_api.request.request import (
     CreateSlideRequest,
     DeleteTextRequest,
