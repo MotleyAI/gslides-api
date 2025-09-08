@@ -10,7 +10,7 @@ from gslides_api.table import (
     TableRange,
 )
 from gslides_api.domain import PageElementProperties
-from gslides_api.request.domain import TableCellLocation
+from gslides_api.table_cell import TableCellLocation
 from gslides_api.request.request import GSlidesAPIRequest
 
 

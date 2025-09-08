@@ -5,7 +5,8 @@ from typeguard import typechecked
 
 from gslides_api.domain import GSlidesBaseModel, Dimension, Unit
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
-from gslides_api.request.domain import Range, RangeType, TableCellLocation
+from gslides_api.request.domain import Range, RangeType
+from gslides_api.table_cell import TableCellLocation
 from gslides_api.request.request import (
     DeleteParagraphBulletsRequest,
     GSlidesAPIRequest,
@@ -82,7 +83,7 @@ class TextContent(GSlidesBaseModel):
 
     def delete_text_request(self, object_id: str = "") -> List[GSlidesAPIRequest]:
         """Convert the text content to a list of requests to delete the text in the element.
-        
+
         Args:
             object_id: The objectId to set on the requests. If empty, caller must set it later.
         """
@@ -100,10 +101,7 @@ class TextContent(GSlidesBaseModel):
         if (not self.textElements) or self.textElements[0].endIndex == 0:
             return out
 
-        out.append(DeleteTextRequest(
-            objectId=object_id,
-            textRange=Range(type=RangeType.ALL)
-        ))
+        out.append(DeleteTextRequest(objectId=object_id, textRange=Range(type=RangeType.ALL)))
         return out
 
     def write_text_requests(

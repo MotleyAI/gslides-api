@@ -6,7 +6,7 @@ from typeguard import typechecked
 
 from gslides_api.client import GoogleAPIClient, api_client as default_api_client
 from gslides_api.domain import OutputUnit
-from gslides_api.request.domain import TableCellLocation
+from gslides_api.table_cell import TableCellLocation
 from gslides_api.table import Table
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import TableData
@@ -429,103 +429,107 @@ class TableElement(PageElementBase):
 
         return requests
 
-    def _calculate_proportional_widths_after_deletion(self, remaining_column_indices: List[int]) -> List[GSlidesAPIRequest]:
+    def _calculate_proportional_widths_after_deletion(
+        self, remaining_column_indices: List[int]
+    ) -> List[GSlidesAPIRequest]:
         """Generate requests to proportionally expand remaining columns to maintain total table width.
-        
+
         Args:
             remaining_column_indices: List of column indices that will remain after deletion
-            
+
         Returns:
             List of UpdateTableColumnPropertiesRequest to adjust column widths
         """
         from gslides_api.request.table import UpdateTableColumnPropertiesRequest
         from gslides_api.table import TableColumnProperties
         from gslides_api.domain import Dimension
-        
+
         requests = []
-        
+
         # Only proceed if we have column width information
         if not self.table.tableColumns or len(self.table.tableColumns) != self.table.columns:
             return requests
-            
+
         # Calculate total width of remaining columns
         total_remaining_width = 0
         remaining_widths = []
-        
+
         for col_idx in remaining_column_indices:
-            if col_idx < len(self.table.tableColumns) and self.table.tableColumns[col_idx].columnWidth:
+            if (
+                col_idx < len(self.table.tableColumns)
+                and self.table.tableColumns[col_idx].columnWidth
+            ):
                 width = self.table.tableColumns[col_idx].columnWidth.magnitude
                 remaining_widths.append(width)
                 total_remaining_width += width
             else:
                 # If we don't have width info for some columns, can't do proportional adjustment
                 return requests
-                
+
         if total_remaining_width == 0:
             return requests
-            
+
         # Calculate total width of all original columns
         total_original_width = 0
         for col in self.table.tableColumns:
             if col.columnWidth:
                 total_original_width += col.columnWidth.magnitude
-                
+
         if total_original_width == 0:
             return requests
-            
+
         # Calculate proportional expansion factor
         expansion_factor = total_original_width / total_remaining_width
-        
+
         # Generate update requests for each remaining column
         for i, col_idx in enumerate(remaining_column_indices):
             new_width = remaining_widths[i] * expansion_factor
             original_col = self.table.tableColumns[col_idx]
-            
+
             # Create new column properties with adjusted width
             new_column_props = TableColumnProperties(
-                columnWidth=Dimension(
-                    magnitude=new_width,
-                    unit=original_col.columnWidth.unit
-                )
+                columnWidth=Dimension(magnitude=new_width, unit=original_col.columnWidth.unit)
             )
-            
+
             requests.append(
                 UpdateTableColumnPropertiesRequest(
                     objectId=self.objectId,
                     columnIndices=[col_idx],
                     tableColumnProperties=new_column_props,
-                    fields="columnWidth"
+                    fields="columnWidth",
                 )
             )
-            
+
         return requests
 
-    def _generate_width_preserving_requests_after_addition(self, original_columns: int, new_columns: int) -> List[GSlidesAPIRequest]:
+    def _generate_width_preserving_requests_after_addition(
+        self, original_columns: int, new_columns: int
+    ) -> List[GSlidesAPIRequest]:
         """Generate requests to preserve original column widths and set new columns to rightmost width.
-        
+
         Args:
             original_columns: Number of columns before addition
             new_columns: Total number of columns after addition
-            
+
         Returns:
             List of UpdateTableColumnPropertiesRequest to set column widths
         """
         from gslides_api.request.table import UpdateTableColumnPropertiesRequest
         from gslides_api.table import TableColumnProperties
-        
+
         requests = []
-        
+
         # Only proceed if we have column width information
         if not self.table.tableColumns or len(self.table.tableColumns) != original_columns:
             return requests
-            
+
         # Get the width of the rightmost original column
         rightmost_col = self.table.tableColumns[original_columns - 1]
         if not rightmost_col.columnWidth:
             return requests
-            
+
         rightmost_width = rightmost_col.columnWidth
-        
+
         # Set all original columns to their current widths (preserving them)
         for col_idx in range(original_columns):
             col = self.table.tableColumns[col_idx]
@@ -535,10 +539,10 @@ class TableElement(PageElementBase):
                         objectId=self.objectId,
                         columnIndices=[col_idx],
                         tableColumnProperties=TableColumnProperties(columnWidth=col.columnWidth),
-                        fields="columnWidth"
+                        fields="columnWidth",
                     )
                 )
-        
+
         # Set all new columns to the rightmost column width
         for col_idx in range(original_columns, new_columns):
             requests.append(
@@ -546,20 +550,22 @@ class TableElement(PageElementBase):
                     objectId=self.objectId,
                     columnIndices=[col_idx],
                     tableColumnProperties=TableColumnProperties(columnWidth=rightmost_width),
-                    fields="columnWidth"
+                    fields="columnWidth",
                 )
             )
-            
+
         return requests
 
-    def resize_requests(self, n_rows: int, n_columns: int, fix_width: bool = True) -> List[GSlidesAPIRequest]:
+    def resize_requests(
+        self, n_rows: int, n_columns: int, fix_width: bool = True
+    ) -> List[GSlidesAPIRequest]:
         """Generate requests to resize the table to the specified dimensions.
 
         Args:
             n_rows: Target number of rows
             n_columns: Target number of columns
             fix_width: If True (default), maintain constant table width when adding/deleting columns.
-                      If False, preserve original column widths when adding columns and allow 
+                      If False, preserve original column widths when adding columns and allow
                       table width to change when deleting columns.
 
         Returns:
@@ -609,21 +615,21 @@ class TableElement(PageElementBase):
                     number=columns_to_add,
                 )
             )
-            
+
             # Add width adjustment requests if fix_width=False
             if not fix_width:
                 width_requests = self._generate_width_preserving_requests_after_addition(
                     current_columns, n_columns
                 )
                 requests.extend(width_requests)
-                
+
         elif n_columns < current_columns:
             # Deleting columns
             columns_to_delete = current_columns - n_columns
-            
+
             # Calculate which columns will remain for width adjustment if fix_width=True
             remaining_column_indices = list(range(n_columns)) if fix_width else []
-            
+
             for i in range(columns_to_delete):
                 column_index = current_columns - 1 - i
                 requests.append(
@@ -632,7 +638,7 @@ class TableElement(PageElementBase):
                         cellLocation=TableCellLocation(rowIndex=0, columnIndex=column_index),
                     )
                 )
-            
+
             # Add width adjustment requests if fix_width=True
             if fix_width and remaining_column_indices:
                 width_requests = self._calculate_proportional_widths_after_deletion(
@@ -649,7 +655,7 @@ class TableElement(PageElementBase):
             n_rows: Target number of rows
             n_columns: Target number of columns
             fix_width: If True (default), maintain constant table width when adding/deleting columns.
-                      If False, preserve original column widths when adding columns and allow 
+                      If False, preserve original column widths when adding columns and allow
                       table width to change when deleting columns.
             api_client: Optional GoogleAPIClient instance. If None, uses the default client.
 

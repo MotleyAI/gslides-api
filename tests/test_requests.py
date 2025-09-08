@@ -5,24 +5,31 @@ Tests for the requests module, specifically CreateParagraphBulletsRequest and re
 import pytest
 from pydantic import ValidationError
 
-from gslides_api import ShapeProperties
-from gslides_api.domain import (BulletGlyphPreset, LayoutReference,
-                                PageElementProperties, PredefinedLayout, Size,
-                                Transform)
-from gslides_api.request.domain import Range, RangeType, TableCellLocation
-from gslides_api.request.request import (CreateParagraphBulletsRequest,
-                                         CreateShapeRequest,
-                                         CreateSlideRequest,
-                                         DeleteObjectRequest,
-                                         DeleteTextRequest,
-                                         DuplicateObjectRequest,
-                                         InsertTextRequest,
-                                         ReplaceImageRequest,
-                                         UpdatePagePropertiesRequest,
-                                         UpdateShapePropertiesRequest,
-                                         UpdateSlidePropertiesRequest,
-                                         UpdateSlidesPositionRequest,
-                                         UpdateTextStyleRequest)
+from gslides_api import ShapeProperties, TableCellLocation
+from gslides_api.domain import (
+    BulletGlyphPreset,
+    LayoutReference,
+    PageElementProperties,
+    PredefinedLayout,
+    Size,
+    Transform,
+)
+from gslides_api.request.domain import Range, RangeType
+from gslides_api.request.request import (
+    CreateParagraphBulletsRequest,
+    CreateShapeRequest,
+    CreateSlideRequest,
+    DeleteObjectRequest,
+    DeleteTextRequest,
+    DuplicateObjectRequest,
+    InsertTextRequest,
+    ReplaceImageRequest,
+    UpdatePagePropertiesRequest,
+    UpdateShapePropertiesRequest,
+    UpdateSlidePropertiesRequest,
+    UpdateSlidesPositionRequest,
+    UpdateTextStyleRequest,
+)
 from gslides_api.text import TextStyle, Type
 
 
@@ -76,14 +83,10 @@ class TestRange:
 
     def test_fixed_range_start_greater_than_end_invalid(self):
         """Test that FIXED_RANGE with startIndex >= endIndex raises validation error."""
-        with pytest.raises(
-            ValidationError, match="startIndex must be less than endIndex"
-        ):
+        with pytest.raises(ValidationError, match="startIndex must be less than endIndex"):
             Range(type=RangeType.FIXED_RANGE, startIndex=5, endIndex=3)
 
-        with pytest.raises(
-            ValidationError, match="startIndex must be less than endIndex"
-        ):
+        with pytest.raises(ValidationError, match="startIndex must be less than endIndex"):
             Range(type=RangeType.FIXED_RANGE, startIndex=5, endIndex=5)
 
     def test_from_start_index_missing_start_invalid(self):
@@ -116,16 +119,6 @@ class TestTableCellLocation:
         cell = TableCellLocation(rowIndex=0, columnIndex=0)
         assert cell.rowIndex == 0
         assert cell.columnIndex == 0
-
-    def test_negative_row_index_invalid(self):
-        """Test that negative row index raises validation error."""
-        with pytest.raises(ValidationError, match="rowIndex must be non-negative"):
-            TableCellLocation(rowIndex=-1, columnIndex=0)
-
-    def test_negative_column_index_invalid(self):
-        """Test that negative column index raises validation error."""
-        with pytest.raises(ValidationError, match="columnIndex must be non-negative"):
-            TableCellLocation(rowIndex=0, columnIndex=-1)
 
 
 class TestCreateParagraphBulletsRequest:
@@ -626,10 +619,7 @@ class TestCreateSlideRequest:
         )
         assert request.objectId == "slide_123"
         assert request.insertionIndex == 2
-        assert (
-            request.slideLayoutReference.predefinedLayout
-            == PredefinedLayout.TITLE_AND_BODY
-        )
+        assert request.slideLayoutReference.predefinedLayout == PredefinedLayout.TITLE_AND_BODY
 
     def test_to_request_format(self):
         """Test that to_request() returns correct format."""

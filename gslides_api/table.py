@@ -1,17 +1,9 @@
 from enum import Enum
 from typing import List, Optional
 
-from gslides_api.client import GoogleAPIClient, api_client as default_api_client
+from gslides_api.table_cell import TableCellLocation
 from gslides_api.domain import Dimension, GSlidesBaseModel, SolidFill, DashStyle
 from gslides_api.element.text_content import TextContent
-from gslides_api.text import TextStyle
-
-
-class TableCellLocation(GSlidesBaseModel):
-    """Represents the location of a table cell."""
-
-    rowIndex: Optional[int] = None
-    columnIndex: Optional[int] = None
 
 
 class ContentAlignment(Enum):
