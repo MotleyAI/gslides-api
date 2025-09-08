@@ -28,22 +28,33 @@ api_client.auto_flush = True
 credential_location = os.getenv("GSLIDES_CREDENTIALS_PATH")
 initialize_credentials(credential_location)
 
-copy = False
+copy = True
 # # This is a copy of the Noosa deck
 # presentation_id = "1Y5RNVGxTJh0ocUbGId4tX6_u7CTPP2NpigH8hTsjaYY"
 # This is a test of table ingestion
-presentation_id = "1U_8TmamiNcb43eCC4teagrzs93h-oYiCXV4l5WyULiY"
+presentation_id = "1TPmeRV2w6C1aXW5ZS7VxpFKD_pQGBri2_X7TzOABgng"
 
+if copy:
+    presentation_id = api_client.copy_presentation(
+        presentation_id, copy_title="Temp copy - delete me later"
+    )["id"]
 p = Presentation.from_id(presentation_id, api_client=api_client)
 
+print(p.url)
+table_name = "Table_1"
+
 slide = p.get_slide_by_name("Slide 4")
-table = slide.get_elements_by_alt_title("Table_1")[0]
+table = slide.get_elements_by_alt_title(table_name)[0]
 cell = table[0, 0]
 print(cell.read_text())
 table.write_text_to_cell(text="Hello world!", location=(0, 0))
 api_client.flush_batch_update()
 
-table.resize(n_rows=5, n_columns=4)
-table.resize(n_rows=3, n_columns=2)
-table.resize(n_rows=4, n_columns=4)
+table.resize(n_rows=5, n_columns=4, fix_width=True)
+table.sync_from_cloud()
+table.resize(n_rows=3, n_columns=3, fix_width=True)
+table.sync_from_cloud()
+table.resize(n_rows=3, n_columns=4, fix_width=False)
+table.sync_from_cloud()
+table.resize(n_rows=3, n_columns=3, fix_width=False)
 print("yay!")
