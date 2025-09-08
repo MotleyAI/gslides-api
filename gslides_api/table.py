@@ -140,3 +140,8 @@ class Table(GSlidesBaseModel):
     tableColumns: Optional[List[TableColumnProperties]] = None
     horizontalBorderRows: Optional[List[TableBorderRow]] = None
     verticalBorderRows: Optional[List[TableBorderRow]] = None
+
+
+# Rebuild models to resolve forward references after all imports
+TableCell.model_rebuild()
+TableBorderCell.model_rebuild()
