@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 from pydantic import Field
 
-from gslides_api.domain import (
+from gslides_api.domain_old import (
     AffineTransform,
     BulletGlyphPreset,
     ImageProperties,
@@ -18,7 +18,7 @@ from gslides_api.request.domain import (
 )
 from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.table_cell import TableCellLocation
-from gslides_api.text import ParagraphStyle, ShapeProperties, TextStyle, Type
+from gslides_api.domain.text import ParagraphStyle, ShapeProperties, TextStyle, Type
 
 
 class CreateParagraphBulletsRequest(GSlidesAPIRequest):

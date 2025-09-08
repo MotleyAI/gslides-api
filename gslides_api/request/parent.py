@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from gslides_api.domain import GSlidesBaseModel
+from gslides_api.domain_old import GSlidesBaseModel
 
 
 class GSlidesAPIRequest(GSlidesBaseModel):

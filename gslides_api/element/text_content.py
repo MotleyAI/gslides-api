@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typeguard import typechecked
 
-from gslides_api.domain import GSlidesBaseModel, Dimension, Unit
+from gslides_api.domain_old import GSlidesBaseModel, Dimension, Unit
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.request.domain import Range, RangeType
 from gslides_api.table_cell import TableCellLocation
@@ -13,7 +13,7 @@ from gslides_api.request.request import (
     UpdateTextStyleRequest,
 )
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.text import TextStyle, TextElement
+from gslides_api.domain.text import TextElement, TextStyle
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
 
 logger = logging.getLogger(__name__)

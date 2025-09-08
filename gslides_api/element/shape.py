@@ -2,10 +2,9 @@ from typing import List, Optional
 
 from pydantic import Field, field_validator
 
-from gslides_api.text import ShapeProperties
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
-from gslides_api.domain import Dimension, GSlidesBaseModel, OutputUnit, PageElementProperties
+from gslides_api.domain_old import Dimension, GSlidesBaseModel, OutputUnit, PageElementProperties
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.text_content import TextContent
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
@@ -19,7 +18,7 @@ from gslides_api.request.request import (
     UpdateTextStyleRequest,
 )
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.text import Placeholder, TextStyle, Type
+from gslides_api.domain.text import Placeholder, ShapeProperties, TextStyle, Type, Type as ShapeType
 
 
 class Shape(GSlidesBaseModel):
@@ -199,9 +198,8 @@ class ShapeElement(PageElementBase):
         stored_shape_type = metadata.get("shape_type") or shape_type or "TEXT_BOX"
 
         # Create basic shape with text content
-        from gslides_api.text import ShapeProperties
+        from gslides_api.domain.text import ShapeProperties
         from gslides_api.element.text_content import TextContent
-        from gslides_api.text import Type as ShapeType
 
         # Create a minimal shape - the actual content will be written via write_text
         shape = Shape(
@@ -216,7 +214,7 @@ class ShapeElement(PageElementBase):
         # Restore size if available, otherwise provide default
         if "size" in metadata:
             size_data = metadata["size"]
-            from gslides_api.domain import Dimension, Size, Unit
+            from gslides_api.domain_old import Dimension, Size, Unit
 
             element_props.size = Size(
                 width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
@@ -224,7 +222,7 @@ class ShapeElement(PageElementBase):
             )
         else:
             # Provide default size for text boxes
-            from gslides_api.domain import Dimension, Size, Unit
+            from gslides_api.domain_old import Dimension, Size, Unit
 
             element_props.size = Size(
                 width=Dimension(magnitude=300, unit=Unit.PT),
@@ -233,13 +231,13 @@ class ShapeElement(PageElementBase):
 
         # Restore transform if available, otherwise create default
         if "transform" in metadata and metadata["transform"]:
-            from gslides_api.domain import Transform
+            from gslides_api.domain_old import Transform
 
             transform_data = metadata["transform"]
             element_props.transform = Transform(**transform_data)
         else:
             # Create a default identity transform
-            from gslides_api.domain import Transform
+            from gslides_api.domain_old import Transform
 
             element_props.transform = Transform(
                 scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"

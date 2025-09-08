@@ -1,5 +1,5 @@
 from gslides_api import Presentation, initialize_credentials
-from gslides_api.domain import MimeType, ThumbnailProperties, ThumbnailSize
+from gslides_api.domain_old import MimeType, ThumbnailProperties, ThumbnailSize
 
 credential_location = "/home/james/Dropbox/PyCharmProjects/gslides-playground/"
 presentation_id = "1bj3qEcf1P6NhShY8YC0UyEwpc_bFdrxxtijqz8hBbXM"

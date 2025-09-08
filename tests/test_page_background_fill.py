@@ -1,8 +1,15 @@
 import unittest
 
-from gslides_api.domain import (Color, Dimension, PageBackgroundFill,
-                                PropertyState, RgbColor, Size, SolidFill,
-                                StretchedPictureFill)
+from gslides_api.domain_old import (
+    Color,
+    Dimension,
+    PageBackgroundFill,
+    PropertyState,
+    RgbColor,
+    Size,
+    SolidFill,
+    StretchedPictureFill,
+)
 
 
 class TestPageBackgroundFill(unittest.TestCase):
@@ -51,18 +58,10 @@ class TestPageBackgroundFill(unittest.TestCase):
             api_format["stretchedPictureFill"]["contentUrl"],
             "https://example.com/image.jpg",
         )
-        self.assertEqual(
-            api_format["stretchedPictureFill"]["size"]["width"]["magnitude"], 100
-        )
-        self.assertEqual(
-            api_format["stretchedPictureFill"]["size"]["width"]["unit"], "PT"
-        )
-        self.assertEqual(
-            api_format["stretchedPictureFill"]["size"]["height"]["magnitude"], 200
-        )
-        self.assertEqual(
-            api_format["stretchedPictureFill"]["size"]["height"]["unit"], "PT"
-        )
+        self.assertEqual(api_format["stretchedPictureFill"]["size"]["width"]["magnitude"], 100)
+        self.assertEqual(api_format["stretchedPictureFill"]["size"]["width"]["unit"], "PT")
+        self.assertEqual(api_format["stretchedPictureFill"]["size"]["height"]["magnitude"], 200)
+        self.assertEqual(api_format["stretchedPictureFill"]["size"]["height"]["unit"], "PT")
 
 
 if __name__ == "__main__":

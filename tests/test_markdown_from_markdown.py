@@ -8,7 +8,7 @@ import pytest
 
 from gslides_api.request.request import InsertTextRequest
 from gslides_api.markdown.from_markdown import markdown_to_text_elements
-from gslides_api.text import TextElement, TextRun, TextStyle
+from gslides_api.domain.text import TextElement, TextRun, TextStyle
 
 
 class TestMarkdownToTextElements:

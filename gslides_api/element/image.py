@@ -8,7 +8,7 @@ import requests
 from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient
-from gslides_api.domain import Image, ImageData, ImageReplaceMethod
+from gslides_api.domain_old import Image, ImageData, ImageReplaceMethod
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.request.request import (
@@ -330,19 +330,19 @@ class ImageElement(PageElementBase):
 
         # Restore image properties if available
         if "imageProperties" in metadata and metadata["imageProperties"]:
-            from gslides_api.domain import ImageProperties
+            from gslides_api.domain_old import ImageProperties
 
             image.imageProperties = ImageProperties(**metadata["imageProperties"])
 
         # Create element properties from metadata
-        from gslides_api.domain import PageElementProperties
+        from gslides_api.domain_old import PageElementProperties
 
         element_props = PageElementProperties(pageObjectId=parent_id)
 
         # Restore size if available, otherwise provide default
         if "size" in metadata:
             size_data = metadata["size"]
-            from gslides_api.domain import Dimension, Size, Unit
+            from gslides_api.domain_old import Dimension, Size, Unit
 
             element_props.size = Size(
                 width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
@@ -350,7 +350,7 @@ class ImageElement(PageElementBase):
             )
         else:
             # Provide default size for images
-            from gslides_api.domain import Dimension, Size, Unit
+            from gslides_api.domain_old import Dimension, Size, Unit
 
             element_props.size = Size(
                 width=Dimension(magnitude=200, unit=Unit.PT),
@@ -359,13 +359,13 @@ class ImageElement(PageElementBase):
 
         # Restore transform if available, otherwise create default
         if "transform" in metadata and metadata["transform"]:
-            from gslides_api.domain import Transform
+            from gslides_api.domain_old import Transform
 
             transform_data = metadata["transform"]
             element_props.transform = Transform(**transform_data)
         else:
             # Create a default identity transform
-            from gslides_api.domain import Transform
+            from gslides_api.domain_old import Transform
 
             element_props.transform = Transform(
                 scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"

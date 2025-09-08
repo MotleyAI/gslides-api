@@ -72,14 +72,12 @@ except Exception as e:
                     group_element = GroupElement.model_validate(element)
                     print("Direct GroupElement validation succeeded!")
                 except Exception as group_element_error:
-                    print(
-                        f"Direct GroupElement validation failed: {group_element_error}"
-                    )
+                    print(f"Direct GroupElement validation failed: {group_element_error}")
 
                 # Let's check the Group model specifically
                 if "elementGroup" in element:
                     print("\nTrying to validate just the elementGroup:")
-                    from gslides_api.domain import Group
+                    from gslides_api.domain_old import Group
 
                     try:
                         group = Group.model_validate(element["elementGroup"])
@@ -92,9 +90,7 @@ except Exception as e:
                 element_with_size = element.copy()
                 element_with_size["size"] = {"width": 100, "height": 100}
                 try:
-                    validated_with_size = page_element_adapter.validate_python(
-                        element_with_size
-                    )
+                    validated_with_size = page_element_adapter.validate_python(element_with_size)
                     print("Validation with dummy size succeeded!")
                 except Exception as size_error:
                     print(f"Validation with dummy size failed: {size_error}")

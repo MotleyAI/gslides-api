@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 from typeguard import typechecked
 
 from gslides_api.client import GoogleAPIClient, api_client as default_api_client
-from gslides_api.domain import OutputUnit
+from gslides_api.domain_old import OutputUnit
 from gslides_api.table_cell import TableCellLocation
 from gslides_api.table import Table
 from gslides_api.element.base import ElementKind, PageElementBase
@@ -20,7 +20,7 @@ from gslides_api.request.table import (
     InsertTableColumnsRequest,
     DeleteTableColumnRequest,
 )
-from gslides_api.text import TextStyle
+from gslides_api.domain.text import TextStyle
 
 
 @typechecked
@@ -379,7 +379,7 @@ class TableElement(PageElementBase):
         num_cols = len(table_data.headers)
 
         # Create temporary TableElement to generate the structure creation request
-        from gslides_api.domain import Dimension, Size, Unit, Transform
+        from gslides_api.domain_old import Dimension, Size, Unit, Transform
 
         # Basic sizing: 100pt per column, 30pt per row
         default_width = max(300, num_cols * 100)
@@ -443,7 +443,7 @@ class TableElement(PageElementBase):
         """
         from gslides_api.request.table import UpdateTableColumnPropertiesRequest
         from gslides_api.table import TableColumnProperties
-        from gslides_api.domain import Dimension
+        from gslides_api.domain_old import Dimension
 
         requests = []
 

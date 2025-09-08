@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from gslides_api.domain import (
+from gslides_api.domain_old import (
     AffineTransform,
     Dimension,
     Image,
@@ -28,11 +28,15 @@ from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageEl
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
-from gslides_api.text import ParagraphMarker, ShapeProperties
 from gslides_api.element.text_content import TextContent
-from gslides_api.text import TextElement as GSlidesTextElement
-from gslides_api.text import TextRun, TextStyle
-from gslides_api.text import Type as ShapeType
+from gslides_api.domain.text import (
+    ParagraphMarker,
+    ShapeProperties,
+    TextElement as GSlidesTextElement,
+    TextRun,
+    TextStyle,
+    Type as ShapeType,
+)
 
 
 class TestTextElementConversion:

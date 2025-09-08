@@ -3,7 +3,7 @@ from typing import List, Optional
 
 import gslides_api
 from gslides_api.client import GoogleAPIClient
-from gslides_api.domain import ColorScheme, GSlidesBaseModel, PageBackgroundFill
+from gslides_api.domain_old import ColorScheme, GSlidesBaseModel, PageBackgroundFill
 from gslides_api.element.base import ElementKind
 from gslides_api.element.element import PageElement
 from pydantic import Field, model_validator

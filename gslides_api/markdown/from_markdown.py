@@ -7,8 +7,7 @@ from marko.ext.gfm.elements import Strikethrough
 from marko.inline import RawText
 from pydantic import BaseModel, field_validator
 
-from gslides_api.text import Link as GSlidesLink
-from gslides_api.domain import BulletGlyphPreset
+from gslides_api.domain_old import BulletGlyphPreset
 from gslides_api.request.domain import Range, RangeType
 from gslides_api.request.request import (
     CreateParagraphBulletsRequest,
@@ -16,7 +15,7 @@ from gslides_api.request.request import (
     UpdateTextStyleRequest,
 )
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.text import TextElement, TextRun, TextStyle
+from gslides_api.domain.text import Link as GSlidesLink, TextElement, TextRun, TextStyle
 
 
 class LineBreakAfterParagraph(TextElement):

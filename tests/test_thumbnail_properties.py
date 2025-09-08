@@ -2,7 +2,7 @@
 
 import pytest
 
-from gslides_api.domain import MimeType, ThumbnailProperties, ThumbnailSize
+from gslides_api.domain_old import MimeType, ThumbnailProperties, ThumbnailSize
 
 
 class TestMimeType:
@@ -23,10 +23,7 @@ class TestThumbnailSize:
 
     def test_thumbnail_size_values(self):
         """Test that ThumbnailSize has the expected values."""
-        assert (
-            ThumbnailSize.THUMBNAIL_SIZE_UNSPECIFIED.value
-            == "THUMBNAIL_SIZE_UNSPECIFIED"
-        )
+        assert ThumbnailSize.THUMBNAIL_SIZE_UNSPECIFIED.value == "THUMBNAIL_SIZE_UNSPECIFIED"
         assert ThumbnailSize.LARGE.value == "LARGE"
         assert ThumbnailSize.MEDIUM.value == "MEDIUM"
         assert ThumbnailSize.SMALL.value == "SMALL"
@@ -66,9 +63,7 @@ class TestThumbnailProperties:
 
     def test_thumbnail_properties_with_both_fields(self):
         """Test creating ThumbnailProperties with both fields."""
-        props = ThumbnailProperties(
-            mimeType=MimeType.PNG, thumbnailSize=ThumbnailSize.MEDIUM
-        )
+        props = ThumbnailProperties(mimeType=MimeType.PNG, thumbnailSize=ThumbnailSize.MEDIUM)
         assert props.mimeType == MimeType.PNG
         assert props.thumbnailSize == ThumbnailSize.MEDIUM
 
@@ -92,9 +87,7 @@ class TestThumbnailProperties:
 
     def test_thumbnail_properties_to_api_format_with_both_fields(self):
         """Test converting ThumbnailProperties with both fields to API format."""
-        props = ThumbnailProperties(
-            mimeType=MimeType.PNG, thumbnailSize=ThumbnailSize.LARGE
-        )
+        props = ThumbnailProperties(mimeType=MimeType.PNG, thumbnailSize=ThumbnailSize.LARGE)
         api_format = props.to_api_format()
         expected = {"mimeType": "PNG", "thumbnailSize": "LARGE"}
         assert api_format == expected
@@ -115,7 +108,7 @@ class TestThumbnailProperties:
 
     def test_thumbnail_properties_inheritance(self):
         """Test that ThumbnailProperties inherits from GSlidesBaseModel."""
-        from gslides_api.domain import GSlidesBaseModel
+        from gslides_api.domain_old import GSlidesBaseModel
 
         props = ThumbnailProperties()
         assert isinstance(props, GSlidesBaseModel)

@@ -3,7 +3,7 @@ from typing import Annotated, Any, Optional, Union
 
 from pydantic import Discriminator, Field, Tag, field_validator
 
-from gslides_api.domain import GSlidesBaseModel
+from gslides_api.domain_old import GSlidesBaseModel
 from gslides_api.page.base import BasePage, PageType
 from gslides_api.page.notes import Notes
 from gslides_api.page.slide import Slide

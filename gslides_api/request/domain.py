@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, model_validator
 
-from gslides_api.domain import GSlidesBaseModel
+from gslides_api.domain_old import GSlidesBaseModel
 
 
 class RangeType(Enum):

@@ -24,11 +24,9 @@ class TestImageThumbnail:
 
     def test_image_thumbnail_inheritance(self):
         """Test that ImageThumbnail inherits from GSlidesBaseModel."""
-        from gslides_api.domain import GSlidesBaseModel
+        from gslides_api.domain_old import GSlidesBaseModel
 
-        thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/test.jpg", width=100, height=100
-        )
+        thumbnail = ImageThumbnail(contentUrl="https://example.com/test.jpg", width=100, height=100)
         assert isinstance(thumbnail, GSlidesBaseModel)
         assert hasattr(thumbnail, "to_api_format")
 
@@ -193,9 +191,7 @@ class TestImageThumbnail:
         mock_response.content = b"fake_data"
         mock_requests.return_value = mock_response
 
-        thumbnail = ImageThumbnail(
-            contentUrl="https://example.com/image", width=800, height=600
-        )
+        thumbnail = ImageThumbnail(contentUrl="https://example.com/image", width=800, height=600)
 
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             try:
@@ -277,9 +273,7 @@ class TestImageThumbnail:
 
         for file_path, expected_extension, expected_format in test_cases:
             file_extension = os.path.splitext(file_path)[1].lower().lstrip(".")
-            actual_format = (
-                "jpeg" if file_extension in ("jpg", "jpeg") else file_extension
-            )
+            actual_format = "jpeg" if file_extension in ("jpg", "jpeg") else file_extension
 
             assert file_extension == expected_extension
             assert actual_format == expected_format

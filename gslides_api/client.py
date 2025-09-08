@@ -12,7 +12,7 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from typeguard import typechecked
 
-from gslides_api.domain import ThumbnailProperties
+from gslides_api.domain_old import ThumbnailProperties
 from gslides_api.request.request import DeleteObjectRequest, DuplicateObjectRequest
 from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.response import ImageThumbnail

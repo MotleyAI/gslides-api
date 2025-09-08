@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field
 
-from gslides_api.domain import (
+from gslides_api.domain_old import (
     Dimension,
     GSlidesBaseModel,
     OptionalColor,

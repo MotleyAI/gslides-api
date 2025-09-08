@@ -9,7 +9,7 @@ from gslides_api.table import (
     TableBorderProperties,
     TableRange,
 )
-from gslides_api.domain import PageElementProperties
+from gslides_api.domain_old import PageElementProperties
 from gslides_api.table_cell import TableCellLocation
 from gslides_api.request.parent import GSlidesAPIRequest
 

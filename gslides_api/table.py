@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Optional
 
 from gslides_api.table_cell import TableCellLocation
-from gslides_api.domain import Dimension, GSlidesBaseModel, SolidFill, DashStyle
+from gslides_api.domain_old import Dimension, GSlidesBaseModel, SolidFill, DashStyle
 from gslides_api.element.text_content import TextContent
 
 

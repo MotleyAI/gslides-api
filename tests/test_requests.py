@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 
-from gslides_api.domain import (
+from gslides_api.domain_old import (
     BulletGlyphPreset,
     LayoutReference,
     PageElementProperties,
@@ -30,7 +30,7 @@ from gslides_api.request.request import (
     UpdateSlidesPositionRequest,
     UpdateTextStyleRequest,
 )
-from gslides_api.text import TextStyle, Type, ShapeProperties
+from gslides_api.domain.text import ShapeProperties, TextStyle, Type
 
 
 class TestRange:
