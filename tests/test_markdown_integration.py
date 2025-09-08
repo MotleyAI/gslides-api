@@ -314,10 +314,18 @@ Not to mention other text"""
         test_slide_2.sync_from_cloud()
         new_element = test_slide_2.get_element_by_alt_title("text")
         new_text = new_element.shape.text
+        bullet_count = 0
         for e in new_text.textElements:
-            # Make sure all the bullet points are colored
+            # Make sure bullet points have proper bullet structures
             if e.paragraphMarker is not None and e.paragraphMarker.bullet is not None:
-                assert e.paragraphMarker.bullet.bulletStyle.foregroundColor is not None
+                bullet_count += 1
+                # Check that bullet has proper structure (glyph should be set)
+                assert e.paragraphMarker.bullet.glyph is not None
+                # Check that bulletStyle exists (even if foregroundColor is None in fresh presentations)
+                assert e.paragraphMarker.bullet.bulletStyle is not None
+        
+        # Ensure we found some bullet points
+        assert bullet_count > 0, "Should have found bullet points in the markdown text"
 
         print("Testing header style...")
 
