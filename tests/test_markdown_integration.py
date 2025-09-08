@@ -13,6 +13,12 @@ import pytest
 
 from gslides_api import Presentation, Slide, initialize_credentials
 from gslides_api.text import TextStyle
+from gslides_api.element.shape import Shape, ShapeElement
+from gslides_api.element.text_content import TextContent
+from gslides_api.domain import Dimension, Size, Transform, Unit
+from gslides_api.text import ShapeProperties
+from gslides_api.text import Type as ShapeType
+from gslides_api.client import api_client
 
 logger = logging.getLogger(__name__)
 
@@ -29,19 +35,101 @@ class TestMarkdownIntegration:
 
     @pytest.fixture(scope="class")
     def presentation(self):
-        """Get the test presentation."""
-        presentation_id = "1FHbC3ZXsEDUUNtQbxyyDQ3EFjwwt13_WovJAiYxhmOU"
-        return Presentation.from_id(presentation_id)
+        """Create a test presentation and clean up after all tests."""
+        # Create test presentation
+        test_presentation = Presentation.create_blank("Markdown Integration Test")
+        yield test_presentation
+        
+        # Cleanup: delete the presentation after all tests
+        try:
+            api_client.delete_file(test_presentation.presentationId)
+        except Exception as e:
+            print(f"Warning: Failed to delete test presentation: {e}")
 
     @pytest.fixture(scope="class")
     def source_slide(self, presentation):
-        """Get the source slide for duplication."""
-        return presentation.slides[1]
+        """Create a source slide with test elements for duplication."""
+        # Create a new slide for testing
+        slide = Slide.create_blank(presentation.presentationId)
+        
+        # Create text element with alt title "text_1"
+        text_element = ShapeElement(
+            objectId="temp_text_1",
+            presentation_id=presentation.presentationId,
+            slide_id=slide.objectId,
+            size=Size(width=Dimension(magnitude=400, unit=Unit.PT), height=Dimension(magnitude=200, unit=Unit.PT)),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=100.0, unit="EMU"),
+            shape=Shape(
+                shapeProperties=ShapeProperties(),
+                shapeType=ShapeType.TEXT_BOX,
+                text=TextContent(textElements=[])
+            )
+        )
+        text_element_id = text_element.create_copy(
+            parent_id=slide.objectId,
+            presentation_id=presentation.presentationId
+        )
+        # Set alt text for identification and add initial content
+        text_element.objectId = text_element_id
+        text_element.set_alt_text(title="text_1")
+        text_element.write_text("* Sample bullet point\\n* Another bullet point", as_markdown=True)
+        
+        # Create title element with alt title "title_1"
+        title_element = ShapeElement(
+            objectId="temp_title_1",
+            presentation_id=presentation.presentationId,
+            slide_id=slide.objectId,
+            size=Size(width=Dimension(magnitude=400, unit=Unit.PT), height=Dimension(magnitude=100, unit=Unit.PT)),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=50.0, unit="EMU"),
+            shape=Shape(
+                shapeProperties=ShapeProperties(),
+                shapeType=ShapeType.TEXT_BOX,
+                text=TextContent(textElements=[])
+            )
+        )
+        title_element_id = title_element.create_copy(
+            parent_id=slide.objectId,
+            presentation_id=presentation.presentationId
+        )
+        # Set alt text for identification and add initial content
+        title_element.objectId = title_element_id
+        title_element.set_alt_text(title="title_1")
+        title_element.write_text("Sample Title", as_markdown=True)
+        
+        # Refresh the slide to get the updated elements
+        return Slide.from_ids(presentation.presentationId, slide.objectId)
 
     @pytest.fixture(scope="class")
     def source_slide_2(self, presentation):
-        """Get the source slide for duplication."""
-        return presentation.slides[2]
+        """Create a second source slide with test elements for duplication."""
+        # Create a new slide for testing
+        slide = Slide.create_blank(presentation.presentationId)
+        
+        # Create text element with alt title "text"
+        text_element = ShapeElement(
+            objectId="temp_text_2",
+            presentation_id=presentation.presentationId,
+            slide_id=slide.objectId,
+            size=Size(width=Dimension(magnitude=400, unit=Unit.PT), height=Dimension(magnitude=300, unit=Unit.PT)),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=100.0, unit="EMU"),
+            shape=Shape(
+                shapeProperties=ShapeProperties(),
+                shapeType=ShapeType.TEXT_BOX,
+                text=TextContent(textElements=[])
+            )
+        )
+        text_element_id = text_element.create_copy(
+            parent_id=slide.objectId,
+            presentation_id=presentation.presentationId
+        )
+        # Set alt text for identification and add initial content
+        text_element.objectId = text_element_id
+        text_element.set_alt_text(title="text")
+        # Write content with header and body that should create multiple styles
+        text_element.write_text("# Sample Header\nThis is body text with different formatting", as_markdown=True)
+        
+        # Refresh the slide to get the updated elements
+        return Slide.from_ids(presentation.presentationId, slide.objectId)
 
     @pytest.fixture
     def test_slide(self, source_slide):
