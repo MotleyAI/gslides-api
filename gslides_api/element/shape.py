@@ -16,9 +16,9 @@ from gslides_api.request.request import (
     CreateShapeRequest,
     DeleteParagraphBulletsRequest,
     DeleteTextRequest,
-    GSlidesAPIRequest,
     UpdateTextStyleRequest,
 )
+from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.text import Placeholder, TextStyle, Type
 
 

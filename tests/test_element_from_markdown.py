@@ -18,7 +18,7 @@ from gslides_api.markdown.element import (
 )
 from gslides_api.request.table import CreateTableRequest
 from gslides_api.request.request import InsertTextRequest, UpdateTextStyleRequest
-from gslides_api import TableCellLocation
+from gslides_api.table_cell import TableCellLocation
 
 
 class TestTextElementFromMarkdown:

@@ -2,9 +2,8 @@
 
 import pytest
 
-from gslides_api import TextElement
-from gslides_api.markdown.from_markdown import (BulletPointGroup, ItemList,
-                                                NumberedListGroup)
+from gslides_api.text import TextElement
+from gslides_api.markdown.from_markdown import BulletPointGroup, ItemList, NumberedListGroup
 from gslides_api.text import TextRun, TextStyle
 
 

@@ -9,10 +9,10 @@ from gslides_api.request.domain import Range, RangeType
 from gslides_api.table_cell import TableCellLocation
 from gslides_api.request.request import (
     DeleteParagraphBulletsRequest,
-    GSlidesAPIRequest,
     DeleteTextRequest,
     UpdateTextStyleRequest,
 )
+from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.text import TextStyle, TextElement
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
 

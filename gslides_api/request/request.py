@@ -1,11 +1,10 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from pydantic import Field
 
 from gslides_api.domain import (
     AffineTransform,
     BulletGlyphPreset,
-    GSlidesBaseModel,
     ImageProperties,
     LayoutReference,
     LineProperties,
@@ -17,24 +16,9 @@ from gslides_api.request.domain import (
     Range,
     SubstringMatchCriteria,
 )
+from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.table_cell import TableCellLocation
 from gslides_api.text import ParagraphStyle, ShapeProperties, TextStyle, Type
-
-if TYPE_CHECKING:
-    from gslides_api.page.base import PageProperties
-    from gslides_api.page.slide_properties import SlideProperties
-
-
-class GSlidesAPIRequest(GSlidesBaseModel):
-    """Base class for all requests to the Google Slides API."""
-
-    def to_request(self) -> List[Dict[str, Any]]:
-        """Convert to the format expected by the Google Slides API."""
-        request_name = self.__class__.__name__.replace("Request", "")
-        # make first letter lowercase
-        request_name = request_name[0].lower() + request_name[1:]
-
-        return [{request_name: self.to_api_format()}]
 
 
 class CreateParagraphBulletsRequest(GSlidesAPIRequest):
@@ -212,21 +196,6 @@ class CreateSlideRequest(GSlidesAPIRequest):
     )
 
 
-class UpdateSlidePropertiesRequest(GSlidesAPIRequest):
-    """Updates the properties of a Slide.
-
-    This request updates the slide properties for the specified slide.
-
-    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updateslidepropertiesrequest
-    """
-
-    objectId: str = Field(description="The object ID of the slide to update")
-    slideProperties: "SlideProperties" = Field(description="The slide properties to update")
-    fields: str = Field(
-        description="The fields that should be updated. At least one field must be specified. The root 'slideProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
-    )
-
-
 class UpdateSlidesPositionRequest(GSlidesAPIRequest):
     """Updates the position of slides in the presentation.
 
@@ -240,21 +209,6 @@ class UpdateSlidesPositionRequest(GSlidesAPIRequest):
     )
     insertionIndex: int = Field(
         description="The index where the slides should be inserted, based on the slide arrangement before the move takes place. Must be between zero and the number of slides in the presentation, inclusive."
-    )
-
-
-class UpdatePagePropertiesRequest(GSlidesAPIRequest):
-    """Updates the properties of a Page.
-
-    This request updates the page properties for the specified page.
-
-    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatepagepropertiesrequest
-    """
-
-    objectId: str = Field(description="The object ID of the page to update")
-    pageProperties: "PageProperties" = Field(description="The page properties to update")
-    fields: str = Field(
-        description="The fields that should be updated. At least one field must be specified. The root 'pageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
 
 

@@ -11,14 +11,14 @@ import os
 
 import pytest
 
-from gslides_api import Presentation, Slide, initialize_credentials
+from gslides_api.presentation import Presentation, Slide
 from gslides_api.text import TextStyle
 from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.element.text_content import TextContent
 from gslides_api.domain import Dimension, Size, Transform, Unit
 from gslides_api.text import ShapeProperties
 from gslides_api.text import Type as ShapeType
-from gslides_api.client import api_client
+from gslides_api.client import api_client, initialize_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class TestMarkdownIntegration:
         # Create test presentation
         test_presentation = Presentation.create_blank("Markdown Integration Test")
         yield test_presentation
-        
+
         # Cleanup: delete the presentation after all tests
         try:
             api_client.delete_file(test_presentation.presentationId)
@@ -51,51 +51,59 @@ class TestMarkdownIntegration:
         """Create a source slide with test elements for duplication."""
         # Create a new slide for testing
         slide = Slide.create_blank(presentation.presentationId)
-        
+
         # Create text element with alt title "text_1"
         text_element = ShapeElement(
             objectId="temp_text_1",
             presentation_id=presentation.presentationId,
             slide_id=slide.objectId,
-            size=Size(width=Dimension(magnitude=400, unit=Unit.PT), height=Dimension(magnitude=200, unit=Unit.PT)),
-            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=100.0, unit="EMU"),
+            size=Size(
+                width=Dimension(magnitude=400, unit=Unit.PT),
+                height=Dimension(magnitude=200, unit=Unit.PT),
+            ),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=100.0, unit="EMU"
+            ),
             shape=Shape(
                 shapeProperties=ShapeProperties(),
                 shapeType=ShapeType.TEXT_BOX,
-                text=TextContent(textElements=[])
-            )
+                text=TextContent(textElements=[]),
+            ),
         )
         text_element_id = text_element.create_copy(
-            parent_id=slide.objectId,
-            presentation_id=presentation.presentationId
+            parent_id=slide.objectId, presentation_id=presentation.presentationId
         )
         # Set alt text for identification and add initial content
         text_element.objectId = text_element_id
         text_element.set_alt_text(title="text_1")
         text_element.write_text("* Sample bullet point\\n* Another bullet point", as_markdown=True)
-        
+
         # Create title element with alt title "title_1"
         title_element = ShapeElement(
             objectId="temp_title_1",
             presentation_id=presentation.presentationId,
             slide_id=slide.objectId,
-            size=Size(width=Dimension(magnitude=400, unit=Unit.PT), height=Dimension(magnitude=100, unit=Unit.PT)),
-            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=50.0, unit="EMU"),
+            size=Size(
+                width=Dimension(magnitude=400, unit=Unit.PT),
+                height=Dimension(magnitude=100, unit=Unit.PT),
+            ),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=50.0, unit="EMU"
+            ),
             shape=Shape(
                 shapeProperties=ShapeProperties(),
                 shapeType=ShapeType.TEXT_BOX,
-                text=TextContent(textElements=[])
-            )
+                text=TextContent(textElements=[]),
+            ),
         )
         title_element_id = title_element.create_copy(
-            parent_id=slide.objectId,
-            presentation_id=presentation.presentationId
+            parent_id=slide.objectId, presentation_id=presentation.presentationId
         )
         # Set alt text for identification and add initial content
         title_element.objectId = title_element_id
         title_element.set_alt_text(title="title_1")
         title_element.write_text("Sample Title", as_markdown=True)
-        
+
         # Refresh the slide to get the updated elements
         return Slide.from_ids(presentation.presentationId, slide.objectId)
 
@@ -104,30 +112,36 @@ class TestMarkdownIntegration:
         """Create a second source slide with test elements for duplication."""
         # Create a new slide for testing
         slide = Slide.create_blank(presentation.presentationId)
-        
+
         # Create text element with alt title "text"
         text_element = ShapeElement(
             objectId="temp_text_2",
             presentation_id=presentation.presentationId,
             slide_id=slide.objectId,
-            size=Size(width=Dimension(magnitude=400, unit=Unit.PT), height=Dimension(magnitude=300, unit=Unit.PT)),
-            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=100.0, unit="EMU"),
+            size=Size(
+                width=Dimension(magnitude=400, unit=Unit.PT),
+                height=Dimension(magnitude=300, unit=Unit.PT),
+            ),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=50.0, translateY=100.0, unit="EMU"
+            ),
             shape=Shape(
                 shapeProperties=ShapeProperties(),
                 shapeType=ShapeType.TEXT_BOX,
-                text=TextContent(textElements=[])
-            )
+                text=TextContent(textElements=[]),
+            ),
         )
         text_element_id = text_element.create_copy(
-            parent_id=slide.objectId,
-            presentation_id=presentation.presentationId
+            parent_id=slide.objectId, presentation_id=presentation.presentationId
         )
         # Set alt text for identification and add initial content
         text_element.objectId = text_element_id
         text_element.set_alt_text(title="text")
         # Write content with header and body that should create multiple styles
-        text_element.write_text("# Sample Header\nThis is body text with different formatting", as_markdown=True)
-        
+        text_element.write_text(
+            "# Sample Header\nThis is body text with different formatting", as_markdown=True
+        )
+
         # Refresh the slide to get the updated elements
         return Slide.from_ids(presentation.presentationId, slide.objectId)
 
@@ -179,9 +193,7 @@ class TestMarkdownIntegration:
             md = "Oh what a text\n* Bullet points\n* And more\n1. Numbered items\n2. And more"
 
             # Write markdown to text element
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
 
             # Sync and verify content matches
             test_slide.sync_from_cloud()
@@ -197,9 +209,7 @@ class TestMarkdownIntegration:
     * And even more `code` blocks"""
 
             # Write markdown to text element
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                medium_md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(medium_md, as_markdown=True)
 
             # Sync from cloud
             test_slide.sync_from_cloud()
@@ -273,9 +283,7 @@ Mixed content with [links](https://example.com) and ~~crossed out~~ text."""
                     f"Expected: ...{repr(complex_markdown[context_start:expected_context_end])}..."
                 )
                 print(f"Actual:   ...{repr(re_md[context_start:context_end])}...")
-                print(
-                    f"Expected length: {len(complex_markdown)}, Actual length: {len(re_md)}"
-                )
+                print(f"Expected length: {len(complex_markdown)}, Actual length: {len(re_md)}")
 
             assert re_md == complex_markdown
 
@@ -323,7 +331,7 @@ Not to mention other text"""
                 assert e.paragraphMarker.bullet.glyph is not None
                 # Check that bulletStyle exists (even if foregroundColor is None in fresh presentations)
                 assert e.paragraphMarker.bullet.bulletStyle is not None
-        
+
         # Ensure we found some bullet points
         assert bullet_count > 0, "Should have found bullet points in the markdown text"
 
@@ -379,9 +387,7 @@ And some more text that belongs in the last list item """
         def test_strikethrough_standalone(self, test_slide):
             """Test strikethrough formatting in a standalone line."""
             md = "This is regular text with ~~strikethrough~~ formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -389,9 +395,7 @@ And some more text that belongs in the last list item """
         def test_emphasis_standalone(self, test_slide):
             """Test emphasis formatting in a standalone line."""
             md = "This is regular text with *emphasis* formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -399,9 +403,7 @@ And some more text that belongs in the last list item """
         def test_bold_standalone(self, test_slide):
             """Test bold formatting in a standalone line."""
             md = "This is regular text with **bold** formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -409,9 +411,7 @@ And some more text that belongs in the last list item """
         def test_bold_emphasis_standalone(self, test_slide):
             """Test bold emphasis formatting in a standalone line."""
             md = "This is regular text with ***bold emphasis*** formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -419,9 +419,7 @@ And some more text that belongs in the last list item """
         def test_code_standalone(self, test_slide):
             """Test code formatting in a standalone line."""
             md = "This is regular text with `code` formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -429,9 +427,7 @@ And some more text that belongs in the last list item """
         def test_link_standalone(self, test_slide):
             """Test link formatting in a standalone line."""
             md = "This is regular text with a [link to Google](https://google.com) formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -439,9 +435,7 @@ And some more text that belongs in the last list item """
         def test_strikethrough_in_bullet(self, test_slide):
             """Test strikethrough formatting within a bullet list."""
             md = "* This is regular text with ~~strikethrough~~ formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -449,9 +443,7 @@ And some more text that belongs in the last list item """
         def test_emphasis_in_bullet(self, test_slide):
             """Test emphasis formatting within a bullet list."""
             md = "* This is regular text with *emphasis* formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -459,9 +451,7 @@ And some more text that belongs in the last list item """
         def test_bold_in_bullet(self, test_slide):
             """Test bold formatting within a bullet list."""
             md = "* This is regular text with **bold** formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -469,9 +459,7 @@ And some more text that belongs in the last list item """
         def test_bold_emphasis_in_bullet(self, test_slide):
             """Test bold emphasis formatting within a bullet list."""
             md = "* This is regular text with ***bold emphasis*** formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -479,9 +467,7 @@ And some more text that belongs in the last list item """
         def test_code_in_bullet(self, test_slide):
             """Test code formatting within a bullet list."""
             md = "* This is regular text with `code` formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -489,9 +475,7 @@ And some more text that belongs in the last list item """
         def test_link_in_bullet(self, test_slide):
             """Test link formatting within a bullet list."""
             md = "* This is regular text with a [link to Google](https://google.com) formatting."
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md
@@ -499,9 +483,7 @@ And some more text that belongs in the last list item """
         def test_simple_nested_numbered_list(self, test_slide):
             """Test simple nested numbered list reconstruction."""
             md = "1. First item\n    1. Nested item\n    2. Another nested item\n2. Second item"
-            test_slide.get_element_by_alt_title("text_1").write_text(
-                md, as_markdown=True
-            )
+            test_slide.get_element_by_alt_title("text_1").write_text(md, as_markdown=True)
             test_slide.sync_from_cloud()
             re_md = test_slide.get_element_by_alt_title("text_1").read_text()
             assert re_md == md

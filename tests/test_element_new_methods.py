@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import TypeAdapter
 
-from gslides_api import ShapeProperties
+from gslides_api.text import ShapeProperties
 from gslides_api.domain import Image, ImageReplaceMethod, Size, Transform
 from gslides_api.element.element import PageElement
 from gslides_api.element.image import ImageElement

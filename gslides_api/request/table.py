@@ -11,7 +11,7 @@ from gslides_api.table import (
 )
 from gslides_api.domain import PageElementProperties
 from gslides_api.table_cell import TableCellLocation
-from gslides_api.request.request import GSlidesAPIRequest
+from gslides_api.request.parent import GSlidesAPIRequest
 
 
 class CreateTableRequest(GSlidesAPIRequest):

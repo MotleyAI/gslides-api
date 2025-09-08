@@ -12,10 +12,10 @@ from gslides_api.domain import BulletGlyphPreset
 from gslides_api.request.domain import Range, RangeType
 from gslides_api.request.request import (
     CreateParagraphBulletsRequest,
-    GSlidesAPIRequest,
     InsertTextRequest,
     UpdateTextStyleRequest,
 )
+from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.text import TextElement, TextRun, TextStyle
 
 

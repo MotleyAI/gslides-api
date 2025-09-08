@@ -6,7 +6,8 @@ from pydantic import Field
 
 from gslides_api.client import GoogleAPIClient, api_client
 from gslides_api.domain import GSlidesBaseModel, OutputUnit, PageElementProperties, Size, Transform
-from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
+from gslides_api.request.request import UpdatePageElementAltTextRequest
+from gslides_api.request.parent import GSlidesAPIRequest
 
 logger = logging.getLogger(__name__)
 

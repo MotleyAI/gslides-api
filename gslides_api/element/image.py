@@ -13,10 +13,10 @@ from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.request.request import (
     CreateImageRequest,
-    GSlidesAPIRequest,
     ReplaceImageRequest,
     UpdateImagePropertiesRequest,
 )
+from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 
 

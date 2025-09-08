@@ -8,6 +8,8 @@ from gslides_api.element.base import ElementKind
 from gslides_api.element.element import PageElement
 from pydantic import Field, model_validator
 
+from gslides_api.request.parent import GSlidesAPIRequest
+
 
 class PageType(Enum):
     """Enumeration of possible page types."""
@@ -24,6 +26,21 @@ class PageProperties(GSlidesBaseModel):
 
     pageBackgroundFill: Optional[PageBackgroundFill] = None
     colorScheme: Optional[ColorScheme] = None
+
+
+class UpdatePagePropertiesRequest(GSlidesAPIRequest):
+    """Updates the properties of a Page.
+
+    This request updates the page properties for the specified page.
+
+    Reference: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#updatepagepropertiesrequest
+    """
+
+    objectId: str = Field(description="The object ID of the page to update")
+    pageProperties: "PageProperties" = Field(description="The page properties to update")
+    fields: str = Field(
+        description="The fields that should be updated. At least one field must be specified. The root 'pageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
+    )
 
 
 def unroll_group_elements(elements: List["PageElement"]) -> List[PageElement]:
