@@ -1,9 +1,10 @@
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional, Sequence, Tuple, Any
 import uuid
 
 from pydantic import Field, field_validator
+from typeguard import typechecked
 
-from gslides_api.client import GoogleAPIClient
+from gslides_api.client import GoogleAPIClient, api_client as default_api_client
 from gslides_api.domain import OutputUnit
 from gslides_api.request.domain import TableCellLocation
 from gslides_api.table import Table
@@ -11,10 +12,17 @@ from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
 from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
-from gslides_api.request.table import CreateTableRequest
+from gslides_api.request.table import (
+    CreateTableRequest,
+    InsertTableRowsRequest,
+    DeleteTableRowRequest,
+    InsertTableColumnsRequest,
+    DeleteTableColumnRequest,
+)
 from gslides_api.text import TextStyle
 
 
+@typechecked
 class TableElement(PageElementBase):
     """Represents a table element on a slide."""
 
@@ -113,12 +121,15 @@ class TableElement(PageElementBase):
     def write_text_to_cell_requests(
         self,
         text: str,
-        location: TableCellLocation = None,
+        location: TableCellLocation | Sequence[int],
         as_markdown: bool = True,
         styles: List[TextStyle] | None = None,
         overwrite: bool = True,
         autoscale: bool = False,
     ) -> List[GSlidesAPIRequest]:
+        if isinstance(location, Sequence):
+            location = TableCellLocation(rowIndex=location[0], columnIndex=location[1])
+
         # Validate cell location is within table bounds
         if (
             location.rowIndex >= self.table.rows
@@ -180,13 +191,13 @@ class TableElement(PageElementBase):
     def write_text_to_cell(
         self,
         text: str,
-        location: TableCellLocation = None,
+        location: TableCellLocation | Sequence[int],
         as_markdown: bool = True,
         styles: List[TextStyle] | None = None,
         overwrite: bool = True,
         autoscale: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any] | None:
         requests = self.write_text_to_cell_requests(
             text=text,
             location=location,
@@ -196,7 +207,7 @@ class TableElement(PageElementBase):
             autoscale=autoscale,
         )
         if requests:
-            client = api_client or globals()["api_client"]
+            client = api_client or default_api_client
             return client.batch_update(requests, self.presentation_id)
 
     def delete_text_in_cell_requests(self, location: TableCellLocation) -> List[GSlidesAPIRequest]:
@@ -440,9 +451,6 @@ class TableElement(PageElementBase):
 
         # Handle row changes
         if n_rows > current_rows:
-            # Add rows at the bottom
-            from gslides_api.request.table import InsertTableRowsRequest
-
             rows_to_add = n_rows - current_rows
             requests.append(
                 InsertTableRowsRequest(
@@ -453,9 +461,6 @@ class TableElement(PageElementBase):
                 )
             )
         elif n_rows < current_rows:
-            # Delete rows from the bottom
-            from gslides_api.request.table import DeleteTableRowRequest
-
             rows_to_delete = current_rows - n_rows
             for i in range(rows_to_delete):
                 row_index = current_rows - 1 - i
@@ -468,9 +473,6 @@ class TableElement(PageElementBase):
 
         # Handle column changes
         if n_columns > current_columns:
-            # Add columns to the right
-            from gslides_api.request.table import InsertTableColumnsRequest
-
             columns_to_add = n_columns - current_columns
             requests.append(
                 InsertTableColumnsRequest(
@@ -481,9 +483,6 @@ class TableElement(PageElementBase):
                 )
             )
         elif n_columns < current_columns:
-            # Delete columns from the right
-            from gslides_api.request.table import DeleteTableColumnRequest
-
             columns_to_delete = current_columns - n_columns
             for i in range(columns_to_delete):
                 column_index = current_columns - 1 - i
@@ -498,6 +497,11 @@ class TableElement(PageElementBase):
 
     def resize(self, n_rows: int, n_columns: int, api_client=None) -> None:
         """Resize the table to the specified dimensions.
+        IMPORTANT: when adding/removing rows, the table size is changed to match the number of rows,
+        but for columns the behavior is different: when adding columns, existing columns are squeezed,
+        with the width of the new columns being equal to the width of the cell at
+        but when deleting columns, the rightmost columns are deleted and the table size is changed
+        to match.
 
         Args:
             n_rows: Target number of rows
@@ -514,16 +518,15 @@ class TableElement(PageElementBase):
             return
 
         if api_client is None:
-            from gslides_api.client import api_client as default_client
 
-            api_client = default_client
+            api_client = default_api_client
             if api_client is None:
                 raise ValueError(
                     "No API client available. Please provide an api_client parameter or initialize the default client."
                 )
 
         # Execute the resize requests
-        api_client.execute_batch_requests(requests, presentation_id=self.presentation_id)
+        api_client.batch_update(requests, presentation_id=self.presentation_id)
 
         # Update local table dimensions
         self.table.rows = n_rows

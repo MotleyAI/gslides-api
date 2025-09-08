@@ -23,7 +23,7 @@ configure_logging(logging_params=LoggingParams(level="INFO"))
 
 llm = init_llm(llm_framework=LLMFramework.LANGCHAIN, llm_name="gpt-5")
 
-api_client.auto_flush = False
+api_client.auto_flush = True
 
 credential_location = os.getenv("GSLIDES_CREDENTIALS_PATH")
 initialize_credentials(credential_location)
@@ -36,4 +36,14 @@ presentation_id = "1U_8TmamiNcb43eCC4teagrzs93h-oYiCXV4l5WyULiY"
 
 p = Presentation.from_id(presentation_id, api_client=api_client)
 
-s = p.get_slide_by_name("Slide 4")
+slide = p.get_slide_by_name("Slide 4")
+table = slide.get_elements_by_alt_title("Table_1")[0]
+cell = table[0, 0]
+print(cell.read_text())
+table.write_text_to_cell(text="Hello world!", location=(0, 0))
+api_client.flush_batch_update()
+
+table.resize(n_rows=5, n_columns=4)
+table.resize(n_rows=3, n_columns=2)
+table.resize(n_rows=4, n_columns=4)
+print("yay!")

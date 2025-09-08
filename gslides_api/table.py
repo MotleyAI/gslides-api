@@ -57,13 +57,14 @@ class TableCell(GSlidesBaseModel):
     text: Optional[TextContent] = None
     tableCellProperties: Optional[TableCellProperties] = None
 
-    def read_text(self) -> str:
+    def read_text(self, as_markdown: bool = True) -> str:
         if self.text is None:
             return ""
-        return self.text.read_text()
+        return self.text.read_text(as_markdown=as_markdown)
 
-    # TODO: implement; problem is that autoscale doesn't work because the cell
-    # is not aware of its size, which is stored in its Table ancestor
+    def write_text(self, *args, **kwargs):
+        raise NotImplementedError("Use TableElement.write_text_to_cell instead.")
+
     # def write_text(
     #     self,
     #     text: str,
@@ -73,6 +74,10 @@ class TableCell(GSlidesBaseModel):
     #     autoscale: bool = False,
     #     api_client: Optional[GoogleAPIClient] = None,
     # ) -> None:
+    #     if autoscale:
+    #         raise NotImplementedError(
+    #             "Autoscale not implemented for table cells yet, call TableElement.write_text_to_cell instead."
+    #         )
     #     if self.text is None:
     #         self.text = TextContent()
     #     requests = self.text.write_text_requests(
