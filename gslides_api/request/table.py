@@ -1,7 +1,14 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import Field
 
+from gslides_api.table import (
+    TableColumnProperties,
+    TableRowProperties,
+    TableCellProperties,
+    TableBorderProperties,
+    TableRange,
+)
 from gslides_api.domain import PageElementProperties
 from gslides_api.request.domain import TableCellLocation
 from gslides_api.request.request import GSlidesAPIRequest
@@ -69,7 +76,7 @@ class DeleteTableRowRequest(GSlidesAPIRequest):
     """
 
     tableObjectId: str = Field(description="The table to delete rows from")
-    cellLocation: Dict[str, Any] = Field(
+    cellLocation: TableCellLocation = Field(
         description="The reference table cell location from which a row will be deleted"
     )
 
@@ -81,7 +88,7 @@ class DeleteTableColumnRequest(GSlidesAPIRequest):
     """
 
     tableObjectId: str = Field(description="The table to delete columns from")
-    cellLocation: Dict[str, Any] = Field(
+    cellLocation: TableCellLocation = Field(
         description="The reference table cell location from which a column will be deleted"
     )
 
@@ -93,10 +100,12 @@ class UpdateTableCellPropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the table")
-    tableRange: Dict[str, Any] = Field(
+    tableRange: TableRange = Field(
         description="The table range representing the subset of the table to which the updates are applied"
     )
-    tableCellProperties: Dict[str, Any] = Field(description="The table cell properties to update")
+    tableCellProperties: TableCellProperties = Field(
+        description="The table cell properties to update"
+    )
     fields: str = Field(description="The fields that should be updated")
 
 
@@ -107,7 +116,7 @@ class UpdateTableBorderPropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the table")
-    tableRange: Optional[Dict[str, Any]] = Field(
+    tableRange: TableRange = Field(
         default=None,
         description="The table range representing the subset of the table to which the updates are applied",
     )
@@ -115,7 +124,7 @@ class UpdateTableBorderPropertiesRequest(GSlidesAPIRequest):
         default=None,
         description="The border position in the table range the updates should apply to",
     )
-    tableBorderProperties: Dict[str, Any] = Field(
+    tableBorderProperties: TableBorderProperties = Field(
         description="The table border properties to update"
     )
     fields: str = Field(description="The fields that should be updated")
@@ -132,7 +141,7 @@ class UpdateTableColumnPropertiesRequest(GSlidesAPIRequest):
         default=None,
         description="The list of zero-based indices specifying which columns to update",
     )
-    tableColumnProperties: Dict[str, Any] = Field(
+    tableColumnProperties: TableColumnProperties = Field(
         description="The table column properties to update"
     )
     fields: str = Field(description="The fields that should be updated")
@@ -149,7 +158,7 @@ class UpdateTableRowPropertiesRequest(GSlidesAPIRequest):
         default=None,
         description="The list of zero-based indices specifying which rows to update",
     )
-    tableRowProperties: Dict[str, Any] = Field(description="The table row properties to update")
+    tableRowProperties: TableRowProperties = Field(description="The table row properties to update")
     fields: str = Field(description="The fields that should be updated")
 
 
@@ -160,7 +169,7 @@ class MergeTableCellsRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the table")
-    tableRange: Dict[str, Any] = Field(
+    tableRange: TableRange = Field(
         description="The table range specifying which cells of the table to merge"
     )
 
@@ -172,6 +181,6 @@ class UnmergeTableCellsRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the table")
-    tableRange: Dict[str, Any] = Field(
+    tableRange: TableRange = Field(
         description="The table range specifying which cells of the table to unmerge"
     )

@@ -131,6 +131,14 @@ class TableBorderRow(GSlidesBaseModel):
     tableBorderCells: Optional[List[TableBorderCell]] = None
 
 
+class TableRange(GSlidesBaseModel):
+    """Represents a range of table cells."""
+
+    location: Optional[TableCellLocation] = None
+    rowSpan: Optional[int] = None
+    columnSpan: Optional[int] = None
+
+
 class Table(GSlidesBaseModel):
     """Represents a table in a slide."""
 
