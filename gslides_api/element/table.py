@@ -192,6 +192,56 @@ class TableElement(PageElementBase):
                 r.cellLocation = location
         return requests
 
+    def create_request(
+        self, parent_id: str, object_id: Optional[str] = None
+    ) -> List[GSlidesAPIRequest]:
+        """Convert a TableElement to a create request for the Google Slides API.
+        We can supply an object_id so we know it for other operations,
+        even before the request is executed.
+        """
+        element_properties = self.element_properties(parent_id)
+        if object_id is None:
+            object_id = f"table_{uuid.uuid4().hex[:8]}"
+
+        request = CreateTableRequest(
+            objectId=object_id,
+            elementProperties=element_properties,
+            rows=self.table.rows,
+            columns=self.table.columns,
+        )
+        return [request]
+
+    def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
+        """Convert a TableElement to an update request for the Google Slides API.
+        Meant for copying one's content to another element
+        """
+        requests = self.alt_text_update_request(element_id)
+        requests += self.content_update_requests(self.to_markdown_element("temp"))
+        return requests
+
+    def content_update_requests(
+        self, markdown_elem: MarkdownTableElement | str
+    ) -> List[GSlidesAPIRequest]:
+        """
+        Update the table's content with the provided markdown table.
+        :param markdown_elem: if a str, must contain only a valid markdown table
+        :return: Request to update the table's content
+        """
+        requests = []
+
+        if isinstance(markdown_elem, str):
+            markdown_elem = MarkdownTableElement.from_markdown("temp", markdown_elem)
+
+        for row in range(markdown_elem.shape[0]):
+            for col in range(markdown_elem.shape[1]):
+                cell_content = markdown_elem[row, col]
+                cell_location = TableCellLocation(rowIndex=row, columnIndex=col)
+                requests.extend(
+                    self.write_text_to_cell_requests(cell_content.strip(), cell_location)
+                )
+
+        return requests
+
     def write_text_to_cell(
         self,
         text: str,
@@ -246,30 +296,6 @@ class TableElement(PageElementBase):
         for r in requests:
             if hasattr(r, "cellLocation"):
                 r.cellLocation = location
-        return requests
-
-    def create_request(
-        self, parent_id: str, object_id: Optional[str] = None
-    ) -> List[GSlidesAPIRequest]:
-        """Convert a TableElement to a create request for the Google Slides API."""
-        element_properties = self.element_properties(parent_id)
-        if object_id is None:
-            object_id = f"table_{uuid.uuid4().hex[:8]}"
-
-        request = CreateTableRequest(
-            objectId=object_id,
-            elementProperties=element_properties,
-            rows=self.table.rows,
-            columns=self.table.columns,
-        )
-        return [request]
-
-    def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
-        """Convert a TableElement to an update request for the Google Slides API."""
-        requests = self.alt_text_update_request(element_id)
-        for row in self.table.tableRows:
-            for cell in row.tableCells:
-                requests += cell.text.to_requests(element_id, location=cell.location)
         return requests
 
     def extract_table_data(self) -> TableData:
@@ -411,21 +437,6 @@ class TableElement(PageElementBase):
 
         # Generate text requests for each cell
         requests += temp_table_element.content_update_requests(markdown_elem)
-
-        return requests
-
-    def content_update_requests(
-        self, markdown_elem: MarkdownTableElement
-    ) -> List[GSlidesAPIRequest]:
-        requests = []
-
-        for row in range(markdown_elem.shape[0]):
-            for col in range(markdown_elem.shape[1]):
-                cell_content = markdown_elem[row, col]
-                cell_location = TableCellLocation(rowIndex=row, columnIndex=col)
-                requests.extend(
-                    self.write_text_to_cell_requests(cell_content.strip(), cell_location)
-                )
 
         return requests
 
