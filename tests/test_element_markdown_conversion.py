@@ -194,7 +194,7 @@ class TestTableElementConversion:
 
         # Convert to API requests
         requests = TableElement.markdown_element_to_requests(
-            markdown_elem, parent_id="slide_123", element_id="test_table"
+            markdown_elem, slide_id="slide_123", element_id="test_table"
         )
 
         # Should have at least a CreateTableRequest
@@ -351,7 +351,7 @@ class TestIntegrationRoundTrip:
 
         # Convert to API requests
         requests = TableElement.markdown_element_to_requests(
-            large_table, parent_id="slide_123", element_id="large_table"
+            large_table, slide_id="slide_123", element_id="large_table"
         )
 
         # Verify table creation request

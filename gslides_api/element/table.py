@@ -364,7 +364,7 @@ class TableElement(PageElementBase):
     def markdown_element_to_requests(
         cls,
         markdown_elem: MarkdownTableElement,
-        parent_id: str,
+        slide_id: str,
         description: Optional[str] = None,
         element_id: Optional[str] = None,
     ) -> List[GSlidesAPIRequest]:
@@ -396,12 +396,12 @@ class TableElement(PageElementBase):
             ),
             transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
             table=Table(rows=num_rows, columns=num_cols),
-            slide_id=parent_id,
+            slide_id=slide_id,
             presentation_id="",
         )
 
         # Start with table creation request
-        requests = temp_table_element.create_request(parent_id, element_id)
+        requests = temp_table_element.create_request(slide_id, element_id)
 
         requests.append(
             UpdatePageElementAltTextRequest(
