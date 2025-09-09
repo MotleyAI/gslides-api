@@ -1,20 +1,33 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple, Any
 import uuid
 
 from pydantic import Field, field_validator
+from typeguard import typechecked
 
-from gslides_api.domain import OutputUnit
-from gslides_api.element.text_container import TextContainer
-from gslides_api.request.domain import TableCellLocation
-from gslides_api.table import Table
+from gslides_api.client import GoogleAPIClient, api_client as default_api_client
+from gslides_api.domain.domain import Dimension, OutputUnit, Size, Transform
+from gslides_api.domain.table_cell import TableCellLocation
+from gslides_api.domain.table import Table, TableColumnProperties
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
-from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
-from gslides_api.request.table import CreateTableRequest
+from gslides_api.request.request import UpdatePageElementAltTextRequest
+from gslides_api.request.parent import GSlidesAPIRequest
+from gslides_api.request.table import (
+    CreateTableRequest,
+    InsertTableRowsRequest,
+    DeleteTableRowRequest,
+    InsertTableColumnsRequest,
+    DeleteTableColumnRequest,
+    UpdateTableColumnPropertiesRequest,
+)
 
 
-class TableElement(TextContainer):
+from gslides_api.domain.text import TextStyle
+
+
+@typechecked
+class TableElement(PageElementBase):
     """Represents a table element on a slide."""
 
     table: Table
@@ -92,6 +105,148 @@ class TableElement(TextContainer):
                         this_row.append("")
                 out.append(this_row)
             return out
+
+    def __getitem__(self, key):
+        """Get a table cell by row/column indices or TableCellLocation.
+
+        Supports multiple access patterns:
+        - table[row, col] - tuple syntax (most common)
+        - table[location] - TableCellLocation object
+        """
+        if isinstance(key, TableCellLocation):
+            row_idx, col_idx = key.rowIndex, key.columnIndex
+        elif isinstance(key, tuple) and len(key) == 2:
+            row_idx, col_idx = key
+        else:
+            raise TypeError("Table indexing requires either (row, col) tuple or TableCellLocation")
+
+        return self.table.tableRows[row_idx].tableCells[col_idx]
+
+    def write_text_to_cell_requests(
+        self,
+        text: str,
+        location: TableCellLocation | Sequence[int],
+        as_markdown: bool = True,
+        styles: List[TextStyle] | None = None,
+        overwrite: bool = True,
+        autoscale: bool = False,
+    ) -> List[GSlidesAPIRequest]:
+        if isinstance(location, Sequence):
+            location = TableCellLocation(rowIndex=location[0], columnIndex=location[1])
+
+        # Validate cell location is within table bounds
+        if (
+            location.rowIndex >= self.table.rows
+            or location.columnIndex >= self.table.columns
+            or location.rowIndex < 0
+            or location.columnIndex < 0
+        ):
+            raise ValueError(
+                f"Cell location ({location.rowIndex}, {location.columnIndex}) "
+                f"is outside table bounds ({self.table.rows}, {self.table.columns})"
+            )
+
+        # If table structure is populated, use the existing cell's text content
+        if (
+            self.table.tableRows is not None
+            and location.rowIndex < len(self.table.tableRows)
+            and self.table.tableRows[location.rowIndex].tableCells is not None
+            and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
+        ):
+            cell = self[location.rowIndex, location.columnIndex]
+            size_inches = self.absolute_size(OutputUnit.IN, location)
+            requests = cell.text.write_text_requests(
+                text=text,
+                as_markdown=as_markdown,
+                styles=styles,
+                overwrite=overwrite,
+                autoscale=autoscale,
+                size_inches=size_inches,
+            )
+        else:
+            # Table structure not populated yet (e.g., during creation from markdown)
+            # Create a temporary TextContent to generate the requests
+            from gslides_api.element.text_content import TextContent
+
+            temp_text_content = TextContent(textElements=[])
+
+            # Calculate size if possible, otherwise use default
+            try:
+                size_inches = self.absolute_size(OutputUnit.IN, location)
+            except (ValueError, AttributeError):
+                size_inches = (4.0, 1.0) if autoscale else None
+
+            requests = temp_text_content.write_text_requests(
+                text=text,
+                as_markdown=as_markdown,
+                styles=styles,
+                overwrite=overwrite,
+                autoscale=autoscale,
+                size_inches=size_inches,
+            )
+
+        # Set objectId and cellLocation on all requests
+        for r in requests:
+            r.objectId = self.objectId
+            if hasattr(r, "cellLocation"):
+                r.cellLocation = location
+        return requests
+
+    def write_text_to_cell(
+        self,
+        text: str,
+        location: TableCellLocation | Sequence[int],
+        as_markdown: bool = True,
+        styles: List[TextStyle] | None = None,
+        overwrite: bool = True,
+        autoscale: bool = False,
+        api_client: Optional[GoogleAPIClient] = None,
+    ) -> dict[str, Any] | None:
+        requests = self.write_text_to_cell_requests(
+            text=text,
+            location=location,
+            as_markdown=as_markdown,
+            styles=styles,
+            overwrite=overwrite,
+            autoscale=autoscale,
+        )
+        if requests:
+            client = api_client or default_api_client
+            return client.batch_update(requests, self.presentation_id)
+
+    def delete_text_in_cell_requests(self, location: TableCellLocation) -> List[GSlidesAPIRequest]:
+        # Validate cell location is within table bounds
+        if (
+            location.rowIndex >= self.table.rows
+            or location.columnIndex >= self.table.columns
+            or location.rowIndex < 0
+            or location.columnIndex < 0
+        ):
+            raise ValueError(
+                f"Cell location ({location.rowIndex}, {location.columnIndex}) "
+                f"is outside table bounds ({self.table.rows}, {self.table.columns})"
+            )
+
+        # If table structure is populated, use the existing cell's text content
+        if (
+            self.table.tableRows is not None
+            and location.rowIndex < len(self.table.tableRows)
+            and self.table.tableRows[location.rowIndex].tableCells is not None
+            and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
+        ):
+            cell = self[location.rowIndex, location.columnIndex]
+            requests = cell.text.delete_text_request(self.objectId)
+        else:
+            # Table structure not populated yet - create generic delete requests
+            from gslides_api.element.text_content import TextContent
+
+            temp_text_content = TextContent(textElements=[])
+            requests = temp_text_content.delete_text_request(self.objectId)
+
+        for r in requests:
+            if hasattr(r, "cellLocation"):
+                r.cellLocation = location
+        return requests
 
     def create_request(
         self, parent_id: str, object_id: Optional[str] = None
@@ -206,10 +361,10 @@ class TableElement(TextContainer):
         return self.to_markdown_element("Table").to_markdown()
 
     @classmethod
-    def markdown_element_to_requests(
+    def create_element_from_markdown_requests(
         cls,
         markdown_elem: MarkdownTableElement,
-        parent_id: str,
+        slide_id: str,
         description: Optional[str] = None,
         element_id: Optional[str] = None,
     ) -> List[GSlidesAPIRequest]:
@@ -227,7 +382,7 @@ class TableElement(TextContainer):
         num_cols = len(table_data.headers)
 
         # Create temporary TableElement to generate the structure creation request
-        from gslides_api.domain import Dimension, Size, Unit, Transform
+        from gslides_api.domain.domain import Unit
 
         # Basic sizing: 100pt per column, 30pt per row
         default_width = max(300, num_cols * 100)
@@ -241,12 +396,12 @@ class TableElement(TextContainer):
             ),
             transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
             table=Table(rows=num_rows, columns=num_cols),
-            slide_id=parent_id,
+            slide_id=slide_id,
             presentation_id="",
         )
 
         # Start with table creation request
-        requests = temp_table_element.create_request(parent_id, element_id)
+        requests = temp_table_element.create_request(slide_id, element_id)
 
         requests.append(
             UpdatePageElementAltTextRequest(
@@ -255,35 +410,271 @@ class TableElement(TextContainer):
         )
 
         # Generate text requests for each cell
-        from gslides_api.markdown.from_markdown import markdown_to_text_elements
-
-        # Process header row first (row 0)
-        for col_idx, header_content in enumerate(table_data.headers):
-            if header_content.strip():
-                cell_location = TableCellLocation(rowIndex=0, columnIndex=col_idx)
-                cell_requests = markdown_to_text_elements(header_content.strip())
-
-                # Set objectId and cellLocation for each request
-                for request in cell_requests:
-                    request.objectId = element_id
-                    if hasattr(request, "cellLocation"):
-                        request.cellLocation = cell_location
-
-                requests.extend(cell_requests)
-
-        # Process data rows (row 1+)
-        for row_idx, row_data in enumerate(table_data.rows):
-            for col_idx, cell_content in enumerate(row_data):
-                if cell_content.strip():
-                    cell_location = TableCellLocation(rowIndex=row_idx + 1, columnIndex=col_idx)
-                    cell_requests = markdown_to_text_elements(cell_content.strip())
-
-                    # Set objectId and cellLocation for each request
-                    for request in cell_requests:
-                        request.objectId = element_id
-                        if hasattr(request, "cellLocation"):
-                            request.cellLocation = cell_location
-
-                    requests.extend(cell_requests)
+        requests += temp_table_element.content_update_requests(markdown_elem)
 
         return requests
+
+    def content_update_requests(
+        self, markdown_elem: MarkdownTableElement
+    ) -> List[GSlidesAPIRequest]:
+        requests = []
+
+        for row in range(markdown_elem.shape[0]):
+            for col in range(markdown_elem.shape[1]):
+                cell_content = markdown_elem[row, col]
+                cell_location = TableCellLocation(rowIndex=row, columnIndex=col)
+                requests.extend(
+                    self.write_text_to_cell_requests(cell_content.strip(), cell_location)
+                )
+
+        return requests
+
+    def _calculate_proportional_widths_after_deletion(
+        self, remaining_column_indices: List[int]
+    ) -> List[GSlidesAPIRequest]:
+        """Generate requests to proportionally expand remaining columns to maintain total table width.
+
+        Args:
+            remaining_column_indices: List of column indices that will remain after deletion
+
+        Returns:
+            List of UpdateTableColumnPropertiesRequest to adjust column widths
+        """
+        requests = []
+
+        # Only proceed if we have column width information
+        if not self.table.tableColumns or len(self.table.tableColumns) != self.table.columns:
+            return requests
+
+        # Calculate total width of remaining columns
+        total_remaining_width = 0
+        remaining_widths = []
+
+        for col_idx in remaining_column_indices:
+            if (
+                col_idx < len(self.table.tableColumns)
+                and self.table.tableColumns[col_idx].columnWidth
+            ):
+                width = self.table.tableColumns[col_idx].columnWidth.magnitude
+                remaining_widths.append(width)
+                total_remaining_width += width
+            else:
+                # If we don't have width info for some columns, can't do proportional adjustment
+                return requests
+
+        if total_remaining_width == 0:
+            return requests
+
+        # Calculate total width of all original columns
+        total_original_width = 0
+        for col in self.table.tableColumns:
+            if col.columnWidth:
+                total_original_width += col.columnWidth.magnitude
+
+        if total_original_width == 0:
+            return requests
+
+        # Calculate proportional expansion factor
+        expansion_factor = total_original_width / total_remaining_width
+
+        # Generate update requests for each remaining column
+        for i, col_idx in enumerate(remaining_column_indices):
+            new_width = remaining_widths[i] * expansion_factor
+            original_col = self.table.tableColumns[col_idx]
+
+            # Create new column properties with adjusted width
+            new_column_props = TableColumnProperties(
+                columnWidth=Dimension(magnitude=new_width, unit=original_col.columnWidth.unit)
+            )
+
+            requests.append(
+                UpdateTableColumnPropertiesRequest(
+                    objectId=self.objectId,
+                    columnIndices=[col_idx],
+                    tableColumnProperties=new_column_props,
+                    fields="columnWidth",
+                )
+            )
+
+        return requests
+
+    def _generate_width_preserving_requests_after_addition(
+        self, original_columns: int, new_columns: int
+    ) -> List[GSlidesAPIRequest]:
+        """Generate requests to preserve original column widths and set new columns to rightmost width.
+
+        Args:
+            original_columns: Number of columns before addition
+            new_columns: Total number of columns after addition
+
+        Returns:
+            List of UpdateTableColumnPropertiesRequest to set column widths
+        """
+        from gslides_api.request.table import UpdateTableColumnPropertiesRequest
+        from gslides_api.domain.table import TableColumnProperties
+
+        requests = []
+
+        # Only proceed if we have column width information
+        if not self.table.tableColumns or len(self.table.tableColumns) != original_columns:
+            return requests
+
+        # Get the width of the rightmost original column
+        rightmost_col = self.table.tableColumns[original_columns - 1]
+        if not rightmost_col.columnWidth:
+            return requests
+
+        rightmost_width = rightmost_col.columnWidth
+
+        # Set all original columns to their current widths (preserving them)
+        for col_idx in range(original_columns):
+            col = self.table.tableColumns[col_idx]
+            if col.columnWidth:
+                requests.append(
+                    UpdateTableColumnPropertiesRequest(
+                        objectId=self.objectId,
+                        columnIndices=[col_idx],
+                        tableColumnProperties=TableColumnProperties(columnWidth=col.columnWidth),
+                        fields="columnWidth",
+                    )
+                )
+
+        # Set all new columns to the rightmost column width
+        for col_idx in range(original_columns, new_columns):
+            requests.append(
+                UpdateTableColumnPropertiesRequest(
+                    objectId=self.objectId,
+                    columnIndices=[col_idx],
+                    tableColumnProperties=TableColumnProperties(columnWidth=rightmost_width),
+                    fields="columnWidth",
+                )
+            )
+
+        return requests
+
+    def resize_requests(
+        self, n_rows: int, n_columns: int, fix_width: bool = True
+    ) -> List[GSlidesAPIRequest]:
+        """Generate requests to resize the table to the specified dimensions.
+
+        Args:
+            n_rows: Target number of rows
+            n_columns: Target number of columns
+            fix_width: If True (default), maintain constant table width when adding/deleting columns.
+                      If False, preserve original column widths when adding columns and allow
+                      table width to change when deleting columns.
+
+        Returns:
+            List of API requests to resize the table
+
+        Raises:
+            ValueError: If target dimensions are less than 1
+        """
+        if n_rows < 1 or n_columns < 1:
+            raise ValueError("Table must have at least 1 row and 1 column")
+
+        requests = []
+        current_rows = self.table.rows
+        current_columns = self.table.columns
+
+        # Handle row changes
+        if n_rows > current_rows:
+            rows_to_add = n_rows - current_rows
+            requests.append(
+                InsertTableRowsRequest(
+                    tableObjectId=self.objectId,
+                    cellLocation=TableCellLocation(rowIndex=current_rows - 1, columnIndex=0),
+                    insertBelow=True,
+                    number=rows_to_add,
+                )
+            )
+        elif n_rows < current_rows:
+            rows_to_delete = current_rows - n_rows
+            for i in range(rows_to_delete):
+                row_index = current_rows - 1 - i
+                requests.append(
+                    DeleteTableRowRequest(
+                        tableObjectId=self.objectId,
+                        cellLocation={"rowIndex": row_index, "columnIndex": 0},
+                    )
+                )
+
+        # Handle column changes
+        if n_columns > current_columns:
+            # Adding columns
+            columns_to_add = n_columns - current_columns
+            requests.append(
+                InsertTableColumnsRequest(
+                    tableObjectId=self.objectId,
+                    cellLocation=TableCellLocation(rowIndex=0, columnIndex=current_columns - 1),
+                    insertRight=True,
+                    number=columns_to_add,
+                )
+            )
+
+            # Add width adjustment requests if fix_width=False
+            if not fix_width:
+                width_requests = self._generate_width_preserving_requests_after_addition(
+                    current_columns, n_columns
+                )
+                requests.extend(width_requests)
+
+        elif n_columns < current_columns:
+            # Deleting columns
+            columns_to_delete = current_columns - n_columns
+
+            # Calculate which columns will remain for width adjustment if fix_width=True
+            remaining_column_indices = list(range(n_columns)) if fix_width else []
+
+            for i in range(columns_to_delete):
+                column_index = current_columns - 1 - i
+                requests.append(
+                    DeleteTableColumnRequest(
+                        tableObjectId=self.objectId,
+                        cellLocation=TableCellLocation(rowIndex=0, columnIndex=column_index),
+                    )
+                )
+
+            # Add width adjustment requests if fix_width=True
+            if fix_width and remaining_column_indices:
+                width_requests = self._calculate_proportional_widths_after_deletion(
+                    remaining_column_indices
+                )
+                requests.extend(width_requests)
+
+        return requests
+
+    def resize(self, n_rows: int, n_columns: int, fix_width: bool = True, api_client=None) -> None:
+        """Resize the table to the specified dimensions.
+
+        Args:
+            n_rows: Target number of rows
+            n_columns: Target number of columns
+            fix_width: If True (default), maintain constant table width when adding/deleting columns.
+                      If False, preserve original column widths when adding columns and allow
+                      table width to change when deleting columns.
+            api_client: Optional GoogleAPIClient instance. If None, uses the default client.
+
+        Raises:
+            ValueError: If target dimensions are less than 1 or if no API client is available
+        """
+        requests = self.resize_requests(n_rows, n_columns, fix_width)
+
+        if not requests:
+            # No changes needed
+            return
+
+        if api_client is None:
+
+            api_client = default_api_client
+            if api_client is None:
+                raise ValueError(
+                    "No API client available. Please provide an api_client parameter or initialize the default client."
+                )
+
+        # Execute the resize requests
+        api_client.batch_update(requests, presentation_id=self.presentation_id)
+
+        # Update local table dimensions
+        self.table.rows = n_rows
+        self.table.columns = n_columns

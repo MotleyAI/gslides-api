@@ -1,7 +1,7 @@
 import pytest
 from pydantic import TypeAdapter
 
-from gslides_api.domain import (
+from gslides_api.domain.domain import (
     Dimension,
     Group,
     Image,
@@ -20,7 +20,7 @@ from gslides_api.domain import (
     WordArt,
 )
 from gslides_api.element.base import AltText, PageElementBase
-from gslides_api.table import Table
+from gslides_api.domain.table import Table
 from gslides_api.element.element import (
     GroupElement,
     LineElement,
@@ -29,9 +29,8 @@ from gslides_api.element.element import (
     WordArtElement,
 )
 from gslides_api.element.image import ImageElement
-from gslides_api.element.shape import ShapeElement
-from gslides_api.text import ShapeProperties, Type
-from gslides_api.element.text_container import Shape
+from gslides_api.element.shape import Shape, ShapeElement
+from gslides_api.domain.text import ShapeProperties, Type
 
 
 def test_page_element_base_fields():

@@ -13,18 +13,16 @@ import pytest
 from gslides_api.client import api_client, initialize_credentials
 
 # Note: Importing individual element types instead of union type
-from gslides_api.domain import Dimension, Size, Transform, Unit
+from gslides_api.domain.domain import Dimension, Size, Transform, Unit
 from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement
-from gslides_api.element.shape import ShapeElement
+from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.presentation import Presentation
-from gslides_api.text import ShapeProperties
-from gslides_api.element.text_container import Shape
-from gslides_api.text import Type as ShapeType
+from gslides_api.domain.text import ShapeProperties, Type as ShapeType
 
 
 class TestAPIRoundTrip:
@@ -136,8 +134,8 @@ class TestAPIRoundTrip:
         )
 
         # Generate API requests to create the table
-        requests = TableElement.markdown_element_to_requests(
-            markdown_table, parent_id=self.test_slide.objectId, element_id="test_table_1"
+        requests = TableElement.create_element_from_markdown_requests(
+            markdown_table, slide_id=self.test_slide.objectId, element_id="test_table_1"
         )
 
         # Execute the requests to create the table
@@ -218,8 +216,8 @@ class TestAPIRoundTrip:
             metadata={"objectId": "multi_table_1"},
         )
         # Generate API requests to create the table
-        requests = TableElement.markdown_element_to_requests(
-            table_element, parent_id=self.test_slide.objectId, element_id="multi_table_1"
+        requests = TableElement.create_element_from_markdown_requests(
+            table_element, slide_id=self.test_slide.objectId, element_id="multi_table_1"
         )
 
         # Execute the requests to create the table

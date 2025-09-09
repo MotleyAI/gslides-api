@@ -1,5 +1,5 @@
 """
-Test that compares the output of Color.to_api_format() and 
+Test that compares the output of Color.to_api_format() and
 Color.model_dump(exclude_none=True, mode="json") using the json_diff function.
 """
 
@@ -7,7 +7,7 @@ import json
 
 import pytest
 
-from gslides_api.domain import Color, RgbColor, ThemeColorType
+from gslides_api.domain.domain import Color, RgbColor, ThemeColorType
 from gslides_api.json_diff import json_diff
 
 

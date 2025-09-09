@@ -1,8 +1,17 @@
 import pytest
 
-from gslides_api.domain import (Color, ColorStop, CropProperties, Image,
-                                ImageProperties, Outline, Recolor, RecolorName,
-                                RgbColor, Shadow)
+from gslides_api.domain.domain import (
+    Color,
+    ColorStop,
+    CropProperties,
+    Image,
+    ImageProperties,
+    Outline,
+    Recolor,
+    RecolorName,
+    RgbColor,
+    Shadow,
+)
 
 
 def test_image_properties_creation():

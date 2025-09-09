@@ -5,8 +5,15 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import Field
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import GSlidesBaseModel, OutputUnit, PageElementProperties, Size, Transform
-from gslides_api.request.request import GSlidesAPIRequest, UpdatePageElementAltTextRequest
+from gslides_api.domain.domain import (
+    GSlidesBaseModel,
+    OutputUnit,
+    PageElementProperties,
+    Size,
+    Transform,
+)
+from gslides_api.request.request import UpdatePageElementAltTextRequest
+from gslides_api.request.parent import GSlidesAPIRequest
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +125,25 @@ class PageElementBase(GSlidesBaseModel):
         #     element_properties["description"] = self.description
 
         return PageElementProperties.model_validate(element_properties)
+
+    @classmethod
+    def from_ids(
+        cls,
+        presentation_id: str,
+        slide_id: str,
+        element_id: str,
+        api_client: Optional[GoogleAPIClient] = None,
+    ) -> "PageElementBase":
+        from gslides_api.page.slide import Slide
+
+        slide = Slide.from_ids(presentation_id, slide_id, api_client=api_client)
+        return slide.get_element_by_id(element_id)
+
+    def sync_from_cloud(self, api_client: Optional[GoogleAPIClient] = None) -> None:
+        new_state = PageElementBase.from_ids(
+            self.presentation_id, self.slide_id, self.objectId, api_client=api_client
+        )
+        self.__dict__ = new_state.__dict__
 
     def alt_text_update_request(
         self, element_id: str, title: str | None = None, description: str | None = None

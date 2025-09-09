@@ -6,9 +6,9 @@ This file tests the core functionality of converting markdown text to TextElemen
 
 import pytest
 
-from gslides_api import InsertTextRequest
+from gslides_api.request.request import InsertTextRequest
 from gslides_api.markdown.from_markdown import markdown_to_text_elements
-from gslides_api.text import TextElement, TextRun, TextStyle
+from gslides_api.domain.text import TextElement, TextRun, TextStyle
 
 
 class TestMarkdownToTextElements:
@@ -24,13 +24,9 @@ class TestMarkdownToTextElements:
 
         # The single element should be a TextElement
         element = result[0]
-        assert isinstance(
-            element, InsertTextRequest
-        ), f"InsertTextRequest, got {type(element)}"
+        assert isinstance(element, InsertTextRequest), f"InsertTextRequest, got {type(element)}"
 
         assert element.text == "Test", f"Expected 'Test', got '{element.text}'"
 
         # Verify the TextElement has proper indices
-        assert (
-            element.insertionIndex == 0
-        ), f"Expected startIndex 0, got {element.startIndex}"
+        assert element.insertionIndex == 0, f"Expected startIndex 0, got {element.startIndex}"

@@ -4,24 +4,41 @@ from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
-from gslides_api.domain import Dimension, OutputUnit, PageElementProperties, Unit
+from gslides_api.domain.domain import (
+    Dimension,
+    GSlidesBaseModel,
+    OutputUnit,
+    PageElementProperties,
+    Size,
+    Transform,
+    Unit,
+)
 from gslides_api.element.base import ElementKind, PageElementBase
+from gslides_api.element.text_content import TextContent
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
-from gslides_api.request.domain import Range, RangeType
+from gslides_api.domain.request import Range, RangeType
 from gslides_api.request.request import (
     CreateShapeRequest,
     DeleteParagraphBulletsRequest,
     DeleteTextRequest,
-    GSlidesAPIRequest,
     UpdateTextStyleRequest,
 )
-from gslides_api.text import TextStyle
-from gslides_api.element.text_container import Shape, TextContainer
+from gslides_api.request.parent import GSlidesAPIRequest
+from gslides_api.domain.text import Placeholder, ShapeProperties, TextStyle, Type, Type as ShapeType
 
 
-class ShapeElement(TextContainer):
+class Shape(GSlidesBaseModel):
+    """Represents a shape in a slide."""
+
+    shapeProperties: ShapeProperties
+    shapeType: Optional[Type] = None  # Make optional to preserve original JSON exactly
+    text: Optional[TextContent] = None
+    placeholder: Optional[Placeholder] = None
+
+
+class ShapeElement(PageElementBase):
     """Represents a shape element on a slide."""
 
     shape: Shape
@@ -76,7 +93,7 @@ class ShapeElement(TextContainer):
         return requests
 
     def delete_text_request(self) -> List[GSlidesAPIRequest]:
-        return self._delete_text_request()
+        return self.shape.text.delete_text_request(self.objectId)
 
     def delete_text(self, api_client: Optional[GoogleAPIClient] = None):
         client = api_client or default_api_client
@@ -113,14 +130,18 @@ class ShapeElement(TextContainer):
         autoscale: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
     ):
-        requests = self.write_text_requests(
+        size_inches = self.absolute_size(OutputUnit.IN)
+        requests = self.shape.text.write_text_requests(
             text=text,
             as_markdown=as_markdown,
             styles=styles,
             overwrite=overwrite,
             autoscale=autoscale,
-            location=None,
+            size_inches=size_inches,
         )
+
+        for r in requests:
+            r.objectId = self.objectId
 
         if requests:
             client = api_client or default_api_client
@@ -185,9 +206,8 @@ class ShapeElement(TextContainer):
         stored_shape_type = metadata.get("shape_type") or shape_type or "TEXT_BOX"
 
         # Create basic shape with text content
-        from gslides_api.text import ShapeProperties
-        from gslides_api.element.text_container import TextContent
-        from gslides_api.text import Type as ShapeType
+        from gslides_api.domain.text import ShapeProperties
+        from gslides_api.element.text_content import TextContent
 
         # Create a minimal shape - the actual content will be written via write_text
         shape = Shape(
@@ -202,16 +222,11 @@ class ShapeElement(TextContainer):
         # Restore size if available, otherwise provide default
         if "size" in metadata:
             size_data = metadata["size"]
-            from gslides_api.domain import Dimension, Size, Unit
-
             element_props.size = Size(
                 width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
                 height=Dimension(magnitude=size_data["height"], unit=Unit(size_data["unit"])),
             )
         else:
-            # Provide default size for text boxes
-            from gslides_api.domain import Dimension, Size, Unit
-
             element_props.size = Size(
                 width=Dimension(magnitude=300, unit=Unit.PT),
                 height=Dimension(magnitude=200, unit=Unit.PT),
@@ -219,14 +234,10 @@ class ShapeElement(TextContainer):
 
         # Restore transform if available, otherwise create default
         if "transform" in metadata and metadata["transform"]:
-            from gslides_api.domain import Transform
 
             transform_data = metadata["transform"]
             element_props.transform = Transform(**transform_data)
         else:
-            # Create a default identity transform
-            from gslides_api.domain import Transform
-
             element_props.transform = Transform(
                 scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
             )

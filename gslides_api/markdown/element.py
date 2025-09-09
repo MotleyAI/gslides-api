@@ -187,6 +187,22 @@ class MarkdownImageElement(MarkdownSlideElement):
         return "\n".join(lines)
 
 
+class RowProxy:
+    """Proxy object for table row access that supports column indexing."""
+    
+    def __init__(self, table_element: 'MarkdownTableElement', row_index: int):
+        self._table = table_element
+        self._row_index = row_index
+    
+    def __getitem__(self, col_index: int) -> str:
+        """Get cell value at column index."""
+        return self._table._get_cell(self._row_index, col_index)
+    
+    def __setitem__(self, col_index: int, value: str) -> None:
+        """Set cell value at column index with validation."""
+        self._table._set_cell(self._row_index, col_index, value)
+
+
 class MarkdownTableElement(MarkdownSlideElement):
     """Table element containing structured table data."""
 
@@ -500,7 +516,7 @@ class MarkdownTableElement(MarkdownSlideElement):
 
         return cls(name=name, content=table_data)
 
-    @classmethod
+    @classmethod 
     def from_df(cls, df, name: str, metadata: dict[str, Any] = None) -> "MarkdownTableElement":
         """Create TableElement from pandas DataFrame.
 
@@ -534,6 +550,179 @@ class MarkdownTableElement(MarkdownSlideElement):
         table_data = TableData(headers=headers, rows=rows)
 
         return cls(name=name, content=table_data, metadata=metadata or {})
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        """Return the shape of the table as (rows, columns).
+        
+        Returns:
+            tuple[int, int]: (total_rows, num_columns) where total_rows includes
+                           the header row if present.
+        
+        Example:
+            >>> table = MarkdownTableElement(name="test", content=TableData(
+            ...     headers=['A', 'B'], rows=[['1', '2'], ['3', '4']]))
+            >>> table.shape
+            (3, 2)  # 1 header row + 2 data rows, 2 columns
+        """
+        if not self.content.headers and not self.content.rows:
+            return (0, 0)
+        
+        # Total rows = 1 header row (if exists) + number of data rows
+        total_rows = (1 if self.content.headers else 0) + len(self.content.rows)
+        
+        # Number of columns from headers if available, otherwise from first row
+        if self.content.headers:
+            num_columns = len(self.content.headers)
+        elif self.content.rows:
+            num_columns = len(self.content.rows[0]) if self.content.rows[0] else 0
+        else:
+            num_columns = 0
+        
+        return (total_rows, num_columns)
+
+    def __getitem__(self, key) -> str | RowProxy:
+        """Get table cell or row.
+        
+        Supports multiple access patterns:
+        - table[row, col] -> str (direct cell access)
+        - table[row] -> RowProxy (row access for chaining)
+        
+        Headers are treated as row 0.
+        """
+        if isinstance(key, tuple) and len(key) == 2:
+            row_idx, col_idx = key
+            return self._get_cell(row_idx, col_idx)
+        elif isinstance(key, int):
+            return RowProxy(self, key)
+        else:
+            raise TypeError("Table indexing requires either (row, col) tuple or row integer")
+    
+    def __setitem__(self, key, value: str) -> None:
+        """Set table cell value with Marko validation.
+        
+        Supports:
+        - table[row, col] = value (direct cell assignment)
+        
+        Headers are treated as row 0.
+        Validates the entire table structure using Marko parsing.
+        """
+        if isinstance(key, tuple) and len(key) == 2:
+            row_idx, col_idx = key
+            self._set_cell(row_idx, col_idx, value)
+        else:
+            raise TypeError("Table assignment requires (row, col) tuple")
+    
+    def _get_cell(self, row_idx: int, col_idx: int) -> str:
+        """Get cell value at the specified row and column indices."""
+        # Validate indices
+        # Total rows = 1 header row + number of data rows (if headers exist)
+        total_rows = (1 if self.content.headers else 0) + len(self.content.rows)
+        if total_rows == 0:
+            raise IndexError("Table is empty")
+        
+        if row_idx < 0:
+            row_idx = total_rows + row_idx
+        
+        if row_idx < 0 or row_idx >= total_rows:
+            raise IndexError(f"Row index {row_idx} out of range for table with {total_rows} rows")
+        
+        # Row 0 is headers
+        if row_idx == 0:
+            if not self.content.headers:
+                raise IndexError("Table has no headers")
+            if col_idx < 0:
+                col_idx = len(self.content.headers) + col_idx
+            if col_idx < 0 or col_idx >= len(self.content.headers):
+                raise IndexError(f"Column index {col_idx} out of range for {len(self.content.headers)} columns")
+            return self.content.headers[col_idx]
+        else:
+            # Row 1+ are data rows
+            data_row_idx = row_idx - 1
+            if data_row_idx >= len(self.content.rows):
+                raise IndexError(f"Data row index {data_row_idx} out of range for {len(self.content.rows)} data rows")
+            
+            row_data = self.content.rows[data_row_idx]
+            if col_idx < 0:
+                col_idx = len(row_data) + col_idx
+            if col_idx < 0 or col_idx >= len(row_data):
+                raise IndexError(f"Column index {col_idx} out of range for row with {len(row_data)} columns")
+            return row_data[col_idx]
+    
+    def _set_cell(self, row_idx: int, col_idx: int, value: str) -> None:
+        """Set cell value with Marko validation."""
+        if not isinstance(value, str):
+            raise TypeError("Cell value must be a string")
+        
+        # Validate indices
+        # Total rows = 1 header row + number of data rows (if headers exist)
+        total_rows = (1 if self.content.headers else 0) + len(self.content.rows)
+        if total_rows == 0:
+            raise IndexError("Cannot set cell in empty table")
+        
+        if row_idx < 0:
+            row_idx = total_rows + row_idx
+        
+        if row_idx < 0 or row_idx >= total_rows:
+            raise IndexError(f"Row index {row_idx} out of range for table with {total_rows} rows")
+        
+        # Create a copy of current table data for validation
+        new_headers = self.content.headers.copy()
+        new_rows = [row.copy() for row in self.content.rows]
+        
+        # Apply the change to the copy
+        if row_idx == 0:
+            # Setting header
+            if not new_headers:
+                raise IndexError("Table has no headers")
+            if col_idx < 0:
+                col_idx = len(new_headers) + col_idx
+            if col_idx < 0 or col_idx >= len(new_headers):
+                raise IndexError(f"Column index {col_idx} out of range for {len(new_headers)} columns")
+            new_headers[col_idx] = value
+        else:
+            # Setting data cell
+            data_row_idx = row_idx - 1
+            if data_row_idx >= len(new_rows):
+                raise IndexError(f"Data row index {data_row_idx} out of range for {len(new_rows)} data rows")
+            
+            if col_idx < 0:
+                col_idx = len(new_rows[data_row_idx]) + col_idx
+            if col_idx < 0 or col_idx >= len(new_rows[data_row_idx]):
+                raise IndexError(f"Column index {col_idx} out of range for row with {len(new_rows[data_row_idx])} columns")
+            new_rows[data_row_idx][col_idx] = value
+        
+        # Create temporary TableData and validate with Marko
+        temp_table_data = TableData(headers=new_headers, rows=new_rows)
+        temp_markdown = temp_table_data.to_markdown()
+        
+        # Validate using Marko (similar to existing validation logic)
+        try:
+            md = marko.Markdown(extensions=["gfm"])
+            doc = md.parse(temp_markdown)
+            
+            # Find table element in the AST to ensure it's valid
+            table_element = None
+            
+            def find_table(node):
+                nonlocal table_element
+                if hasattr(node, "__class__") and node.__class__.__name__ == "Table":
+                    table_element = node
+                    return True
+                if hasattr(node, "children"):
+                    for child in node.children:
+                        if find_table(child):
+                            return True
+                return False
+            
+            if not find_table(doc):
+                raise ValueError("Generated markdown does not contain a valid table")
+            
+            # If validation passes, update the actual content
+            self.content = temp_table_data
+            
+        except Exception as e:
+            raise ValueError(f"Invalid table structure after setting cell [{row_idx}, {col_idx}] = '{value}': {e}")
 
 
 class MarkdownChartElement(MarkdownSlideElement):

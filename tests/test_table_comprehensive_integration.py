@@ -104,8 +104,8 @@ class TestTableComprehensiveIntegration:
         markdown_table = MarkdownTableElement.from_markdown("APITest", styled_markdown)
 
         # Convert to API requests and create the table
-        requests = TableElement.markdown_element_to_requests(
-            markdown_table, parent_id=self.test_slide.objectId, element_id="api_test_table"
+        requests = TableElement.create_element_from_markdown_requests(
+            markdown_table, slide_id=self.test_slide.objectId, element_id="api_test_table"
         )
 
         # Execute the requests to create the table
@@ -144,8 +144,8 @@ class TestTableComprehensiveIntegration:
         print("✓ Step 1: MarkdownTableElement created")
 
         # Step 2: Convert to API requests
-        requests = TableElement.markdown_element_to_requests(
-            markdown_table, parent_id=self.test_slide.objectId, element_id="roundtrip_test_table"
+        requests = TableElement.create_element_from_markdown_requests(
+            markdown_table, slide_id=self.test_slide.objectId, element_id="roundtrip_test_table"
         )
         print("✓ Step 2: API requests generated")
 

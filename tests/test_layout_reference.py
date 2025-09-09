@@ -1,6 +1,6 @@
 import pytest
 
-from gslides_api.domain import LayoutReference, PredefinedLayout
+from gslides_api.domain.domain import LayoutReference, PredefinedLayout
 
 
 def test_layout_reference_validation():
@@ -16,15 +16,9 @@ def test_layout_reference_validation():
     assert layout_ref.predefinedLayout == PredefinedLayout.TITLE_AND_BODY
 
     # Invalid: both fields are None
-    with pytest.raises(
-        ValueError, match="Exactly one of layoutId or predefinedLayout must be set"
-    ):
+    with pytest.raises(ValueError, match="Exactly one of layoutId or predefinedLayout must be set"):
         LayoutReference()
 
     # Invalid: both fields are set
-    with pytest.raises(
-        ValueError, match="Exactly one of layoutId or predefinedLayout must be set"
-    ):
-        LayoutReference(
-            layoutId="layout-123", predefinedLayout=PredefinedLayout.TITLE_AND_BODY
-        )
+    with pytest.raises(ValueError, match="Exactly one of layoutId or predefinedLayout must be set"):
+        LayoutReference(layoutId="layout-123", predefinedLayout=PredefinedLayout.TITLE_AND_BODY)

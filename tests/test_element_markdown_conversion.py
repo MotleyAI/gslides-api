@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from gslides_api.domain import (
+from gslides_api.domain.domain import (
     AffineTransform,
     Dimension,
     Image,
@@ -21,18 +21,22 @@ from gslides_api.domain import (
 )
 from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement
-from gslides_api.table import Table
-from gslides_api.element.shape import ShapeElement
+from gslides_api.domain.table import Table
+from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.markdown.element import ContentType
 from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.markdown.element import TableData
 from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
-from gslides_api.text import ParagraphMarker, ShapeProperties
-from gslides_api.element.text_container import Shape, TextContent
-from gslides_api.text import TextElement as GSlidesTextElement
-from gslides_api.text import TextRun, TextStyle
-from gslides_api.text import Type as ShapeType
+from gslides_api.element.text_content import TextContent
+from gslides_api.domain.text import (
+    ParagraphMarker,
+    ShapeProperties,
+    TextElement as GSlidesTextElement,
+    TextRun,
+    TextStyle,
+    Type as ShapeType,
+)
 
 
 class TestTextElementConversion:
@@ -189,8 +193,8 @@ class TestTableElementConversion:
         markdown_elem = MarkdownTableElement(name="Test Table", content=original_markdown)
 
         # Convert to API requests
-        requests = TableElement.markdown_element_to_requests(
-            markdown_elem, parent_id="slide_123", element_id="test_table"
+        requests = TableElement.create_element_from_markdown_requests(
+            markdown_elem, slide_id="slide_123", element_id="test_table"
         )
 
         # Should have at least a CreateTableRequest
@@ -312,7 +316,7 @@ class TestIntegrationRoundTrip:
         empty_table = MarkdownTableElement(name="Empty", content=empty_table_data)
 
         # Should generate valid API requests even for empty table
-        requests = TableElement.markdown_element_to_requests(empty_table, "slide_123")
+        requests = TableElement.create_element_from_markdown_requests(empty_table, "slide_123")
         from gslides_api.request.table import CreateTableRequest
 
         assert len(requests) > 0
@@ -346,8 +350,8 @@ class TestIntegrationRoundTrip:
         large_table = MarkdownTableElement(name="Large", content=large_table_data)
 
         # Convert to API requests
-        requests = TableElement.markdown_element_to_requests(
-            large_table, parent_id="slide_123", element_id="large_table"
+        requests = TableElement.create_element_from_markdown_requests(
+            large_table, slide_id="slide_123", element_id="large_table"
         )
 
         # Verify table creation request

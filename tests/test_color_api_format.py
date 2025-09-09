@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from gslides_api.domain import Color, RgbColor, ThemeColorType
+from gslides_api.domain.domain import Color, RgbColor, ThemeColorType
 from gslides_api.json_diff import json_diff
 
 
@@ -79,10 +79,7 @@ def test_color_with_enum_handling():
 
         # The difference might be that to_api_format() uses .value while model_dump() might use the name
         # Let's check if that's the case
-        if (
-            api_format["themeColor"] == "ACCENT1"
-            and model_dump["themeColor"] != "ACCENT1"
-        ):
+        if api_format["themeColor"] == "ACCENT1" and model_dump["themeColor"] != "ACCENT1":
             print(
                 "to_api_format() uses enum.value while model_dump() uses a different representation"
             )

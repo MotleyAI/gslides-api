@@ -4,7 +4,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, model_validator
-from pydantic.json import pydantic_encoder
 
 
 class GSlidesBaseModel(BaseModel):
@@ -299,8 +298,6 @@ class Shadow(GSlidesBaseModel):
     alignment: Optional[RectanglePosition] = None
 
 
-
-
 class CropProperties(GSlidesBaseModel):
     """Represents crop properties of an image."""
 
@@ -389,9 +386,7 @@ class Image(GSlidesBaseModel):
                 self._original_properties_type = type(self.imageProperties).__name__
 
             try:
-                self.imageProperties = ImageProperties.model_validate(
-                    self.imageProperties
-                )
+                self.imageProperties = ImageProperties.model_validate(self.imageProperties)
             except (ValueError, TypeError):
                 # Keep as is if conversion fails
                 pass
@@ -746,8 +741,6 @@ class ThumbnailProperties(GSlidesBaseModel):
     """
 
 
-# https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#pageelementproperties
-# Note: When you initially create a PageElement, the API may modify the values of both size and transform, but the visual size will be unchanged.
 class PageElementProperties(GSlidesBaseModel):
     """Represents properties of a page element."""
 

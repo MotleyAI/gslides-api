@@ -1,21 +1,25 @@
-from typing import Any, Dict, List, Optional
+import logging
+from typing import Any, Dict, List, Optional, Tuple
 
+from typeguard import typechecked
 
-from gslides_api.client import GoogleAPIClient, api_client as default_api_client
-from gslides_api.domain import GSlidesBaseModel, OutputUnit, Dimension, Unit
-from gslides_api.element.base import PageElementBase
+from gslides_api.domain.domain import Dimension, GSlidesBaseModel, Unit
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
-from gslides_api.request.domain import Range, RangeType, TableCellLocation
+from gslides_api.domain.request import Range, RangeType
+from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.request.request import (
     DeleteParagraphBulletsRequest,
-    GSlidesAPIRequest,
     DeleteTextRequest,
     UpdateTextStyleRequest,
 )
-from gslides_api.text import Placeholder, TextStyle, Type, TextElement, ShapeProperties
+from gslides_api.request.parent import GSlidesAPIRequest
+from gslides_api.domain.text import TextElement, TextStyle
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
 
+logger = logging.getLogger(__name__)
 
+
+@typechecked
 class TextContent(GSlidesBaseModel):
     """Represents text content with its elements and lists."""
 
@@ -77,34 +81,27 @@ class TextContent(GSlidesBaseModel):
                         out.append("\n")
             return "".join(out)
 
+    def delete_text_request(self, object_id: str = "") -> List[GSlidesAPIRequest]:
+        """Convert the text content to a list of requests to delete the text in the element.
 
-class TextContainer(PageElementBase):
-    """Contains shared text manipulation logic between text boxes and tables."""
+        Args:
+            object_id: The objectId to set on the requests. If empty, caller must set it later.
+        """
 
-    def _delete_text_request(
-        self, location: TableCellLocation | None = None
-    ) -> List[GSlidesAPIRequest]:
-        if self.shape.text is None:
-            return []
         # If there are any bullets, need to delete them first
         out: list[GSlidesAPIRequest] = []
-        if self.shape.text.lists is not None and len(self.shape.text.lists) > 0:
+        if self.lists is not None and len(self.lists) > 0:
             out.append(
                 DeleteParagraphBulletsRequest(
-                    objectId=self.objectId,
-                    cellLocation=location,
+                    objectId=object_id,
                     textRange=Range(type=RangeType.ALL),
                 ),
             )
 
-        if (not self.shape.text.textElements) or self.shape.text.textElements[0].endIndex == 0:
+        if (not self.textElements) or self.textElements[0].endIndex == 0:
             return out
 
-        out.append(
-            DeleteTextRequest(
-                objectId=self.objectId, cellLocation=location, textRange=Range(type=RangeType.ALL)
-            )
-        )
+        out.append(DeleteTextRequest(objectId=object_id, textRange=Range(type=RangeType.ALL)))
         return out
 
     def write_text_requests(
@@ -114,12 +111,18 @@ class TextContainer(PageElementBase):
         styles: List[TextStyle] | None = None,
         overwrite: bool = True,
         autoscale: bool = False,
-        location: TableCellLocation | None = None,
+        size_inches: Tuple[float, float] | None = None,
     ):
+        """Convert the text content to a list of requests to update the text in the element.
+        IMPORTANT: This does not set the objectId on the requests as the container doesn't know it,
+        so the caller must set it before sending the requests, ditto for CellLocation if needed.
+        """
         styles = styles or self.styles
 
         if autoscale:
-            styles = self.autoscale_text(text, styles)
+            if size_inches is None:
+                raise ValueError("size_inches must be provided if autoscale is True")
+            styles = self.autoscale_text(text, size_inches, styles)
 
         if self.has_text and overwrite:
             requests = self.delete_text_request()
@@ -136,37 +139,32 @@ class TextContainer(PageElementBase):
 
         requests += markdown_to_text_elements(text, **style_args)
 
-        for r in requests:
-            r.objectId = self.objectId
-
         # TODO: this is broken, we should use different logic to just dump raw text, asterisks, hashes and all
         if not as_markdown:
             requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
-
-        if location is not None:
-            for r in requests:
-                if hasattr(r, "cellLocation"):
-                    r.cellLocation = location
 
         return requests
 
     def autoscale_text(
         self,
         text: str,
+        size_inches: Tuple[float, float],
         styles: List[TextStyle] | None = None,
-        location: TableCellLocation | None = None,
     ) -> List[TextStyle]:
         # Unfortunately, GS
 
         # For now, just derive the scaling factor based on first style
         if not styles or len(styles) == 0:
+            logger.warning("No styles provided, cannot autoscale text")
             return styles or []
 
         first_style = styles[0]
-        if location is not None:  # this must be a table, with overridden absolute_size
-            my_width_in, my_height_in = self.absolute_size(OutputUnit.IN, location=location)
-        else:
-            my_width_in, my_height_in = self.absolute_size(OutputUnit.IN)
+
+        my_width_in, my_height_in = size_inches
+        # if location is not None:  # this must be a table, with overridden absolute_size
+        #     my_width_in, my_height_in = self.absolute_size(OutputUnit.IN, location=location)
+        # else:
+        #     my_width_in, my_height_in = self.absolute_size(OutputUnit.IN)
 
         # Get current font size in points (default to 12pt if not specified)
         current_font_size_pt = 12.0
@@ -236,12 +234,3 @@ class TextContainer(PageElementBase):
             scaled_styles.append(scaled_style)
 
         return scaled_styles
-
-
-class Shape(GSlidesBaseModel):
-    """Represents a shape in a slide."""
-
-    shapeProperties: ShapeProperties
-    shapeType: Optional[Type] = None  # Make optional to preserve original JSON exactly
-    text: Optional[TextContent] = None
-    placeholder: Optional[Placeholder] = None

@@ -1,15 +1,9 @@
 from enum import Enum
 from typing import List, Optional
 
-from gslides_api.domain import Dimension, GSlidesBaseModel, SolidFill, DashStyle
-from gslides_api.element.text_container import TextContent
-
-
-class TableCellLocation(GSlidesBaseModel):
-    """Represents the location of a table cell."""
-
-    rowIndex: Optional[int] = None
-    columnIndex: Optional[int] = None
+from gslides_api.domain.domain import DashStyle, Dimension, GSlidesBaseModel, SolidFill
+from gslides_api.element.text_content import TextContent
+from gslides_api.domain.table_cell import TableCellLocation
 
 
 class ContentAlignment(Enum):
@@ -55,6 +49,14 @@ class TableCell(GSlidesBaseModel):
     text: Optional[TextContent] = None
     tableCellProperties: Optional[TableCellProperties] = None
 
+    def read_text(self, as_markdown: bool = True) -> str:
+        if self.text is None:
+            return ""
+        return self.text.read_text(as_markdown=as_markdown)
+
+    def write_text(self, *args, **kwargs):
+        raise NotImplementedError("Use TableElement.write_text_to_cell instead.")
+
 
 class TableRow(GSlidesBaseModel):
     """Represents a table row."""
@@ -91,6 +93,14 @@ class TableBorderRow(GSlidesBaseModel):
     tableBorderCells: Optional[List[TableBorderCell]] = None
 
 
+class TableRange(GSlidesBaseModel):
+    """Represents a range of table cells."""
+
+    location: Optional[TableCellLocation] = None
+    rowSpan: Optional[int] = None
+    columnSpan: Optional[int] = None
+
+
 class Table(GSlidesBaseModel):
     """Represents a table in a slide."""
 
@@ -100,3 +110,8 @@ class Table(GSlidesBaseModel):
     tableColumns: Optional[List[TableColumnProperties]] = None
     horizontalBorderRows: Optional[List[TableBorderRow]] = None
     verticalBorderRows: Optional[List[TableBorderRow]] = None
+
+
+# Rebuild models to resolve forward references after all imports
+TableCell.model_rebuild()
+TableBorderCell.model_rebuild()

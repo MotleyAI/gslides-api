@@ -1,6 +1,6 @@
 import pytest
 
-from gslides_api import ElementKind
+from gslides_api.element.base import ElementKind
 
 
 def test_element_kind_enum():

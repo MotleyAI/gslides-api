@@ -1,12 +1,11 @@
 import pytest
 
-from gslides_api.domain import Size, Transform
-from gslides_api.element.shape import ShapeElement
+from gslides_api.domain.domain import Size, Transform
+from gslides_api.element.shape import Shape, ShapeElement
 from gslides_api.page.base import PageProperties
 from gslides_api.page.slide import Slide
 from gslides_api.page.slide_properties import SlideProperties
-from gslides_api.text import ShapeProperties, Type
-from gslides_api.element.text_container import Shape
+from gslides_api.domain.text import ShapeProperties, Type
 
 
 def test_presentation_id_not_in_api_format():

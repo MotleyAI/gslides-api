@@ -1,6 +1,6 @@
 import pytest
 
-from gslides_api.domain import Outline, Video, VideoProperties, VideoSourceType
+from gslides_api.domain.domain import Outline, Video, VideoProperties, VideoSourceType
 
 
 def test_video_properties_creation():

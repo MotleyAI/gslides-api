@@ -5,22 +5,20 @@ from typing import Optional
 from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import LayoutReference, ThumbnailProperties, ThumbnailSize, Transform
-from gslides_api.element.shape import ShapeElement
-from gslides_api.page.base import BasePage, ElementKind, PageType
-from gslides_api.page.slide_properties import SlideProperties
-from gslides_api.request.domain import Range, RangeType
+from gslides_api.domain.domain import LayoutReference, ThumbnailProperties, ThumbnailSize, Transform
+from gslides_api.element.shape import Shape, ShapeElement
+from gslides_api.page.base import BasePage, ElementKind, PageType, UpdatePagePropertiesRequest
+from gslides_api.page.slide_properties import SlideProperties, UpdateSlidePropertiesRequest
+from gslides_api.domain.request import Range, RangeType
 from gslides_api.request.request import (
     CreateSlideRequest,
     DeleteTextRequest,
     InsertTextRequest,
-    UpdatePagePropertiesRequest,
-    UpdateSlidePropertiesRequest,
     UpdateSlidesPositionRequest,
 )
+
 from gslides_api.response import ImageThumbnail
-from gslides_api.text import ShapeProperties
-from gslides_api.element.text_container import Shape
+from gslides_api.domain.text import ShapeProperties
 from gslides_api.utils import dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)

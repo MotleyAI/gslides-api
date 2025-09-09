@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 import requests
 
-from gslides_api.domain import Image, ImageData, Transform
+from gslides_api.domain.domain import Image, ImageData, Transform
 from gslides_api.element.base import ElementKind
 from gslides_api.element.image import ImageElement
 

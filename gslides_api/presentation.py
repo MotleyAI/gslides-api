@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain import GSlidesBaseModel, Size
+from gslides_api.domain.domain import GSlidesBaseModel, Size
 from gslides_api.page.page import Layout, Master, NotesMaster, Page
 from gslides_api.page.slide import Slide
 
@@ -82,9 +82,7 @@ class Presentation(GSlidesBaseModel):
     ):
         client = api_client or globals()["api_client"]
         copy_title = copy_title or f"Copy of {self.title}"
-        new = client.copy_presentation(
-            self.presentationId, copy_title, folder_id=folder_id
-        )
+        new = client.copy_presentation(self.presentationId, copy_title, folder_id=folder_id)
         return self.from_id(new["id"], api_client=api_client)
 
     def sync_from_cloud(self, api_client: Optional[GoogleAPIClient] = None):
@@ -103,6 +101,12 @@ class Presentation(GSlidesBaseModel):
     def delete_slide(self, slide_id: str, api_client: Optional[GoogleAPIClient] = None):
         client = api_client or globals()["api_client"]
         client.delete_object(slide_id, self.presentationId)
+
+    def get_slide_by_name(self, slide_name: str) -> Optional[Slide]:
+        for slide in self.slides:
+            if slide.speaker_notes.read_text().strip() == slide_name:
+                return slide
+        return None
 
     @property
     def url(self):
