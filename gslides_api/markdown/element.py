@@ -551,6 +551,36 @@ class MarkdownTableElement(MarkdownSlideElement):
 
         return cls(name=name, content=table_data, metadata=metadata or {})
 
+    @property
+    def shape(self) -> tuple[int, int]:
+        """Return the shape of the table as (rows, columns).
+        
+        Returns:
+            tuple[int, int]: (total_rows, num_columns) where total_rows includes
+                           the header row if present.
+        
+        Example:
+            >>> table = MarkdownTableElement(name="test", content=TableData(
+            ...     headers=['A', 'B'], rows=[['1', '2'], ['3', '4']]))
+            >>> table.shape
+            (3, 2)  # 1 header row + 2 data rows, 2 columns
+        """
+        if not self.content.headers and not self.content.rows:
+            return (0, 0)
+        
+        # Total rows = 1 header row (if exists) + number of data rows
+        total_rows = (1 if self.content.headers else 0) + len(self.content.rows)
+        
+        # Number of columns from headers if available, otherwise from first row
+        if self.content.headers:
+            num_columns = len(self.content.headers)
+        elif self.content.rows:
+            num_columns = len(self.content.rows[0]) if self.content.rows[0] else 0
+        else:
+            num_columns = 0
+        
+        return (total_rows, num_columns)
+
     def __getitem__(self, key) -> str | RowProxy:
         """Get table cell or row.
         

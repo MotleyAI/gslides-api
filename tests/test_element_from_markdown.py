@@ -2,7 +2,7 @@
 Tests for the from_markdown class methods on all MarkdownSlideElement classes.
 
 This file tests the from_markdown methods that create element instances from raw markdown content.
-Also tests the new markdown_element_to_requests method for TableElement.
+Also tests the new create_element_from_markdown_requests method for TableElement.
 """
 
 import pytest
@@ -416,7 +416,7 @@ class TestFromMarkdownIntegration:
 
 
 class TestTableElementMarkdownToRequests:
-    """Test TableElement.markdown_element_to_requests() method."""
+    """Test TableElement.create_element_from_markdown_requests() method."""
 
     def test_simple_table_to_requests(self):
         """Test converting simple table to API requests."""
@@ -430,7 +430,9 @@ class TestTableElementMarkdownToRequests:
         parent_id = "slide123"
 
         # Convert to requests
-        requests = GSlidesTableElement.markdown_element_to_requests(markdown_elem, parent_id)
+        requests = GSlidesTableElement.create_element_from_markdown_requests(
+            markdown_elem, parent_id
+        )
 
         # Should have at least one CreateTableRequest
         assert len(requests) > 0
@@ -458,7 +460,7 @@ class TestTableElementMarkdownToRequests:
         parent_id = "slide456"
         custom_id = "my_custom_table_id"
 
-        requests = GSlidesTableElement.markdown_element_to_requests(
+        requests = GSlidesTableElement.create_element_from_markdown_requests(
             markdown_elem, parent_id, element_id=custom_id
         )
 
@@ -477,7 +479,9 @@ class TestTableElementMarkdownToRequests:
         markdown_elem = MarkdownTableElement.from_markdown("Products", markdown)
         parent_id = "slide789"
 
-        requests = GSlidesTableElement.markdown_element_to_requests(markdown_elem, parent_id)
+        requests = GSlidesTableElement.create_element_from_markdown_requests(
+            markdown_elem, parent_id
+        )
 
         # Should have CreateTable + text insertion + style requests
         request_types = [type(req).__name__ for req in requests]
@@ -506,7 +510,9 @@ class TestTableElementMarkdownToRequests:
         markdown_elem = MarkdownTableElement.from_markdown("Sparse", markdown)
         parent_id = "slide_empty"
 
-        requests = GSlidesTableElement.markdown_element_to_requests(markdown_elem, parent_id)
+        requests = GSlidesTableElement.create_element_from_markdown_requests(
+            markdown_elem, parent_id
+        )
 
         # Should only have requests for non-empty cells
         text_requests = [req for req in requests if isinstance(req, InsertTextRequest)]
@@ -525,7 +531,9 @@ class TestTableElementMarkdownToRequests:
         markdown_elem = MarkdownTableElement.from_markdown("Items", markdown)
         parent_id = "slide_single"
 
-        requests = GSlidesTableElement.markdown_element_to_requests(markdown_elem, parent_id)
+        requests = GSlidesTableElement.create_element_from_markdown_requests(
+            markdown_elem, parent_id
+        )
 
         # Verify table dimensions
         create_request = requests[0]
@@ -541,7 +549,9 @@ class TestTableElementMarkdownToRequests:
         markdown_elem = MarkdownTableElement.from_markdown("HeaderOnly", markdown)
         parent_id = "slide_header"
 
-        requests = GSlidesTableElement.markdown_element_to_requests(markdown_elem, parent_id)
+        requests = GSlidesTableElement.create_element_from_markdown_requests(
+            markdown_elem, parent_id
+        )
 
         # Should still create table structure
         create_request = requests[0]
@@ -564,7 +574,9 @@ class TestTableElementMarkdownToRequests:
         markdown_elem = MarkdownTableElement.from_markdown("LargeTable", markdown)
         parent_id = "slide_large"
 
-        requests = GSlidesTableElement.markdown_element_to_requests(markdown_elem, parent_id)
+        requests = GSlidesTableElement.create_element_from_markdown_requests(
+            markdown_elem, parent_id
+        )
 
         # Verify table dimensions
         create_request = requests[0]
@@ -584,7 +596,7 @@ class TestTableElementMarkdownToRequests:
         parent_id = "slide_structure"
         element_id = "test_table_123"
 
-        requests = GSlidesTableElement.markdown_element_to_requests(
+        requests = GSlidesTableElement.create_element_from_markdown_requests(
             markdown_elem, parent_id, element_id=element_id
         )
 

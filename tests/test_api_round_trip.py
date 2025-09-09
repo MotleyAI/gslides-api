@@ -134,7 +134,7 @@ class TestAPIRoundTrip:
         )
 
         # Generate API requests to create the table
-        requests = TableElement.markdown_element_to_requests(
+        requests = TableElement.create_element_from_markdown_requests(
             markdown_table, slide_id=self.test_slide.objectId, element_id="test_table_1"
         )
 
@@ -216,7 +216,7 @@ class TestAPIRoundTrip:
             metadata={"objectId": "multi_table_1"},
         )
         # Generate API requests to create the table
-        requests = TableElement.markdown_element_to_requests(
+        requests = TableElement.create_element_from_markdown_requests(
             table_element, slide_id=self.test_slide.objectId, element_id="multi_table_1"
         )
 

@@ -193,7 +193,7 @@ class TestTableElementConversion:
         markdown_elem = MarkdownTableElement(name="Test Table", content=original_markdown)
 
         # Convert to API requests
-        requests = TableElement.markdown_element_to_requests(
+        requests = TableElement.create_element_from_markdown_requests(
             markdown_elem, slide_id="slide_123", element_id="test_table"
         )
 
@@ -316,7 +316,7 @@ class TestIntegrationRoundTrip:
         empty_table = MarkdownTableElement(name="Empty", content=empty_table_data)
 
         # Should generate valid API requests even for empty table
-        requests = TableElement.markdown_element_to_requests(empty_table, "slide_123")
+        requests = TableElement.create_element_from_markdown_requests(empty_table, "slide_123")
         from gslides_api.request.table import CreateTableRequest
 
         assert len(requests) > 0
@@ -350,7 +350,7 @@ class TestIntegrationRoundTrip:
         large_table = MarkdownTableElement(name="Large", content=large_table_data)
 
         # Convert to API requests
-        requests = TableElement.markdown_element_to_requests(
+        requests = TableElement.create_element_from_markdown_requests(
             large_table, slide_id="slide_123", element_id="large_table"
         )
 

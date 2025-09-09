@@ -170,6 +170,9 @@ class GoogleAPIClient:
     def batch_update(
         self, requests: list, presentation_id: str, flush: bool = False
     ) -> Dict[str, Any]:
+        if len(requests) == 0:
+            return {}
+
         assert all(isinstance(r, GSlidesAPIRequest) for r in requests)
 
         if self.pending_presentation_id is None:

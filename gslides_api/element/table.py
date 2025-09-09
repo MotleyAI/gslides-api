@@ -361,7 +361,7 @@ class TableElement(PageElementBase):
         return self.to_markdown_element("Table").to_markdown()
 
     @classmethod
-    def markdown_element_to_requests(
+    def create_element_from_markdown_requests(
         cls,
         markdown_elem: MarkdownTableElement,
         slide_id: str,
@@ -410,25 +410,21 @@ class TableElement(PageElementBase):
         )
 
         # Generate text requests for each cell
-        from gslides_api.markdown.from_markdown import markdown_to_text_elements
+        requests += temp_table_element.content_update_requests(markdown_elem)
 
-        # Process header row first (row 0)
-        for col_idx, header_content in enumerate(table_data.headers):
-            cell_location = TableCellLocation(rowIndex=0, columnIndex=col_idx)
-            requests.extend(
-                temp_table_element.write_text_to_cell_requests(
-                    header_content.strip(), cell_location
-                )
-            )
+        return requests
 
-        # Process data rows (row 1+)
-        for row_idx, row_data in enumerate(table_data.rows):
-            for col_idx, cell_content in enumerate(row_data):
-                cell_location = TableCellLocation(rowIndex=row_idx + 1, columnIndex=col_idx)
+    def content_update_requests(
+        self, markdown_elem: MarkdownTableElement
+    ) -> List[GSlidesAPIRequest]:
+        requests = []
+
+        for row in range(markdown_elem.shape[0]):
+            for col in range(markdown_elem.shape[1]):
+                cell_content = markdown_elem[row, col]
+                cell_location = TableCellLocation(rowIndex=row, columnIndex=col)
                 requests.extend(
-                    temp_table_element.write_text_to_cell_requests(
-                        cell_content.strip(), cell_location
-                    )
+                    self.write_text_to_cell_requests(cell_content.strip(), cell_location)
                 )
 
         return requests

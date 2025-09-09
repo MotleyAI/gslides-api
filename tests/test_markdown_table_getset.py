@@ -325,3 +325,94 @@ class TestMarkdownTableElementGetSet:
         assert recreated[0, 0].strip() == 'Item'
         assert recreated[1, 1].strip() == '15'
         assert recreated[2, 2].strip() == '$2.00'
+
+    def test_shape_property(self):
+        """Test the shape property returns correct dimensions."""
+        # Regular table with headers and data
+        table_data = TableData(
+            headers=['A', 'B', 'C'],
+            rows=[['1', '2', '3'], ['4', '5', '6']]
+        )
+        table = MarkdownTableElement(name='Matrix', content=table_data)
+        
+        # Should be (3 rows, 3 cols) - 1 header row + 2 data rows
+        assert table.shape == (3, 3)
+
+    def test_shape_property_single_row(self):
+        """Test shape property with single data row."""
+        table_data = TableData(
+            headers=['Name', 'Age'],
+            rows=[['Alice', '25']]
+        )
+        table = MarkdownTableElement(name='Single', content=table_data)
+        
+        # Should be (2 rows, 2 cols) - 1 header row + 1 data row
+        assert table.shape == (2, 2)
+
+    def test_shape_property_empty_table(self):
+        """Test shape property with empty table."""
+        empty_table = MarkdownTableElement(
+            name='Empty',
+            content=TableData(headers=[], rows=[])
+        )
+        
+        assert empty_table.shape == (0, 0)
+
+    def test_shape_property_header_only(self):
+        """Test shape property with headers but no data rows."""
+        table_data = TableData(
+            headers=['Col1', 'Col2', 'Col3', 'Col4'],
+            rows=[]
+        )
+        table = MarkdownTableElement(name='HeaderOnly', content=table_data)
+        
+        # Should be (1 row, 4 cols) - 1 header row + 0 data rows
+        assert table.shape == (1, 4)
+
+    def test_shape_property_no_headers(self):
+        """Test shape property with data rows but no headers."""
+        table_data = TableData(
+            headers=[],
+            rows=[['a', 'b'], ['c', 'd'], ['e', 'f']]
+        )
+        table = MarkdownTableElement(name='NoHeaders', content=table_data)
+        
+        # Should be (3 rows, 2 cols) - 0 header rows + 3 data rows
+        assert table.shape == (3, 2)
+
+    def test_shape_property_single_column(self):
+        """Test shape property with single column table."""
+        table_data = TableData(
+            headers=['Item'],
+            rows=[['Apple'], ['Banana'], ['Cherry']]
+        )
+        table = MarkdownTableElement(name='SingleCol', content=table_data)
+        
+        # Should be (4 rows, 1 col) - 1 header row + 3 data rows
+        assert table.shape == (4, 1)
+
+    def test_shape_consistency_with_indexing(self):
+        """Test that shape property is consistent with indexing bounds."""
+        table_data = TableData(
+            headers=['X', 'Y', 'Z'],
+            rows=[['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9']]
+        )
+        table = MarkdownTableElement(name='Consistent', content=table_data)
+        
+        rows, cols = table.shape
+        assert rows == 4  # 1 header + 3 data rows
+        assert cols == 3  # 3 columns
+        
+        # Test that we can access all cells within shape bounds
+        for row in range(rows):
+            for col in range(cols):
+                # This should not raise an exception
+                value = table[row, col]
+                assert isinstance(value, str)
+        
+        # Test that accessing beyond shape bounds raises errors
+        with pytest.raises(IndexError):
+            _ = table[rows, 0]  # One beyond last row
+            
+        with pytest.raises(IndexError):
+            _ = table[0, cols]  # One beyond last column
