@@ -1,29 +1,29 @@
-from typing import List, Optional, Sequence, Tuple, Any
 import uuid
+from typing import Any, List, Optional, Sequence, Tuple
 
 from pydantic import Field, field_validator
 from typeguard import typechecked
 
-from gslides_api.client import GoogleAPIClient, api_client as default_api_client
+from gslides_api.client import GoogleAPIClient
+from gslides_api.client import api_client as default_api_client
 from gslides_api.domain.domain import Dimension, OutputUnit, Size, Transform
+from gslides_api.domain.table import (Table, TableColumnProperties,
+                                      TableRowProperties)
 from gslides_api.domain.table_cell import TableCellLocation
-from gslides_api.domain.table import Table, TableColumnProperties
-from gslides_api.element.base import ElementKind, PageElementBase
-from gslides_api.markdown.element import TableData
-from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
-from gslides_api.request.request import UpdatePageElementAltTextRequest
-from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.request.table import (
-    CreateTableRequest,
-    InsertTableRowsRequest,
-    DeleteTableRowRequest,
-    InsertTableColumnsRequest,
-    DeleteTableColumnRequest,
-    UpdateTableColumnPropertiesRequest,
-)
-
-
 from gslides_api.domain.text import TextStyle
+from gslides_api.element.base import ElementKind, PageElementBase
+from gslides_api.markdown.element import \
+    MarkdownTableElement as MarkdownTableElement
+from gslides_api.markdown.element import TableData
+from gslides_api.request.parent import GSlidesAPIRequest
+from gslides_api.request.request import UpdatePageElementAltTextRequest
+from gslides_api.request.table import (CreateTableRequest,
+                                       DeleteTableColumnRequest,
+                                       DeleteTableRowRequest,
+                                       InsertTableColumnsRequest,
+                                       InsertTableRowsRequest,
+                                       UpdateTableColumnPropertiesRequest,
+                                       UpdateTableRowPropertiesRequest)
 
 
 @typechecked
@@ -59,7 +59,9 @@ class TableElement(PageElementBase):
                 or location.rowIndex >= len(self.table.tableRows)
                 or not self.table.tableRows[location.rowIndex].rowHeight
             ):
-                raise ValueError(f"Row height not available for row {location.rowIndex}")
+                raise ValueError(
+                    f"Row height not available for row {location.rowIndex}"
+                )
 
             row_height_dim = self.table.tableRows[location.rowIndex].rowHeight
 
@@ -69,7 +71,9 @@ class TableElement(PageElementBase):
                 or location.columnIndex >= len(self.table.tableColumns)
                 or not self.table.tableColumns[location.columnIndex].columnWidth
             ):
-                raise ValueError(f"Column width not available for column {location.columnIndex}")
+                raise ValueError(
+                    f"Column width not available for column {location.columnIndex}"
+                )
 
             column_width_dim = self.table.tableColumns[location.columnIndex].columnWidth
 
@@ -87,9 +91,13 @@ class TableElement(PageElementBase):
 
             return width_result, height_result
 
-    def _read_text(self, location: Optional[TableCellLocation] = None) -> str | list[list[str]]:
+    def _read_text(
+        self, location: Optional[TableCellLocation] = None
+    ) -> str | list[list[str]]:
         if location is not None:
-            cell = self.table.tableRows[location.rowIndex].tableCells[location.columnIndex]
+            cell = self.table.tableRows[location.rowIndex].tableCells[
+                location.columnIndex
+            ]
             if cell.text is not None:
                 return cell.text.read_text()
             else:
@@ -118,7 +126,9 @@ class TableElement(PageElementBase):
         elif isinstance(key, tuple) and len(key) == 2:
             row_idx, col_idx = key
         else:
-            raise TypeError("Table indexing requires either (row, col) tuple or TableCellLocation")
+            raise TypeError(
+                "Table indexing requires either (row, col) tuple or TableCellLocation"
+            )
 
         return self.table.tableRows[row_idx].tableCells[col_idx]
 
@@ -152,7 +162,8 @@ class TableElement(PageElementBase):
             self.table.tableRows is not None
             and location.rowIndex < len(self.table.tableRows)
             and self.table.tableRows[location.rowIndex].tableCells is not None
-            and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
+            and location.columnIndex
+            < len(self.table.tableRows[location.rowIndex].tableCells)
         ):
             cell = self[location.rowIndex, location.columnIndex]
             size_inches = self.absolute_size(OutputUnit.IN, location)
@@ -267,7 +278,9 @@ class TableElement(PageElementBase):
             client = api_client or default_api_client
             return client.batch_update(requests, self.presentation_id)
 
-    def delete_text_in_cell_requests(self, location: TableCellLocation) -> List[GSlidesAPIRequest]:
+    def delete_text_in_cell_requests(
+        self, location: TableCellLocation
+    ) -> List[GSlidesAPIRequest]:
         # Validate cell location is within table bounds
         if (
             location.rowIndex >= self.table.rows
@@ -285,7 +298,8 @@ class TableElement(PageElementBase):
             self.table.tableRows is not None
             and location.rowIndex < len(self.table.tableRows)
             and self.table.tableRows[location.rowIndex].tableCells is not None
-            and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
+            and location.columnIndex
+            < len(self.table.tableRows[location.rowIndex].tableCells)
         ):
             cell = self[location.rowIndex, location.columnIndex]
             requests = cell.text.delete_text_request(self.objectId)
@@ -326,7 +340,9 @@ class TableElement(PageElementBase):
                 rows.append(row_cells[: len(headers)])
 
         except (AttributeError, IndexError):
-            raise ValueError("Could not extract table data - table structure may be invalid")
+            raise ValueError(
+                "Could not extract table data - table structure may be invalid"
+            )
 
         if not headers:
             raise ValueError("No headers found in table")
@@ -364,7 +380,9 @@ class TableElement(PageElementBase):
 
         if hasattr(self, "transform") and self.transform:
             metadata["transform"] = (
-                self.transform.to_api_format() if hasattr(self.transform, "to_api_format") else None
+                self.transform.to_api_format()
+                if hasattr(self.transform, "to_api_format")
+                else None
             )
 
         # Store title and description if available
@@ -423,7 +441,9 @@ class TableElement(PageElementBase):
                 width=Dimension(magnitude=default_width, unit=Unit.PT),
                 height=Dimension(magnitude=default_height, unit=Unit.PT),
             ),
-            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            ),
             table=Table(rows=num_rows, columns=num_cols),
             slide_id=slide_id,
             presentation_id="",
@@ -457,7 +477,10 @@ class TableElement(PageElementBase):
         requests = []
 
         # Only proceed if we have column width information
-        if not self.table.tableColumns or len(self.table.tableColumns) != self.table.columns:
+        if (
+            not self.table.tableColumns
+            or len(self.table.tableColumns) != self.table.columns
+        ):
             return requests
 
         # Calculate total width of remaining columns
@@ -498,7 +521,9 @@ class TableElement(PageElementBase):
 
             # Create new column properties with adjusted width
             new_column_props = TableColumnProperties(
-                columnWidth=Dimension(magnitude=new_width, unit=original_col.columnWidth.unit)
+                columnWidth=Dimension(
+                    magnitude=new_width, unit=original_col.columnWidth.unit
+                )
             )
 
             requests.append(
@@ -524,13 +549,17 @@ class TableElement(PageElementBase):
         Returns:
             List of UpdateTableColumnPropertiesRequest to set column widths
         """
-        from gslides_api.request.table import UpdateTableColumnPropertiesRequest
         from gslides_api.domain.table import TableColumnProperties
+        from gslides_api.request.table import \
+            UpdateTableColumnPropertiesRequest
 
         requests = []
 
         # Only proceed if we have column width information
-        if not self.table.tableColumns or len(self.table.tableColumns) != original_columns:
+        if (
+            not self.table.tableColumns
+            or len(self.table.tableColumns) != original_columns
+        ):
             return requests
 
         # Get the width of the rightmost original column
@@ -548,7 +577,9 @@ class TableElement(PageElementBase):
                     UpdateTableColumnPropertiesRequest(
                         objectId=self.objectId,
                         columnIndices=[col_idx],
-                        tableColumnProperties=TableColumnProperties(columnWidth=col.columnWidth),
+                        tableColumnProperties=TableColumnProperties(
+                            columnWidth=col.columnWidth
+                        ),
                         fields="columnWidth",
                     )
                 )
@@ -559,15 +590,167 @@ class TableElement(PageElementBase):
                 UpdateTableColumnPropertiesRequest(
                     objectId=self.objectId,
                     columnIndices=[col_idx],
-                    tableColumnProperties=TableColumnProperties(columnWidth=rightmost_width),
+                    tableColumnProperties=TableColumnProperties(
+                        columnWidth=rightmost_width
+                    ),
                     fields="columnWidth",
                 )
             )
 
         return requests
 
+    def _calculate_proportional_heights_after_deletion(
+        self, remaining_row_indices: List[int]
+    ) -> List[GSlidesAPIRequest]:
+        """Generate requests to proportionally expand remaining rows to maintain total table height.
+
+        Args:
+            remaining_row_indices: List of row indices that will remain after deletion
+
+        Returns:
+            List of UpdateTableRowPropertiesRequest to adjust row heights
+        """
+        requests = []
+
+        # Only proceed if we have row height information
+        if not self.table.tableRows or len(self.table.tableRows) != self.table.rows:
+            return requests
+
+        # Calculate total height of remaining rows
+        total_remaining_height = 0
+        remaining_heights = []
+
+        for row_idx in remaining_row_indices:
+            if (
+                row_idx < len(self.table.tableRows)
+                and self.table.tableRows[row_idx].rowHeight
+            ):
+                height = self.table.tableRows[row_idx].rowHeight.magnitude
+                remaining_heights.append(height)
+                total_remaining_height += height
+            else:
+                # If we don't have height info for some rows, can't do proportional adjustment
+                return requests
+
+        if total_remaining_height == 0:
+            return requests
+
+        # Calculate total height of all original rows
+        total_original_height = 0
+        for row in self.table.tableRows:
+            if row.rowHeight:
+                total_original_height += row.rowHeight.magnitude
+
+        if total_original_height == 0:
+            return requests
+
+        # Calculate proportional expansion factor
+        expansion_factor = total_original_height / total_remaining_height
+
+        # Generate update requests for each remaining row
+        for i, row_idx in enumerate(remaining_row_indices):
+            new_height = remaining_heights[i] * expansion_factor
+            original_row = self.table.tableRows[row_idx]
+
+            # Create new row properties with adjusted height
+            new_row_props = TableRowProperties(
+                minRowHeight=Dimension(
+                    magnitude=new_height, unit=original_row.rowHeight.unit
+                )
+            )
+
+            requests.append(
+                UpdateTableRowPropertiesRequest(
+                    objectId=self.objectId,
+                    rowIndices=[row_idx],
+                    tableRowProperties=new_row_props,
+                    fields="minRowHeight",
+                )
+            )
+
+        return requests
+
+    def _calculate_proportional_heights_after_addition(
+        self, original_rows: int, new_rows: int
+    ) -> List[GSlidesAPIRequest]:
+        """Generate requests to proportionally shrink all rows to maintain total table height.
+
+        Args:
+            original_rows: Number of rows before addition
+            new_rows: Total number of rows after addition
+
+        Returns:
+            List of UpdateTableRowPropertiesRequest to set row heights
+        """
+        requests = []
+
+        # Only proceed if we have row height information
+        if not self.table.tableRows or len(self.table.tableRows) != original_rows:
+            return requests
+
+        # Calculate total height of all original rows
+        total_original_height = 0
+        for row in self.table.tableRows:
+            if row.rowHeight:
+                total_original_height += row.rowHeight.magnitude
+            else:
+                # If we don't have height info for some rows, can't do proportional adjustment
+                return requests
+
+        if total_original_height == 0:
+            return requests
+
+        # Calculate new height per row to maintain total table height
+        new_height_per_row = total_original_height / new_rows
+
+        # Get the unit from the first row that has height info
+        height_unit = None
+        for row in self.table.tableRows:
+            if row.rowHeight:
+                height_unit = row.rowHeight.unit
+                break
+
+        if height_unit is None:
+            return requests
+
+        # Generate update requests for all existing rows (new rows will get default height from API)
+        for row_idx in range(original_rows):
+            new_row_props = TableRowProperties(
+                minRowHeight=Dimension(magnitude=new_height_per_row, unit=height_unit)
+            )
+
+            requests.append(
+                UpdateTableRowPropertiesRequest(
+                    objectId=self.objectId,
+                    rowIndices=[row_idx],
+                    tableRowProperties=new_row_props,
+                    fields="minRowHeight",
+                )
+            )
+
+        # Generate update requests for all new rows as well
+        for row_idx in range(original_rows, new_rows):
+            new_row_props = TableRowProperties(
+                minRowHeight=Dimension(magnitude=new_height_per_row, unit=height_unit)
+            )
+
+            requests.append(
+                UpdateTableRowPropertiesRequest(
+                    objectId=self.objectId,
+                    rowIndices=[row_idx],
+                    tableRowProperties=new_row_props,
+                    fields="minRowHeight",
+                )
+            )
+
+        return requests
+
     def resize_requests(
-        self, n_rows: int, n_columns: int, fix_width: bool = True
+        self,
+        n_rows: int,
+        n_columns: int,
+        fix_width: bool = True,
+        fix_height: bool = False,
     ) -> List[GSlidesAPIRequest]:
         """Generate requests to resize the table to the specified dimensions.
 
@@ -577,6 +760,9 @@ class TableElement(PageElementBase):
             fix_width: If True (default), maintain constant table width when adding/deleting columns.
                       If False, preserve original column widths when adding columns and allow
                       table width to change when deleting columns.
+            fix_height: If True, maintain constant table height when adding/deleting rows.
+                       If False (default), preserve original row heights when adding rows and allow
+                       table height to change when deleting rows.
 
         Returns:
             List of API requests to resize the table
@@ -593,17 +779,33 @@ class TableElement(PageElementBase):
 
         # Handle row changes
         if n_rows > current_rows:
+            # Adding rows
             rows_to_add = n_rows - current_rows
             requests.append(
                 InsertTableRowsRequest(
                     tableObjectId=self.objectId,
-                    cellLocation=TableCellLocation(rowIndex=current_rows - 1, columnIndex=0),
+                    cellLocation=TableCellLocation(
+                        rowIndex=current_rows - 1, columnIndex=0
+                    ),
                     insertBelow=True,
                     number=rows_to_add,
                 )
             )
+
+            # Add height adjustment requests if fix_height=True
+            if fix_height:
+                height_requests = self._calculate_proportional_heights_after_addition(
+                    current_rows, n_rows
+                )
+                requests.extend(height_requests)
+
         elif n_rows < current_rows:
+            # Deleting rows
             rows_to_delete = current_rows - n_rows
+
+            # Calculate which rows will remain for height adjustment if fix_height=True
+            remaining_row_indices = list(range(n_rows)) if fix_height else []
+
             for i in range(rows_to_delete):
                 row_index = current_rows - 1 - i
                 requests.append(
@@ -613,6 +815,13 @@ class TableElement(PageElementBase):
                     )
                 )
 
+            # Add height adjustment requests if fix_height=True
+            if fix_height and remaining_row_indices:
+                height_requests = self._calculate_proportional_heights_after_deletion(
+                    remaining_row_indices
+                )
+                requests.extend(height_requests)
+
         # Handle column changes
         if n_columns > current_columns:
             # Adding columns
@@ -620,7 +829,9 @@ class TableElement(PageElementBase):
             requests.append(
                 InsertTableColumnsRequest(
                     tableObjectId=self.objectId,
-                    cellLocation=TableCellLocation(rowIndex=0, columnIndex=current_columns - 1),
+                    cellLocation=TableCellLocation(
+                        rowIndex=0, columnIndex=current_columns - 1
+                    ),
                     insertRight=True,
                     number=columns_to_add,
                 )
@@ -628,8 +839,10 @@ class TableElement(PageElementBase):
 
             # Add width adjustment requests if fix_width=False
             if not fix_width:
-                width_requests = self._generate_width_preserving_requests_after_addition(
-                    current_columns, n_columns
+                width_requests = (
+                    self._generate_width_preserving_requests_after_addition(
+                        current_columns, n_columns
+                    )
                 )
                 requests.extend(width_requests)
 
@@ -645,7 +858,9 @@ class TableElement(PageElementBase):
                 requests.append(
                     DeleteTableColumnRequest(
                         tableObjectId=self.objectId,
-                        cellLocation=TableCellLocation(rowIndex=0, columnIndex=column_index),
+                        cellLocation=TableCellLocation(
+                            rowIndex=0, columnIndex=column_index
+                        ),
                     )
                 )
 
@@ -658,7 +873,14 @@ class TableElement(PageElementBase):
 
         return requests
 
-    def resize(self, n_rows: int, n_columns: int, fix_width: bool = True, api_client=None) -> None:
+    def resize(
+        self,
+        n_rows: int,
+        n_columns: int,
+        fix_width: bool = True,
+        fix_height: bool = False,
+        api_client=None,
+    ) -> None:
         """Resize the table to the specified dimensions.
 
         Args:
@@ -667,12 +889,15 @@ class TableElement(PageElementBase):
             fix_width: If True (default), maintain constant table width when adding/deleting columns.
                       If False, preserve original column widths when adding columns and allow
                       table width to change when deleting columns.
+            fix_height: If True, maintain constant table height when adding/deleting rows.
+                       If False (default), preserve original row heights when adding rows and allow
+                       table height to change when deleting rows.
             api_client: Optional GoogleAPIClient instance. If None, uses the default client.
 
         Raises:
             ValueError: If target dimensions are less than 1 or if no API client is available
         """
-        requests = self.resize_requests(n_rows, n_columns, fix_width)
+        requests = self.resize_requests(n_rows, n_columns, fix_width, fix_height)
 
         if not requests:
             # No changes needed

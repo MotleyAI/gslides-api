@@ -6,7 +6,13 @@ import pytest
 from unittest.mock import Mock, patch
 
 from gslides_api.element.table import TableElement
-from gslides_api.domain.table import Table, TableCell, TableColumnProperties, TableRow
+from gslides_api.domain.table import (
+    Table,
+    TableCell,
+    TableColumnProperties,
+    TableRow,
+    TableRowProperties,
+)
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.domain import Dimension, Size, Transform, Unit
 from gslides_api.element.text_content import TextContent
@@ -14,6 +20,7 @@ from gslides_api.request.table import (
     InsertTableColumnsRequest,
     DeleteTableColumnRequest,
     UpdateTableColumnPropertiesRequest,
+    UpdateTableRowPropertiesRequest,
     InsertTableRowsRequest,
     DeleteTableRowRequest,
 )
@@ -28,18 +35,32 @@ class TestTableElementResize:
         table_columns = []
         for i in range(columns):
             table_columns.append(
-                TableColumnProperties(columnWidth=Dimension(magnitude=100, unit=Unit.PT))
+                TableColumnProperties(
+                    columnWidth=Dimension(magnitude=100, unit=Unit.PT)
+                )
             )
 
-        # Create table rows
+        # Create table rows with height information
         table_rows = []
         for row_idx in range(rows):
             cells = []
             for col_idx in range(columns):
                 cells.append(TableCell(text=TextContent(textElements=[])))
-            table_rows.append(TableRow(tableCells=cells))
+            table_rows.append(
+                TableRow(
+                    tableCells=cells,
+                    rowHeight=Dimension(
+                        magnitude=50, unit=Unit.PT
+                    ),  # Default row height
+                    tableRowProperties=TableRowProperties(
+                        minRowHeight=Dimension(magnitude=50, unit=Unit.PT)
+                    ),
+                )
+            )
 
-        table = Table(rows=rows, columns=columns, tableColumns=table_columns, tableRows=table_rows)
+        table = Table(
+            rows=rows, columns=columns, tableColumns=table_columns, tableRows=table_rows
+        )
 
         return TableElement(
             objectId="test-table-id",
@@ -47,7 +68,9 @@ class TestTableElementResize:
                 width=Dimension(magnitude=400, unit=Unit.PT),
                 height=Dimension(magnitude=300, unit=Unit.PT),
             ),
-            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            ),
             table=table,
             slide_id="test-slide-id",
             presentation_id="test-presentation-id",
@@ -92,8 +115,12 @@ class TestTableElementResize:
         requests = table_element.resize_requests(3, 6, fix_width=False)
 
         # Should have insert request plus width adjustment requests
-        insert_requests = [r for r in requests if isinstance(r, InsertTableColumnsRequest)]
-        update_requests = [r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)]
+        insert_requests = [
+            r for r in requests if isinstance(r, InsertTableColumnsRequest)
+        ]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)
+        ]
 
         assert len(insert_requests) == 1
         assert insert_requests[0].number == 2
@@ -119,8 +146,12 @@ class TestTableElementResize:
         table_element = self.create_test_table(3, 4)
         requests = table_element.resize_requests(3, 2, fix_width=True)
 
-        delete_requests = [r for r in requests if isinstance(r, DeleteTableColumnRequest)]
-        update_requests = [r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)]
+        delete_requests = [
+            r for r in requests if isinstance(r, DeleteTableColumnRequest)
+        ]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)
+        ]
 
         # Should have delete requests for 2 columns
         assert len(delete_requests) == 2
@@ -140,8 +171,12 @@ class TestTableElementResize:
         table_element = self.create_test_table(3, 4)
         requests = table_element.resize_requests(3, 2, fix_width=False)
 
-        delete_requests = [r for r in requests if isinstance(r, DeleteTableColumnRequest)]
-        update_requests = [r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)]
+        delete_requests = [
+            r for r in requests if isinstance(r, DeleteTableColumnRequest)
+        ]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)
+        ]
 
         # Should have delete requests for 2 columns
         assert len(delete_requests) == 2
@@ -159,7 +194,9 @@ class TestTableElementResize:
                 width=Dimension(magnitude=400, unit=Unit.PT),
                 height=Dimension(magnitude=300, unit=Unit.PT),
             ),
-            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            ),
             table=table,
             slide_id="test-slide-id",
             presentation_id="test-presentation-id",
@@ -169,8 +206,12 @@ class TestTableElementResize:
         requests_add = table_element.resize_requests(3, 6, fix_width=False)
         requests_delete = table_element.resize_requests(3, 2, fix_width=True)
 
-        insert_requests = [r for r in requests_add if isinstance(r, InsertTableColumnsRequest)]
-        delete_requests = [r for r in requests_delete if isinstance(r, DeleteTableColumnRequest)]
+        insert_requests = [
+            r for r in requests_add if isinstance(r, InsertTableColumnsRequest)
+        ]
+        delete_requests = [
+            r for r in requests_delete if isinstance(r, DeleteTableColumnRequest)
+        ]
         update_requests = [
             r
             for r in requests_add + requests_delete
@@ -185,10 +226,14 @@ class TestTableElementResize:
         """Test that invalid dimensions raise ValueError."""
         table_element = self.create_test_table(3, 4)
 
-        with pytest.raises(ValueError, match="Table must have at least 1 row and 1 column"):
+        with pytest.raises(
+            ValueError, match="Table must have at least 1 row and 1 column"
+        ):
             table_element.resize_requests(0, 4)
 
-        with pytest.raises(ValueError, match="Table must have at least 1 row and 1 column"):
+        with pytest.raises(
+            ValueError, match="Table must have at least 1 row and 1 column"
+        ):
             table_element.resize_requests(3, 0)
 
     def test_resize_requests_mixed_changes(self):
@@ -197,14 +242,18 @@ class TestTableElementResize:
         requests = table_element.resize_requests(5, 6, fix_width=False)
 
         row_requests = [
-            r for r in requests if isinstance(r, (InsertTableRowsRequest, DeleteTableRowRequest))
+            r
+            for r in requests
+            if isinstance(r, (InsertTableRowsRequest, DeleteTableRowRequest))
         ]
         col_requests = [
             r
             for r in requests
             if isinstance(r, (InsertTableColumnsRequest, DeleteTableColumnRequest))
         ]
-        update_requests = [r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)
+        ]
 
         # Should have row insertion
         assert len(row_requests) == 1
@@ -231,10 +280,10 @@ class TestTableElementResize:
             mock_requests = [Mock()]
             mock_resize_requests.return_value = mock_requests
 
-            # Test with fix_width=True
+            # Test with fix_width=True (fix_height uses default False)
             table_element.resize(3, 6, fix_width=True, api_client=mock_client_instance)
 
-            mock_resize_requests.assert_called_once_with(3, 6, True)
+            mock_resize_requests.assert_called_once_with(3, 6, True, False)
             mock_client_instance.batch_update.assert_called_once()
 
     @patch("gslides_api.element.table.default_api_client")
@@ -268,7 +317,9 @@ class TestTableElementResize:
                 width=Dimension(magnitude=500, unit=Unit.PT),
                 height=Dimension(magnitude=300, unit=Unit.PT),
             ),
-            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            ),
             table=table,
             slide_id="test-slide-id",
             presentation_id="test-presentation-id",
@@ -277,7 +328,9 @@ class TestTableElementResize:
         # Delete 2 columns, keep first 2
         requests = table_element.resize_requests(3, 2, fix_width=True)
 
-        update_requests = [r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)
+        ]
         assert len(update_requests) == 2
 
         # Original total: 50 + 100 + 150 + 200 = 500pt
@@ -285,8 +338,277 @@ class TestTableElementResize:
         # Expansion factor: 500 / 150 = 3.333...
         # New widths should be: 50 * 3.333... ≈ 166.67, 100 * 3.333... ≈ 333.33
 
-        widths = [req.tableColumnProperties.columnWidth.magnitude for req in update_requests]
+        widths = [
+            req.tableColumnProperties.columnWidth.magnitude for req in update_requests
+        ]
         widths.sort()  # Sort to make comparison easier
 
         assert abs(widths[0] - 166.67) < 0.1  # Allow small floating point error
         assert abs(widths[1] - 333.33) < 0.1
+
+    # ===== NEW TESTS FOR fix_height PARAMETER =====
+
+    def test_resize_requests_add_rows_fix_height_false(self):
+        """Test adding rows with fix_height=False (default behavior) doesn't adjust heights."""
+        table_element = self.create_test_table(3, 4)
+        requests = table_element.resize_requests(5, 4, fix_height=False)
+
+        insert_requests = [r for r in requests if isinstance(r, InsertTableRowsRequest)]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableRowPropertiesRequest)
+        ]
+
+        assert len(insert_requests) == 1
+        assert insert_requests[0].number == 2
+
+        # Should NOT have height adjustment requests
+        assert len(update_requests) == 0
+
+    def test_resize_requests_add_rows_fix_height_true(self):
+        """Test adding rows with fix_height=True maintains table height."""
+        table_element = self.create_test_table(3, 4)
+        requests = table_element.resize_requests(5, 4, fix_height=True)
+
+        insert_requests = [r for r in requests if isinstance(r, InsertTableRowsRequest)]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableRowPropertiesRequest)
+        ]
+
+        assert len(insert_requests) == 1
+        assert insert_requests[0].number == 2
+
+        # Should have height adjustment requests for all 5 rows (3 original + 2 new)
+        assert len(update_requests) == 5
+
+        # Original total height: 3 * 50 = 150pt
+        # New height per row: 150 / 5 = 30pt
+        for update_req in update_requests:
+            assert len(update_req.rowIndices) == 1
+            assert update_req.tableRowProperties.minRowHeight.magnitude == 30.0
+            assert update_req.fields == "minRowHeight"
+
+    def test_resize_requests_delete_rows_fix_height_false(self):
+        """Test deleting rows with fix_height=False (default) doesn't adjust heights."""
+        table_element = self.create_test_table(3, 4)
+        requests = table_element.resize_requests(2, 4, fix_height=False)
+
+        delete_requests = [r for r in requests if isinstance(r, DeleteTableRowRequest)]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableRowPropertiesRequest)
+        ]
+
+        assert len(delete_requests) == 1
+
+        # Should NOT have height adjustment requests
+        assert len(update_requests) == 0
+
+    def test_resize_requests_delete_rows_fix_height_true(self):
+        """Test deleting rows with fix_height=True maintains table height."""
+        table_element = self.create_test_table(3, 4)
+        requests = table_element.resize_requests(2, 4, fix_height=True)
+
+        delete_requests = [r for r in requests if isinstance(r, DeleteTableRowRequest)]
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableRowPropertiesRequest)
+        ]
+
+        assert len(delete_requests) == 1
+
+        # Should have height adjustment requests for remaining 2 rows
+        assert len(update_requests) == 2
+
+        # Original total height: 3 * 50 = 150pt, remaining rows: 2
+        # Each remaining row should be expanded to maintain total height: 150 / 2 = 75pt
+        for update_req in update_requests:
+            assert len(update_req.rowIndices) == 1
+            assert update_req.tableRowProperties.minRowHeight.magnitude == 75.0
+            assert update_req.fields == "minRowHeight"
+
+    def test_resize_requests_no_row_height_info(self):
+        """Test behavior when row height information is not available."""
+        # Create table without row height information
+        table_columns = []
+        for i in range(4):
+            table_columns.append(
+                TableColumnProperties(
+                    columnWidth=Dimension(magnitude=100, unit=Unit.PT)
+                )
+            )
+
+        table = Table(rows=3, columns=4, tableColumns=table_columns, tableRows=None)
+        table_element = TableElement(
+            objectId="test-table-id",
+            size=Size(
+                width=Dimension(magnitude=400, unit=Unit.PT),
+                height=Dimension(magnitude=300, unit=Unit.PT),
+            ),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            ),
+            table=table,
+            slide_id="test-slide-id",
+            presentation_id="test-presentation-id",
+        )
+
+        # Should only generate insert/delete requests, no height adjustments
+        requests_add = table_element.resize_requests(5, 4, fix_height=True)
+        requests_delete = table_element.resize_requests(2, 4, fix_height=True)
+
+        insert_requests = [
+            r for r in requests_add if isinstance(r, InsertTableRowsRequest)
+        ]
+        delete_requests = [
+            r for r in requests_delete if isinstance(r, DeleteTableRowRequest)
+        ]
+        update_requests = [
+            r
+            for r in requests_add + requests_delete
+            if isinstance(r, UpdateTableRowPropertiesRequest)
+        ]
+
+        assert len(insert_requests) == 1
+        assert len(delete_requests) == 1
+        assert len(update_requests) == 0  # No height adjustments possible
+
+    def test_proportional_height_calculation_edge_cases(self):
+        """Test edge cases in proportional height calculations."""
+        # Create table with uneven row heights
+        table_columns = []
+        for i in range(4):
+            table_columns.append(
+                TableColumnProperties(
+                    columnWidth=Dimension(magnitude=100, unit=Unit.PT)
+                )
+            )
+
+        table_rows = []
+        row_heights = [30, 60, 90]  # Different heights
+        for row_idx, height in enumerate(row_heights):
+            cells = []
+            for col_idx in range(4):
+                cells.append(TableCell(text=TextContent(textElements=[])))
+            table_rows.append(
+                TableRow(
+                    tableCells=cells,
+                    rowHeight=Dimension(magnitude=height, unit=Unit.PT),
+                    tableRowProperties=TableRowProperties(
+                        minRowHeight=Dimension(magnitude=height, unit=Unit.PT)
+                    ),
+                )
+            )
+
+        table = Table(
+            rows=3, columns=4, tableColumns=table_columns, tableRows=table_rows
+        )
+        table_element = TableElement(
+            objectId="test-table-id",
+            size=Size(
+                width=Dimension(magnitude=400, unit=Unit.PT),
+                height=Dimension(magnitude=180, unit=Unit.PT),  # 30 + 60 + 90
+            ),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            ),
+            table=table,
+            slide_id="test-slide-id",
+            presentation_id="test-presentation-id",
+        )
+
+        # Delete 1 row (keep first 2), should maintain total height
+        requests = table_element.resize_requests(2, 4, fix_height=True)
+
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableRowPropertiesRequest)
+        ]
+        assert len(update_requests) == 2
+
+        # Original total: 30 + 60 + 90 = 180pt
+        # Remaining rows original heights: 30 + 60 = 90pt
+        # Expansion factor: 180 / 90 = 2.0
+        # New heights should be: 30 * 2.0 = 60pt, 60 * 2.0 = 120pt
+
+        heights = [
+            req.tableRowProperties.minRowHeight.magnitude for req in update_requests
+        ]
+        heights.sort()  # Sort to make comparison easier
+
+        assert heights[0] == 60.0
+        assert heights[1] == 120.0
+
+    def test_resize_requests_mixed_fix_width_fix_height(self):
+        """Test simultaneous row and column changes with both fix_width and fix_height."""
+        table_element = self.create_test_table(3, 4)
+        requests = table_element.resize_requests(5, 6, fix_width=True, fix_height=True)
+
+        row_requests = [
+            r
+            for r in requests
+            if isinstance(r, (InsertTableRowsRequest, DeleteTableRowRequest))
+        ]
+        col_requests = [
+            r
+            for r in requests
+            if isinstance(r, (InsertTableColumnsRequest, DeleteTableColumnRequest))
+        ]
+        row_update_requests = [
+            r for r in requests if isinstance(r, UpdateTableRowPropertiesRequest)
+        ]
+        col_update_requests = [
+            r for r in requests if isinstance(r, UpdateTableColumnPropertiesRequest)
+        ]
+
+        # Should have row insertion
+        assert len(row_requests) == 1
+        assert isinstance(row_requests[0], InsertTableRowsRequest)
+
+        # Should have column insertion
+        assert len(col_requests) == 1
+        assert isinstance(col_requests[0], InsertTableColumnsRequest)
+
+        # Should have height adjustment requests (fix_height=True)
+        assert len(row_update_requests) == 5  # All 5 rows
+
+        # Should NOT have width adjustment requests (fix_width=True is default for adding columns)
+        assert len(col_update_requests) == 0
+
+    @patch("gslides_api.element.table.default_api_client")
+    def test_resize_method_with_fix_height(self, mock_api_client):
+        """Test that resize method properly passes fix_height parameter."""
+        mock_client_instance = Mock()
+        mock_api_client.__bool__.return_value = True
+        mock_api_client.batch_update.return_value = {"replies": []}
+
+        table_element = self.create_test_table(3, 4)
+
+        # Mock resize_requests to verify parameters
+        with patch.object(TableElement, "resize_requests") as mock_resize_requests:
+            mock_requests = [Mock()]
+            mock_resize_requests.return_value = mock_requests
+
+            # Test with both fix_width and fix_height
+            table_element.resize(
+                5, 6, fix_width=False, fix_height=True, api_client=mock_client_instance
+            )
+
+            mock_resize_requests.assert_called_once_with(5, 6, False, True)
+            mock_client_instance.batch_update.assert_called_once()
+
+    def test_resize_requests_height_adjustment_row_indices(self):
+        """Test that height adjustment requests target the correct row indices."""
+        table_element = self.create_test_table(4, 3)
+
+        # Delete 2 rows (keep rows 0, 1)
+        requests = table_element.resize_requests(2, 3, fix_height=True)
+
+        update_requests = [
+            r for r in requests if isinstance(r, UpdateTableRowPropertiesRequest)
+        ]
+        assert len(update_requests) == 2
+
+        # Check that the correct row indices are targeted
+        targeted_rows = []
+        for req in update_requests:
+            targeted_rows.extend(req.rowIndices)
+
+        targeted_rows.sort()
+        assert targeted_rows == [0, 1]  # First two rows should remain
