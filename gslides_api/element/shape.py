@@ -131,6 +131,9 @@ class ShapeElement(PageElementBase):
         api_client: Optional[GoogleAPIClient] = None,
     ):
         size_inches = self.absolute_size(OutputUnit.IN)
+        if not self.shape.text:
+            self.shape.text = TextContent(textElements=[])
+
         requests = self.shape.text.write_text_requests(
             text=text,
             as_markdown=as_markdown,
