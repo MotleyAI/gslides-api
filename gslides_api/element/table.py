@@ -130,12 +130,13 @@ class TableElement(PageElementBase):
         styles: List[TextStyle] | None = None,
         overwrite: bool = True,
         autoscale: bool = False,
+        check_shape: bool = True,
     ) -> List[GSlidesAPIRequest]:
         if isinstance(location, Sequence):
             location = TableCellLocation(rowIndex=location[0], columnIndex=location[1])
 
         # Validate cell location is within table bounds
-        if (
+        if check_shape and (
             location.rowIndex >= self.table.rows
             or location.columnIndex >= self.table.columns
             or location.rowIndex < 0
@@ -220,7 +221,7 @@ class TableElement(PageElementBase):
         return requests
 
     def content_update_requests(
-        self, markdown_elem: MarkdownTableElement | str
+        self, markdown_elem: MarkdownTableElement | str, check_shape: bool = True
     ) -> List[GSlidesAPIRequest]:
         """
         Update the table's content with the provided markdown table.
@@ -237,7 +238,9 @@ class TableElement(PageElementBase):
                 cell_content = markdown_elem[row, col]
                 cell_location = TableCellLocation(rowIndex=row, columnIndex=col)
                 requests.extend(
-                    self.write_text_to_cell_requests(cell_content.strip(), cell_location)
+                    self.write_text_to_cell_requests(
+                        cell_content.strip(), cell_location, check_shape=check_shape
+                    )
                 )
 
         return requests
