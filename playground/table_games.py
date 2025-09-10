@@ -12,7 +12,7 @@ from storyline.common.cached_call import cached_call
 from storyline.common.logging import configure_logging
 from storyline.config import LoggingParams
 from storyline.domain.chart_image_to_config import image_to_config
-from storyline.domain.layout import ChartBlock
+from storyline.domain.content.chart_block import ChartBlock
 
 from storyline.slides.ingest_presentation import name_slides, delete_alt_titles, ingest_presentation
 from storyline.slides.slide_deck import SlideDeck
