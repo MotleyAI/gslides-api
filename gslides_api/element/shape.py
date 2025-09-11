@@ -122,7 +122,8 @@ class ShapeElement(PageElementBase):
             styles = None
         else:
             styles = self.shape.text.styles(skip_whitespace)
-            if len(styles) == 1 and styles[0].is_default():
+
+            if styles is not None and len(styles) == 1 and styles[0].is_default():
                 styles = None
 
         if styles is None:
