@@ -14,7 +14,7 @@ from gslides_api.domain.domain import (
     Unit,
 )
 from gslides_api.domain.request import Range, RangeType
-from gslides_api.domain.text import Placeholder, ShapeProperties, TextStyle
+from gslides_api.domain.text import PlaceholderType, ShapeProperties, TextStyle
 from gslides_api.domain.text import Type
 from gslides_api.domain.text import Type as ShapeType
 from gslides_api.element.base import ElementKind, PageElementBase
@@ -31,6 +31,16 @@ from gslides_api.request.request import (
 )
 
 
+class Placeholder(GSlidesBaseModel):
+    """Represents a placeholder in a slide."""
+
+    type: PlaceholderType
+    parentObjectId: Optional[str] = None
+    index: Optional[int] = None
+    # This is not in the API, we fetch it from elsewhere in the Presentation object using parentObjectId
+    parent_object: Optional["ShapeElement"] = Field(default=None, exclude=True)
+
+
 class Shape(GSlidesBaseModel):
     """Represents a shape in a slide."""
 
@@ -39,8 +49,11 @@ class Shape(GSlidesBaseModel):
     text: Optional[TextContent] = None
     placeholder: Optional[Placeholder] = None
 
-    def placeholder_styles(self):
-        pass
+    @property
+    def placeholder_styles(self) -> list[TextStyle]:
+        if self.placeholder is None or self.placeholder.parent_object is None:
+            return []
+        return self.placeholder.parent_object.styles(skip_whitespace=False)
 
 
 class ShapeElement(PageElementBase):
@@ -104,12 +117,19 @@ class ShapeElement(PageElementBase):
         client = api_client or default_api_client
         return client.batch_update(self.delete_text_request(), self.presentation_id)
 
-    @property
-    def styles(self) -> List[TextStyle] | None:
+    def styles(self, skip_whitespace: bool = True) -> List[TextStyle] | None:
         if not hasattr(self.shape, "text") or self.shape.text is None:
-            return None
+            styles = None
+        else:
+            styles = self.shape.text.styles(skip_whitespace)
 
-        return self.shape.text.styles
+            if styles is not None and len(styles) == 1 and styles[0].is_default():
+                styles = None
+
+        if styles is None:
+            styles = self.shape.placeholder_styles
+
+        return styles
 
     def to_markdown(self) -> str | None:
         """Convert the shape's text content back to markdown format.
@@ -139,6 +159,8 @@ class ShapeElement(PageElementBase):
         if not self.shape.text:
             self.shape.text = TextContent(textElements=[])
 
+        if not styles:
+            styles = self.styles()
         requests = self.shape.text.write_text_requests(
             text=text,
             as_markdown=as_markdown,
@@ -190,10 +212,10 @@ class ShapeElement(PageElementBase):
             metadata["description"] = self.description
 
         # Store text styles if available
-        if self.styles:
+        if self.styles():
             metadata["styles"] = [
                 style.to_api_format() if hasattr(style, "to_api_format") else str(style)
-                for style in self.styles
+                for style in self.styles()
             ]
 
         return MarkdownTextElement(name=name, content=content, metadata=metadata)
@@ -263,3 +285,6 @@ class ShapeElement(PageElementBase):
         )
 
         return shape_element
+
+
+Placeholder.model_rebuild()

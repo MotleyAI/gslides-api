@@ -296,13 +296,13 @@ Mixed content with [links](https://example.com) and ~~crossed out~~ text."""
 
     def test_header_style_2(self, test_slide_2):
         old_element = test_slide_2.get_element_by_alt_title("text")
-        old_style_1 = old_element.styles[0]
-        old_style_2 = old_element.styles[1]
+        old_style_1 = old_element.styles()[0]
+        old_style_2 = old_element.styles()[1]
         old_element.write_text("# New Title\nNew text", as_markdown=True)
         test_slide_2.sync_from_cloud()
         new_element = test_slide_2.get_element_by_alt_title("text")
-        new_style_1 = new_element.styles[0]
-        new_style_2 = new_element.styles[1]
+        new_style_1 = new_element.styles()[0]
+        new_style_2 = new_element.styles()[1]
         print("Testing header style...")
         compare_styles(old_style_1, new_style_1)
         print("Testing text style...")

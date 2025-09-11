@@ -3,9 +3,14 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field
 
-from gslides_api.domain.domain import (Dimension, GSlidesBaseModel,
-                                       OptionalColor, Outline, Shadow,
-                                       ShapeBackgroundFill)
+from gslides_api.domain.domain import (
+    Dimension,
+    GSlidesBaseModel,
+    OptionalColor,
+    Outline,
+    Shadow,
+    ShapeBackgroundFill,
+)
 
 
 class Type(Enum):
@@ -296,6 +301,9 @@ class TextStyle(GSlidesBaseModel):
     underline: Optional[bool] = None
     weightedFontFamily: Optional[WeightedFontFamily] = None
 
+    def is_default(self) -> bool:
+        return len(self.model_dump(exclude_unset=True)) == 0
+
 
 class Bullet(GSlidesBaseModel):
     """Represents a bullet point in a list.
@@ -324,14 +332,6 @@ class ShapeProperties(GSlidesBaseModel):
     shadow: Optional[Shadow] = None
     autofit: Optional[Dict[str, Any]] = None
     contentAlignment: Optional[str] = None
-
-
-class Placeholder(GSlidesBaseModel):
-    """Represents a placeholder in a slide."""
-
-    type: PlaceholderType
-    parentObjectId: Optional[str] = None
-    index: Optional[int] = None
 
 
 class AutoText(GSlidesBaseModel):
