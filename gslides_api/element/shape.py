@@ -4,25 +4,31 @@ from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
-from gslides_api.domain.domain import (Dimension, GSlidesBaseModel, OutputUnit,
-                                       PageElementProperties, Size, Transform,
-                                       Unit)
+from gslides_api.domain.domain import (
+    Dimension,
+    GSlidesBaseModel,
+    OutputUnit,
+    PageElementProperties,
+    Size,
+    Transform,
+    Unit,
+)
 from gslides_api.domain.request import Range, RangeType
 from gslides_api.domain.text import PlaceholderType, ShapeProperties, TextStyle
 from gslides_api.domain.text import Type
 from gslides_api.domain.text import Type as ShapeType
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.text_content import TextContent
-from gslides_api.markdown.element import \
-    MarkdownTextElement as MarkdownTextElement
-from gslides_api.markdown.from_markdown import (markdown_to_text_elements,
-                                                text_elements_to_requests)
+from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
+from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.request.request import (CreateShapeRequest,
-                                         DeleteParagraphBulletsRequest,
-                                         DeleteTextRequest,
-                                         UpdateTextStyleRequest)
+from gslides_api.request.request import (
+    CreateShapeRequest,
+    DeleteParagraphBulletsRequest,
+    DeleteTextRequest,
+    UpdateTextStyleRequest,
+)
 
 
 class Placeholder(GSlidesBaseModel):
@@ -43,8 +49,11 @@ class Shape(GSlidesBaseModel):
     text: Optional[TextContent] = None
     placeholder: Optional[Placeholder] = None
 
-    def placeholder_styles(self):
-        pass
+    @property
+    def placeholder_styles(self) -> list[TextStyle]:
+        if self.placeholder is None or self.placeholder.parent_object is None:
+            return []
+        return self.placeholder.parent_object.styles(skip_whitespace=False)
 
 
 class ShapeElement(PageElementBase):
@@ -108,12 +117,18 @@ class ShapeElement(PageElementBase):
         client = api_client or default_api_client
         return client.batch_update(self.delete_text_request(), self.presentation_id)
 
-    @property
-    def styles(self) -> List[TextStyle] | None:
+    def styles(self, skip_whitespace: bool = True) -> List[TextStyle] | None:
         if not hasattr(self.shape, "text") or self.shape.text is None:
-            return None
+            styles = None
+        else:
+            styles = self.shape.text.styles(skip_whitespace)
+            if len(styles) == 1 and styles[0].is_default():
+                styles = None
 
-        return self.shape.text.styles
+        if styles is None:
+            styles = self.shape.placeholder_styles
+
+        return styles
 
     def to_markdown(self) -> str | None:
         """Convert the shape's text content back to markdown format.
@@ -140,6 +155,8 @@ class ShapeElement(PageElementBase):
         api_client: Optional[GoogleAPIClient] = None,
     ):
         size_inches = self.absolute_size(OutputUnit.IN)
+        if not styles:
+            styles = self.styles()
         requests = self.shape.text.write_text_requests(
             text=text,
             as_markdown=as_markdown,
@@ -181,9 +198,7 @@ class ShapeElement(PageElementBase):
 
         if hasattr(self, "transform") and self.transform:
             metadata["transform"] = (
-                self.transform.to_api_format()
-                if hasattr(self.transform, "to_api_format")
-                else None
+                self.transform.to_api_format() if hasattr(self.transform, "to_api_format") else None
             )
 
         # Store title and description if available
@@ -193,10 +208,10 @@ class ShapeElement(PageElementBase):
             metadata["description"] = self.description
 
         # Store text styles if available
-        if self.styles:
+        if self.styles():
             metadata["styles"] = [
                 style.to_api_format() if hasattr(style, "to_api_format") else str(style)
-                for style in self.styles
+                for style in self.styles()
             ]
 
         return MarkdownTextElement(name=name, content=content, metadata=metadata)
@@ -224,9 +239,7 @@ class ShapeElement(PageElementBase):
         shape = Shape(
             shapeProperties=ShapeProperties(),
             shapeType=ShapeType(stored_shape_type),
-            text=(
-                TextContent(textElements=[]) if markdown_elem.content.strip() else None
-            ),
+            text=(TextContent(textElements=[]) if markdown_elem.content.strip() else None),
         )
 
         # Create element properties from metadata
@@ -236,12 +249,8 @@ class ShapeElement(PageElementBase):
         if "size" in metadata:
             size_data = metadata["size"]
             element_props.size = Size(
-                width=Dimension(
-                    magnitude=size_data["width"], unit=Unit(size_data["unit"])
-                ),
-                height=Dimension(
-                    magnitude=size_data["height"], unit=Unit(size_data["unit"])
-                ),
+                width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
+                height=Dimension(magnitude=size_data["height"], unit=Unit(size_data["unit"])),
             )
         else:
             element_props.size = Size(
