@@ -874,3 +874,38 @@ class PageElementProperties(GSlidesBaseModel):
         y_result = self._convert_emu_to_units(y_emu, units)
 
         return x_result, y_result
+
+    def absolute_cell_size(
+        self, units: OutputUnit, width_emu: float, height_emu: float
+    ) -> Tuple[float, float]:
+        """Calculate the absolute size of a cell using pre-calculated EMU dimensions.
+
+        This method is used for table cells where width and height are calculated
+        separately from row/column properties, then scaled by the table's transform.
+
+        Args:
+            units: The units to return the size in. Can be "cm" or "in".
+            width_emu: The width of the cell in EMUs.
+            height_emu: The height of the cell in EMUs.
+
+        Returns:
+            A tuple of (width, height) representing the cell's dimensions
+            in the specified units.
+
+        Raises:
+            ValueError: If units is not "cm" or "in".
+            ValueError: If element transform is not available.
+        """
+
+        if self.transform is None:
+            raise ValueError("Element transform is not available")
+
+        # Apply transform scaling
+        actual_width_emu = width_emu * self.transform.scaleX
+        actual_height_emu = height_emu * self.transform.scaleY
+
+        # Convert from EMUs to the requested units
+        width_result = self._convert_emu_to_units(actual_width_emu, units)
+        height_result = self._convert_emu_to_units(actual_height_emu, units)
+
+        return width_result, height_result
