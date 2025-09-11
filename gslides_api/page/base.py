@@ -1,13 +1,14 @@
 from enum import Enum
 from typing import List, Optional
 
-import gslides_api
-from gslides_api.client import GoogleAPIClient
-from gslides_api.domain.domain import ColorScheme, GSlidesBaseModel, PageBackgroundFill
-from gslides_api.element.base import ElementKind
-from gslides_api.element.element import PageElement
 from pydantic import Field, model_validator
 
+import gslides_api
+from gslides_api.client import GoogleAPIClient
+from gslides_api.domain.domain import (ColorScheme, GSlidesBaseModel,
+                                       PageBackgroundFill)
+from gslides_api.element.base import ElementKind
+from gslides_api.element.element import PageElement
 from gslides_api.request.parent import GSlidesAPIRequest
 
 # https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations/request#pageelementproperties
@@ -40,7 +41,9 @@ class UpdatePagePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the page to update")
-    pageProperties: "PageProperties" = Field(description="The page properties to update")
+    pageProperties: "PageProperties" = Field(
+        description="The page properties to update"
+    )
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'pageProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )
@@ -71,7 +74,9 @@ class BasePage(GSlidesBaseModel):
 
     def _propagate_presentation_id(self, presentation_id: Optional[str] = None) -> None:
         """Helper method to set presentation_id on all pageElements."""
-        target_id = presentation_id if presentation_id is not None else self.presentation_id
+        target_id = (
+            presentation_id if presentation_id is not None else self.presentation_id
+        )
         if target_id is not None and self.pageElements is not None:
             for element in self.pageElements:
                 element.presentation_id = target_id
@@ -79,7 +84,10 @@ class BasePage(GSlidesBaseModel):
             for element in self.page_elements_flat:
                 element.presentation_id = target_id
 
-        if hasattr(self, "slideProperties") and self.slideProperties.notesPage is not None:
+        if (
+            hasattr(self, "slideProperties")
+            and self.slideProperties.notesPage is not None
+        ):
             self.slideProperties.notesPage.presentation_id = target_id
 
     @property
@@ -133,7 +141,9 @@ class BasePage(GSlidesBaseModel):
     def get_element_by_id(self, element_id: str) -> PageElement | None:
         if self.pageElements is None:
             return None
-        return next((e for e in self.page_elements_flat if e.objectId == element_id), None)
+        return next(
+            (e for e in self.page_elements_flat if e.objectId == element_id), None
+        )
 
     def get_element_by_alt_title(self, title: str) -> PageElement | None:
         """Get first element by alt title. Deprecated - use get_elements_by_alt_title."""

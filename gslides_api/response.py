@@ -82,7 +82,9 @@ class ImageThumbnail(GSlidesBaseModel):
             # Detect the actual image format from the payload
 
             # Handle common extension aliases
-            expected_format = "jpeg" if file_extension in ("jpg", "jpeg") else file_extension
+            expected_format = (
+                "jpeg" if file_extension in ("jpg", "jpeg") else file_extension
+            )
 
             if self.mime_type and self.mime_type != expected_format:
                 raise ValueError(
@@ -97,7 +99,9 @@ class ImageThumbnail(GSlidesBaseModel):
         try:
             from IPython.display import Image
         except ImportError:
-            raise ImportError("IPython is not installed. Please install it to use this method.")
+            raise ImportError(
+                "IPython is not installed. Please install it to use this method."
+            )
         from IPython.display import Image
 
         return Image(self.payload)

@@ -14,7 +14,9 @@ class Notes(BasePage):
     """Represents a notes page in a presentation."""
 
     notesProperties: NotesProperties
-    pageType: PageType = Field(default=PageType.NOTES, description="The type of page", exclude=True)
+    pageType: PageType = Field(
+        default=PageType.NOTES, description="The type of page", exclude=True
+    )
 
     @field_validator("pageType")
     @classmethod

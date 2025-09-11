@@ -82,7 +82,9 @@ class Presentation(GSlidesBaseModel):
     ):
         client = api_client or globals()["api_client"]
         copy_title = copy_title or f"Copy of {self.title}"
-        new = client.copy_presentation(self.presentationId, copy_title, folder_id=folder_id)
+        new = client.copy_presentation(
+            self.presentationId, copy_title, folder_id=folder_id
+        )
         return self.from_id(new["id"], api_client=api_client)
 
     def sync_from_cloud(self, api_client: Optional[GoogleAPIClient] = None):

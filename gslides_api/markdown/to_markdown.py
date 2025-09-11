@@ -40,8 +40,12 @@ def text_elements_to_markdown(elements: List[TextElement]):
             if te.paragraphMarker.bullet is not None:
                 bullet = te.paragraphMarker.bullet
                 list_id = bullet.listId if hasattr(bullet, "listId") else None
-                nesting_level = bullet.nestingLevel if hasattr(bullet, "nestingLevel") else 0
-                glyph = bullet.glyph if hasattr(bullet, "glyph") and bullet.glyph else "●"
+                nesting_level = (
+                    bullet.nestingLevel if hasattr(bullet, "nestingLevel") else 0
+                )
+                glyph = (
+                    bullet.glyph if hasattr(bullet, "glyph") and bullet.glyph else "●"
+                )
 
                 # Determine if this is a numbered list based on the glyph
                 is_numbered = _is_numbered_list_glyph(glyph)
@@ -157,7 +161,12 @@ def _apply_markdown_formatting(content: str, style) -> str:
             text_content = f"~~{text_content}~~"
 
         # Handle combined bold and italic (***text***)
-        if hasattr(style, "bold") and style.bold and hasattr(style, "italic") and style.italic:
+        if (
+            hasattr(style, "bold")
+            and style.bold
+            and hasattr(style, "italic")
+            and style.italic
+        ):
             text_content = f"***{text_content}***"
         # Handle bold only
         elif hasattr(style, "bold") and style.bold:
@@ -176,7 +185,9 @@ def _is_numbered_list_glyph(glyph: str) -> bool:
         return False
 
     # Check if the glyph contains digits or letters (indicating numbering)
-    return any(char.isdigit() for char in glyph) or any(char.isalpha() for char in glyph)
+    return any(char.isdigit() for char in glyph) or any(
+        char.isalpha() for char in glyph
+    )
 
 
 def _get_list_indentation(nesting_level: int | None) -> str:
