@@ -2,10 +2,13 @@ import copy
 import logging
 from typing import Any, Dict, List, Optional
 
+from pydantic import model_validator
+
 from gslides_api.client import GoogleAPIClient, api_client
 from gslides_api.domain.domain import GSlidesBaseModel, Size
-from gslides_api.page.page import Layout, Master, NotesMaster, Page
+from gslides_api.element.base import ElementKind
 from gslides_api.element.element import PageElement
+from gslides_api.page.page import Layout, Master, NotesMaster, Page
 from gslides_api.page.slide import Slide
 
 logger = logging.getLogger(__name__)
@@ -83,7 +86,9 @@ class Presentation(GSlidesBaseModel):
     ):
         client = api_client or globals()["api_client"]
         copy_title = copy_title or f"Copy of {self.title}"
-        new = client.copy_presentation(self.presentationId, copy_title, folder_id=folder_id)
+        new = client.copy_presentation(
+            self.presentationId, copy_title, folder_id=folder_id
+        )
         return self.from_id(new["id"], api_client=api_client)
 
     def sync_from_cloud(self, api_client: Optional[GoogleAPIClient] = None):
@@ -111,11 +116,61 @@ class Presentation(GSlidesBaseModel):
 
     def get_page_elements_from_id(self, element_id: str) -> List[PageElement]:
         out = []
-        for slide in self.slides + self.layouts + self.masters:
-            for element in slide.page_elements_flat:
+
+        # Build list of all pages, handling None values
+        all_pages = []
+        if self.slides:
+            all_pages.extend(self.slides)
+        if self.layouts:
+            all_pages.extend(self.layouts)
+        if self.masters:
+            all_pages.extend(self.masters)
+
+        for page in all_pages:
+            for element in page.page_elements_flat:
                 if element.objectId == element_id:
                     out.append(element)
         return out
+
+    @model_validator(mode="after")
+    def resolve_placeholder_parents(self) -> "Presentation":
+        """Resolve parent_object references for shape placeholders.
+
+        Iterates over all ShapeElements in slides and checks if they have a
+        placeholder with a parentObjectId. If so, fetches the parent element
+        from elsewhere in the presentation and sets the parent_object reference.
+        """
+        if not self.slides:
+            return self
+
+        for slide in self.slides:
+            for element in slide.page_elements_flat:
+                if (
+                    element.type == ElementKind.SHAPE
+                    and hasattr(element, "shape")
+                    and element.shape
+                    and hasattr(element.shape, "placeholder")
+                    and element.shape.placeholder
+                    and hasattr(element.shape.placeholder, "parentObjectId")
+                    and element.shape.placeholder.parentObjectId
+                ):
+
+                    parent_id = element.shape.placeholder.parentObjectId
+                    parents = self.get_page_elements_from_id(parent_id)
+
+                    if parents:
+                        element.shape.placeholder.parent_object = parents[
+                            0
+                        ]  # Use first match
+                        logger.debug(
+                            f"Resolved parent object {parent_id} for placeholder in element {element.objectId}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Parent object {parent_id} not found for placeholder in element {element.objectId}"
+                        )
+
+        return self
 
     @property
     def url(self):
