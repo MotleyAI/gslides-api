@@ -156,6 +156,9 @@ class ShapeElement(PageElementBase):
         api_client: Optional[GoogleAPIClient] = None,
     ):
         size_inches = self.absolute_size(OutputUnit.IN)
+        if not self.shape.text:
+            self.shape.text = TextContent(textElements=[])
+
         if not styles:
             styles = self.styles()
         requests = self.shape.text.write_text_requests(
