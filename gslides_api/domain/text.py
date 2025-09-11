@@ -3,9 +3,14 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field
 
-from gslides_api.domain.domain import (Dimension, GSlidesBaseModel,
-                                       OptionalColor, Outline, Shadow,
-                                       ShapeBackgroundFill)
+from gslides_api.domain.domain import (
+    Dimension,
+    GSlidesBaseModel,
+    OptionalColor,
+    Outline,
+    Shadow,
+    ShapeBackgroundFill,
+)
 
 
 class Type(Enum):
@@ -324,14 +329,6 @@ class ShapeProperties(GSlidesBaseModel):
     shadow: Optional[Shadow] = None
     autofit: Optional[Dict[str, Any]] = None
     contentAlignment: Optional[str] = None
-
-
-class Placeholder(GSlidesBaseModel):
-    """Represents a placeholder in a slide."""
-
-    type: PlaceholderType
-    parentObjectId: Optional[str] = None
-    index: Optional[int] = None
 
 
 class AutoText(GSlidesBaseModel):

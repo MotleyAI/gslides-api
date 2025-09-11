@@ -14,7 +14,7 @@ from gslides_api.domain.domain import (
     Unit,
 )
 from gslides_api.domain.request import Range, RangeType
-from gslides_api.domain.text import Placeholder, ShapeProperties, TextStyle
+from gslides_api.domain.text import PlaceholderType, ShapeProperties, TextStyle
 from gslides_api.domain.text import Type
 from gslides_api.domain.text import Type as ShapeType
 from gslides_api.element.base import ElementKind, PageElementBase
@@ -29,6 +29,16 @@ from gslides_api.request.request import (
     DeleteTextRequest,
     UpdateTextStyleRequest,
 )
+
+
+class Placeholder(GSlidesBaseModel):
+    """Represents a placeholder in a slide."""
+
+    type: PlaceholderType
+    parentObjectId: Optional[str] = None
+    index: Optional[int] = None
+    # This is not in the API, we fetch it from elsewhere in the Presentation object using parentObjectId
+    parent_object: Optional["ShapeElement"] = None
 
 
 class Shape(GSlidesBaseModel):
@@ -260,3 +270,6 @@ class ShapeElement(PageElementBase):
         )
 
         return shape_element
+
+
+Placeholder.model_rebuild()
