@@ -19,6 +19,14 @@ class RangeType(Enum):
     """Selects text from a start index to the end of the text."""
 
 
+class ApplyMode(Enum):
+    """Enumeration of possible apply modes for replace all text requests."""
+
+    APPLY_MODE_UNSPECIFIED = "APPLY_MODE_UNSPECIFIED"  # Unspecified mode.
+    RELATIVE = "RELATIVE"  # Applies the new AffineTransform matrix to the existing one, and replaces the existing one with the resulting concatenation.
+    ABSOLUTE = "ABSOLUTE"  # Replaces the existing AffineTransform matrix with the new one.
+
+
 class Range(GSlidesBaseModel):
     """Represents a range of text within a shape or table cell.
 

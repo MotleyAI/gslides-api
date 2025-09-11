@@ -108,22 +108,16 @@ class PageElementBase(GSlidesBaseModel):
         client = api_client or globals()["api_client"]
         client.delete_object(self.objectId, self.presentation_id)
 
-    def element_properties(self, parent_id: str) -> PageElementProperties:
+    def element_properties(self, parent_id: str | None = None) -> PageElementProperties:
         """Get common element properties for API requests."""
+        if parent_id is None:
+            parent_id = self.slide_id
         # Common element properties
         element_properties = {
             "pageObjectId": parent_id,
             "size": self.size.to_api_format(),
             "transform": self.transform.to_api_format(),
         }
-
-        # TODO: this will be ignored - where are they set?
-        # # Add title and description if provided
-        # if self.title is not None:
-        #     element_properties["title"] = self.title
-        # if self.description is not None:
-        #     element_properties["description"] = self.description
-
         return PageElementProperties.model_validate(element_properties)
 
     @classmethod

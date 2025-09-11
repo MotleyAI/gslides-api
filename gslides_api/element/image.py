@@ -19,6 +19,8 @@ from gslides_api.request.request import (
 from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 
+logger = logging.getLogger(__name__)
+
 
 class ImageElement(PageElementBase):
     """Represents an image element on a slide."""
@@ -43,12 +45,21 @@ class ImageElement(PageElementBase):
         """Create a request to create an image element like the given element."""
         url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
         element_properties = e.element_properties(parent_id or e.slide_id)
-        request = CreateImageRequest(
-            objectId=image_id,
-            elementProperties=element_properties,
-            url=url,
-        )
-        return [request]
+        logger.info(f"Creating image request with properties: {element_properties.model_dump()}")
+        requests = [
+            CreateImageRequest(
+                objectId=image_id,
+                elementProperties=element_properties,
+                url=url,
+            )
+        ]
+        if e.type == ElementKind.IMAGE:
+            requests += e.element_to_update_request(image_id)
+        else:
+            # Only alt-text can be copied, other properties are different
+            requests += e.alt_text_update_request(image_id)
+
+        return requests
 
     @staticmethod
     def create_image_element_like(

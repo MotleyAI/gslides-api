@@ -11,7 +11,12 @@ from gslides_api.domain.domain import (
     PageElementProperties,
     VideoProperties,
 )
-from gslides_api.domain.request import PlaceholderIdMapping, Range, SubstringMatchCriteria
+from gslides_api.domain.request import (
+    PlaceholderIdMapping,
+    Range,
+    SubstringMatchCriteria,
+    ApplyMode,
+)
 from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.text import ParagraphStyle, ShapeProperties, TextStyle, Type
@@ -426,7 +431,9 @@ class UpdatePageElementTransformRequest(GSlidesAPIRequest):
     transform: AffineTransform = Field(
         description="The input transform matrix used to update the page element"
     )
-    applyMode: str = Field(description="The apply mode of the transform update")
+    applyMode: ApplyMode = Field(
+        default=ApplyMode.ABSOLUTE, description="The apply mode of the transform update"
+    )
 
 
 class RefreshSheetsChartRequest(GSlidesAPIRequest):

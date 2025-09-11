@@ -60,6 +60,18 @@ class Transform(GSlidesBaseModel):
     scaleY: float = 1.0
     unit: Optional[str] = None  # Make optional to preserve original JSON exactly
 
+    def to_affine_transform(self) -> "AffineTransform":
+        """Convert to AffineTransform."""
+        return AffineTransform(
+            scaleX=self.scaleX,
+            scaleY=self.scaleY,
+            shearX=0.0,
+            shearY=0.0,
+            translateX=self.translateX,
+            translateY=self.translateY,
+            unit=self.unit,
+        )
+
 
 class AffineTransform(GSlidesBaseModel):
     """AffineTransform uses a 3x3 matrix with an implied last row of [ 0 0 1 ] to transform source coordinates (x,y) into destination coordinates (x', y').
