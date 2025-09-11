@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from gslides_api.client import GoogleAPIClient, api_client
 from gslides_api.domain.domain import GSlidesBaseModel, Size
 from gslides_api.page.page import Layout, Master, NotesMaster, Page
+from gslides_api.element.element import PageElement
 from gslides_api.page.slide import Slide
 
 logger = logging.getLogger(__name__)
@@ -82,9 +83,7 @@ class Presentation(GSlidesBaseModel):
     ):
         client = api_client or globals()["api_client"]
         copy_title = copy_title or f"Copy of {self.title}"
-        new = client.copy_presentation(
-            self.presentationId, copy_title, folder_id=folder_id
-        )
+        new = client.copy_presentation(self.presentationId, copy_title, folder_id=folder_id)
         return self.from_id(new["id"], api_client=api_client)
 
     def sync_from_cloud(self, api_client: Optional[GoogleAPIClient] = None):
@@ -109,6 +108,14 @@ class Presentation(GSlidesBaseModel):
             if slide.speaker_notes.read_text().strip() == slide_name:
                 return slide
         return None
+
+    def get_page_elements_from_id(self, element_id: str) -> List[PageElement]:
+        out = []
+        for slide in self.slides + self.layouts + self.masters:
+            for element in slide.page_elements_flat:
+                if element.objectId == element_id:
+                    out.append(element)
+        return out
 
     @property
     def url(self):
