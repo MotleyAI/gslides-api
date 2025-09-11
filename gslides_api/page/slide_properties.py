@@ -25,7 +25,9 @@ class UpdateSlidePropertiesRequest(GSlidesAPIRequest):
     """
 
     objectId: str = Field(description="The object ID of the slide to update")
-    slideProperties: SlideProperties = Field(description="The slide properties to update")
+    slideProperties: SlideProperties = Field(
+        description="The slide properties to update"
+    )
     fields: str = Field(
         description="The fields that should be updated. At least one field must be specified. The root 'slideProperties' is implied and should not be specified. A single '*' can be used as short-hand for listing every field."
     )

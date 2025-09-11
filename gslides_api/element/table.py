@@ -81,15 +81,9 @@ class TableElement(PageElementBase):
             width_emu = column_width_dim.magnitude
             height_emu = row_height_dim.magnitude
 
-            # Apply transform scaling (cells inherit table transforms)
-            actual_width_emu = width_emu * self.transform.scaleX
-            actual_height_emu = height_emu * self.transform.scaleY
-
-            # Convert from EMUs to requested units
-            width_result = self._convert_emu_to_units(actual_width_emu, units)
-            height_result = self._convert_emu_to_units(actual_height_emu, units)
-
-            return width_result, height_result
+            # Use PageElementProperties to handle the scaling and conversion
+            element_props = self.element_properties()
+            return element_props.absolute_cell_size(units, width_emu, height_emu)
 
     def _read_text(
         self, location: Optional[TableCellLocation] = None

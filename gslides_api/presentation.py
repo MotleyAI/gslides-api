@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from gslides_api.client import GoogleAPIClient, api_client
 from gslides_api.domain.domain import GSlidesBaseModel, Size
 from gslides_api.page.page import Layout, Master, NotesMaster, Page
+from gslides_api.element.element import PageElement
 from gslides_api.page.slide import Slide
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,14 @@ class Presentation(GSlidesBaseModel):
             if slide.speaker_notes.read_text().strip() == slide_name:
                 return slide
         return None
+
+    def get_page_elements_from_id(self, element_id: str) -> List[PageElement]:
+        out = []
+        for slide in self.slides + self.layouts + self.masters:
+            for element in slide.page_elements_flat:
+                if element.objectId == element_id:
+                    out.append(element)
+        return out
 
     @property
     def url(self):

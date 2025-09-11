@@ -2,14 +2,11 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from gslides_api.domain.table import (
-    TableBorderProperties,
-    TableCellProperties,
-    TableColumnProperties,
-    TableRange,
-    TableRowProperties,
-)
 from gslides_api.domain.domain import PageElementProperties
+from gslides_api.domain.table import (TableBorderProperties,
+                                      TableCellProperties,
+                                      TableColumnProperties, TableRange,
+                                      TableRowProperties)
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.request.parent import GSlidesAPIRequest
 
@@ -158,7 +155,9 @@ class UpdateTableRowPropertiesRequest(GSlidesAPIRequest):
         default=None,
         description="The list of zero-based indices specifying which rows to update",
     )
-    tableRowProperties: TableRowProperties = Field(description="The table row properties to update")
+    tableRowProperties: TableRowProperties = Field(
+        description="The table row properties to update"
+    )
     fields: str = Field(description="The fields that should be updated")
 
 

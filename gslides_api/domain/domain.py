@@ -1,7 +1,7 @@
 import mimetypes
 import os
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, model_validator
 
@@ -59,6 +59,18 @@ class Transform(GSlidesBaseModel):
     scaleX: float = 1.0
     scaleY: float = 1.0
     unit: Optional[str] = None  # Make optional to preserve original JSON exactly
+
+    def to_affine_transform(self) -> "AffineTransform":
+        """Convert to AffineTransform."""
+        return AffineTransform(
+            scaleX=self.scaleX,
+            scaleY=self.scaleY,
+            shearX=0.0,
+            shearY=0.0,
+            translateX=self.translateX,
+            translateY=self.translateY,
+            unit=self.unit,
+        )
 
 
 class AffineTransform(GSlidesBaseModel):
@@ -386,7 +398,9 @@ class Image(GSlidesBaseModel):
                 self._original_properties_type = type(self.imageProperties).__name__
 
             try:
-                self.imageProperties = ImageProperties.model_validate(self.imageProperties)
+                self.imageProperties = ImageProperties.model_validate(
+                    self.imageProperties
+                )
             except (ValueError, TypeError):
                 # Keep as is if conversion fails
                 pass
@@ -747,3 +761,151 @@ class PageElementProperties(GSlidesBaseModel):
     pageObjectId: Optional[str] = None
     size: Optional[Size] = None
     transform: Optional[Transform] = None
+
+    # EMU conversion constants
+    _EMU_PER_CM = 360000  # 1 EMU = 1/360,000 cm
+    _EMU_PER_INCH = 914400  # 1 inch = 914,400 EMUs
+
+    def _convert_emu_to_units(self, value_emu: float, units: OutputUnit) -> float:
+        """Convert a value from EMUs to the specified units.
+
+        Args:
+            value_emu: The value in EMUs to convert.
+            units: The target units (OutputUnit.CM or OutputUnit.IN).
+
+        Returns:
+            The converted value in the specified units.
+
+        Raises:
+            TypeError: If units is not an OutputUnit enum value.
+        """
+        try:
+            units = OutputUnit(units)
+        except Exception as e:
+            raise TypeError(
+                f"units must be an OutputUnit enum value, got {units}"
+            ) from e
+
+        if not isinstance(units, OutputUnit):
+            raise TypeError(
+                f"units must be an OutputUnit enum value, got {type(units)}"
+            )
+
+        if units == OutputUnit.CM:
+            return value_emu / self._EMU_PER_CM
+        elif units == OutputUnit.IN:
+            return value_emu / self._EMU_PER_INCH
+        else:
+            raise ValueError(f"Unsupported OutputUnit: {units}")
+
+    def absolute_size(self, units: OutputUnit) -> Tuple[float, float]:
+        """Calculate the absolute size of the element in the specified units.
+
+        This method calculates the actual rendered size of the element, taking into
+        account any scaling applied via the transform. The size represents the
+        width and height of the element as it appears on the slide.
+
+        Args:
+            units: The units to return the size in. Can be "cm" or "in".
+
+        Returns:
+            A tuple of (width, height) representing the element's dimensions
+            in the specified units.
+
+        Raises:
+            ValueError: If units is not "cm" or "in".
+            ValueError: If element size is not available.
+        """
+
+        if self.size is None:
+            raise ValueError("Element size is not available")
+
+        if self.transform is None:
+            raise ValueError("Element transform is not available")
+
+        # Extract width and height from size
+        # Size can have width/height as either float or Dimension objects
+        if hasattr(self.size.width, "magnitude"):
+            width_emu = self.size.width.magnitude
+        else:
+            width_emu = self.size.width
+
+        if hasattr(self.size.height, "magnitude"):
+            height_emu = self.size.height.magnitude
+        else:
+            height_emu = self.size.height
+
+        # Apply transform scaling
+        actual_width_emu = width_emu * self.transform.scaleX
+        actual_height_emu = height_emu * self.transform.scaleY
+
+        # Convert from EMUs to the requested units
+        width_result = self._convert_emu_to_units(actual_width_emu, units)
+        height_result = self._convert_emu_to_units(actual_height_emu, units)
+
+        return width_result, height_result
+
+    def absolute_position(
+        self, units: OutputUnit = OutputUnit.CM
+    ) -> Tuple[float, float]:
+        """Calculate the absolute position of the element on the page in the specified units.
+
+        Position represents the distance of the top-left corner of the element
+        from the top-left corner of the slide.
+
+        Args:
+            units: The units to return the position in. Can be "cm" or "in".
+
+        Returns:
+            A tuple of (x, y) representing the position in the specified units,
+            where x is the horizontal distance from the left edge and y is the
+            vertical distance from the top edge of the slide.
+        """
+
+        if self.transform is None:
+            raise ValueError("Element transform is not available")
+
+        # Extract position from transform (translateX, translateY are in EMUs)
+        x_emu = self.transform.translateX
+        y_emu = self.transform.translateY
+
+        # Convert from EMUs to the requested units
+        x_result = self._convert_emu_to_units(x_emu, units)
+        y_result = self._convert_emu_to_units(y_emu, units)
+
+        return x_result, y_result
+
+    def absolute_cell_size(
+        self, units: OutputUnit, width_emu: float, height_emu: float
+    ) -> Tuple[float, float]:
+        """Calculate the absolute size of a cell using pre-calculated EMU dimensions.
+
+        This method is used for table cells where width and height are calculated
+        separately from row/column properties, then scaled by the table's transform.
+
+        Args:
+            units: The units to return the size in. Can be "cm" or "in".
+            width_emu: The width of the cell in EMUs.
+            height_emu: The height of the cell in EMUs.
+
+        Returns:
+            A tuple of (width, height) representing the cell's dimensions
+            in the specified units.
+
+        Raises:
+            ValueError: If units is not "cm" or "in".
+            ValueError: If element transform is not available.
+        """
+
+        if self.transform is None:
+            raise ValueError("Element transform is not available")
+
+        # Apply transform scaling
+        actual_width_emu = width_emu * self.transform.scaleX
+        actual_height_emu = height_emu * self.transform.scaleY
+
+        # Convert from EMUs to the requested units
+        width_result = self._convert_emu_to_units(actual_width_emu, units)
+        height_result = self._convert_emu_to_units(actual_height_emu, units)
+
+        return width_result, height_result

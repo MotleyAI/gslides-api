@@ -13,20 +13,22 @@ from gslides_api.domain.domain import (
     Transform,
     Unit,
 )
+from gslides_api.domain.request import Range, RangeType
+from gslides_api.domain.text import Placeholder, ShapeProperties, TextStyle
+from gslides_api.domain.text import Type
+from gslides_api.domain.text import Type as ShapeType
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.text_content import TextContent
 from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
-from gslides_api.domain.request import Range, RangeType
+from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.request.request import (
     CreateShapeRequest,
     DeleteParagraphBulletsRequest,
     DeleteTextRequest,
     UpdateTextStyleRequest,
 )
-from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.domain.text import Placeholder, ShapeProperties, TextStyle, Type, Type as ShapeType
 
 
 class Shape(GSlidesBaseModel):
@@ -36,6 +38,9 @@ class Shape(GSlidesBaseModel):
     shapeType: Optional[Type] = None  # Make optional to preserve original JSON exactly
     text: Optional[TextContent] = None
     placeholder: Optional[Placeholder] = None
+
+    def placeholder_styles(self):
+        pass
 
 
 class ShapeElement(PageElementBase):
@@ -216,7 +221,7 @@ class ShapeElement(PageElementBase):
         shape = Shape(
             shapeProperties=ShapeProperties(),
             shapeType=ShapeType(stored_shape_type),
-            text=TextContent(textElements=[]) if markdown_elem.content.strip() else None,
+            text=(TextContent(textElements=[]) if markdown_elem.content.strip() else None),
         )
 
         # Create element properties from metadata

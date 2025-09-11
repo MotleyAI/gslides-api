@@ -4,17 +4,16 @@ from typing import Any, Dict, List, Optional, Tuple
 from typeguard import typechecked
 
 from gslides_api.domain.domain import Dimension, GSlidesBaseModel, Unit
-from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.domain.request import Range, RangeType
 from gslides_api.domain.table_cell import TableCellLocation
-from gslides_api.request.request import (
-    DeleteParagraphBulletsRequest,
-    DeleteTextRequest,
-    UpdateTextStyleRequest,
-)
-from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.domain.text import TextElement, TextStyle
+from gslides_api.markdown.from_markdown import (markdown_to_text_elements,
+                                                text_elements_to_requests)
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
+from gslides_api.request.parent import GSlidesAPIRequest
+from gslides_api.request.request import (DeleteParagraphBulletsRequest,
+                                         DeleteTextRequest,
+                                         UpdateTextStyleRequest)
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +100,9 @@ class TextContent(GSlidesBaseModel):
         if (not self.textElements) or self.textElements[0].endIndex == 0:
             return out
 
-        out.append(DeleteTextRequest(objectId=object_id, textRange=Range(type=RangeType.ALL)))
+        out.append(
+            DeleteTextRequest(objectId=object_id, textRange=Range(type=RangeType.ALL))
+        )
         return out
 
     def write_text_requests(
@@ -141,7 +142,9 @@ class TextContent(GSlidesBaseModel):
 
         # TODO: this is broken, we should use different logic to just dump raw text, asterisks, hashes and all
         if not as_markdown:
-            requests = [r for r in requests if not isinstance(r, UpdateTextStyleRequest)]
+            requests = [
+                r for r in requests if not isinstance(r, UpdateTextStyleRequest)
+            ]
 
         return requests
 
@@ -195,7 +198,9 @@ class TextContent(GSlidesBaseModel):
 
         # Count actual text length (excluding markdown formatting)
         # Simple approximation: remove common markdown characters
-        clean_text = text.replace("*", "").replace("_", "").replace("#", "").replace("`", "")
+        clean_text = (
+            text.replace("*", "").replace("_", "").replace("#", "").replace("`", "")
+        )
         actual_text_length = len(clean_text)
 
         # Determine the scaling factor based on the number of characters that would fit in the box overall
@@ -209,14 +214,18 @@ class TextContent(GSlidesBaseModel):
             ) ** 0.5  # Square root for more gradual scaling
 
         # Apply minimum scaling factor to ensure text remains readable
-        scaling_factor = max(scaling_factor, 0.3)  # Don't scale below 30% of original size
+        scaling_factor = max(
+            scaling_factor, 0.3
+        )  # Don't scale below 30% of original size
 
         # Apply the scaling factor to the font size of ALL styles
 
         scaled_styles = []
 
         for style in styles:
-            scaled_style = style.model_copy()  # Create a copy to avoid modifying the original
+            scaled_style = (
+                style.model_copy()
+            )  # Create a copy to avoid modifying the original
 
             # Get the current font size for this style
             style_font_size_pt = 12.0  # default

@@ -5,15 +5,10 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import Field
 
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain.domain import (
-    GSlidesBaseModel,
-    OutputUnit,
-    PageElementProperties,
-    Size,
-    Transform,
-)
-from gslides_api.request.request import UpdatePageElementAltTextRequest
+from gslides_api.domain.domain import (GSlidesBaseModel, OutputUnit,
+                                       PageElementProperties, Size, Transform)
 from gslides_api.request.parent import GSlidesAPIRequest
+from gslides_api.request.request import UpdatePageElementAltTextRequest
 
 logger = logging.getLogger(__name__)
 
@@ -53,38 +48,6 @@ class PageElementBase(GSlidesBaseModel):
     presentation_id: Optional[str] = Field(default=None, exclude=True)
     slide_id: Optional[str] = Field(default=None, exclude=True)
 
-    # EMU conversion constants
-    _EMU_PER_CM = 360000  # 1 EMU = 1/360,000 cm
-    _EMU_PER_INCH = 914400  # 1 inch = 914,400 EMUs
-
-    def _convert_emu_to_units(self, value_emu: float, units: OutputUnit) -> float:
-        """Convert a value from EMUs to the specified units.
-
-        Args:
-            value_emu: The value in EMUs to convert.
-            units: The target units (OutputUnit.CM or OutputUnit.IN).
-
-        Returns:
-            The converted value in the specified units.
-
-        Raises:
-            TypeError: If units is not an OutputUnit enum value.
-        """
-        try:
-            units = OutputUnit(units)
-        except Exception as e:
-            raise TypeError(f"units must be an OutputUnit enum value, got {units}") from e
-
-        if not isinstance(units, OutputUnit):
-            raise TypeError(f"units must be an OutputUnit enum value, got {type(units)}")
-
-        if units == OutputUnit.CM:
-            return value_emu / self._EMU_PER_CM
-        elif units == OutputUnit.IN:
-            return value_emu / self._EMU_PER_INCH
-        else:
-            raise ValueError(f"Unsupported OutputUnit: {units}")
-
     def create_copy(
         self,
         parent_id: str,
@@ -108,22 +71,16 @@ class PageElementBase(GSlidesBaseModel):
         client = api_client or globals()["api_client"]
         client.delete_object(self.objectId, self.presentation_id)
 
-    def element_properties(self, parent_id: str) -> PageElementProperties:
+    def element_properties(self, parent_id: str | None = None) -> PageElementProperties:
         """Get common element properties for API requests."""
+        if parent_id is None:
+            parent_id = self.slide_id
         # Common element properties
         element_properties = {
             "pageObjectId": parent_id,
-            "size": self.size.to_api_format(),
+            "size": self.size.to_api_format() if self.size else None,
             "transform": self.transform.to_api_format(),
         }
-
-        # TODO: this will be ignored - where are they set?
-        # # Add title and description if provided
-        # if self.title is not None:
-        #     element_properties["title"] = self.title
-        # if self.description is not None:
-        #     element_properties["description"] = self.description
-
         return PageElementProperties.model_validate(element_properties)
 
     @classmethod
@@ -165,7 +122,9 @@ class PageElementBase(GSlidesBaseModel):
                 UpdatePageElementAltTextRequest(
                     objectId=element_id,
                     title=title if title is not None else self.title,
-                    description=(description if description is not None else self.description),
+                    description=(
+                        description if description is not None else self.description
+                    ),
                 )
             ]
         else:
@@ -228,7 +187,9 @@ class PageElementBase(GSlidesBaseModel):
 
         This method should be overridden by subclasses.
         """
-        raise NotImplementedError("Subclasses must implement element_to_update_request method")
+        raise NotImplementedError(
+            "Subclasses must implement element_to_update_request method"
+        )
 
     def to_markdown(self) -> str | None:
         """Convert a PageElement to markdown.
@@ -255,33 +216,12 @@ class PageElementBase(GSlidesBaseModel):
             ValueError: If units is not "cm" or "in".
             ValueError: If element size is not available.
         """
+        element_props = self.element_properties()
+        return element_props.absolute_size(units)
 
-        if self.size is None:
-            raise ValueError("Element size is not available")
-
-        # Extract width and height from size
-        # Size can have width/height as either float or Dimension objects
-        if hasattr(self.size.width, "magnitude"):
-            width_emu = self.size.width.magnitude
-        else:
-            width_emu = self.size.width
-
-        if hasattr(self.size.height, "magnitude"):
-            height_emu = self.size.height.magnitude
-        else:
-            height_emu = self.size.height
-
-        # Apply transform scaling
-        actual_width_emu = width_emu * self.transform.scaleX
-        actual_height_emu = height_emu * self.transform.scaleY
-
-        # Convert from EMUs to the requested units
-        width_result = self._convert_emu_to_units(actual_width_emu, units)
-        height_result = self._convert_emu_to_units(actual_height_emu, units)
-
-        return width_result, height_result
-
-    def absolute_position(self, units: OutputUnit = OutputUnit.CM) -> Tuple[float, float]:
+    def absolute_position(
+        self, units: OutputUnit = OutputUnit.CM
+    ) -> Tuple[float, float]:
         """Calculate the absolute position of the element on the page in the specified units.
 
         Position represents the distance of the top-left corner of the element
@@ -295,13 +235,5 @@ class PageElementBase(GSlidesBaseModel):
             where x is the horizontal distance from the left edge and y is the
             vertical distance from the top edge of the slide.
         """
-
-        # Extract position from transform (translateX, translateY are in EMUs)
-        x_emu = self.transform.translateX
-        y_emu = self.transform.translateY
-
-        # Convert from EMUs to the requested units
-        x_result = self._convert_emu_to_units(x_emu, units)
-        y_result = self._convert_emu_to_units(y_emu, units)
-
-        return x_result, y_result
+        element_props = self.element_properties()
+        return element_props.absolute_position(units)

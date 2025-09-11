@@ -1,9 +1,10 @@
 from enum import Enum
 from typing import List, Optional
 
-from gslides_api.domain.domain import DashStyle, Dimension, GSlidesBaseModel, SolidFill
-from gslides_api.element.text_content import TextContent
+from gslides_api.domain.domain import (DashStyle, Dimension, GSlidesBaseModel,
+                                       SolidFill)
 from gslides_api.domain.table_cell import TableCellLocation
+from gslides_api.element.text_content import TextContent
 
 
 class ContentAlignment(Enum):
