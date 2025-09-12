@@ -210,7 +210,7 @@ class TextContent(GSlidesBaseModel):
             # Text doesn't fit, scale down
             scaling_factor = (
                 total_chars_that_fit / actual_text_length
-            ) ** 0.25  # Square root for more gradual scaling
+            ) ** 0.5  # Square root because we're scaling both width and height
 
         # Apply minimum scaling factor to ensure text remains readable
         scaling_factor = max(scaling_factor, 0.6)  # Don't scale below 30% of original size
