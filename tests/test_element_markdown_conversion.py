@@ -62,7 +62,7 @@ class TestTextElementConversion:
 
         # Convert back to MarkdownTextElement
         with patch(
-            "gslides_api.element.shape.ShapeElement.to_markdown",
+            "gslides_api.element.shape.ShapeElement.read_text",
             return_value=original_markdown,
         ):
             converted_markdown_elem = shape_elem.to_markdown_element(name="Test Text")
@@ -334,7 +334,7 @@ class TestIntegrationRoundTrip:
         markdown_elem = MarkdownTextElement(name="Special", content=special_text)
 
         with patch(
-            "gslides_api.element.shape.ShapeElement.to_markdown",
+            "gslides_api.element.shape.ShapeElement.read_text",
             return_value=special_text,
         ):
             shape = ShapeElement.from_markdown_element(markdown_elem, "slide_123")

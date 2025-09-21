@@ -184,7 +184,7 @@ class ShapeElement(PageElementBase):
 
     def to_markdown_element(self, name: str = "Text") -> MarkdownTextElement:
         """Convert ShapeElement to MarkdownTextElement for round-trip conversion."""
-        content = self.to_markdown() or ""
+        content = self.read_text(as_markdown=True) or ""
 
         # Store position, size, and other properties in metadata for perfect reconstruction
         metadata = {

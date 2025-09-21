@@ -75,7 +75,7 @@ class TextContent(GSlidesBaseModel):
             return ""
         if as_markdown:
             if not self.textElements:
-                return None
+                return ""
 
             return text_elements_to_markdown(self.textElements)
         else:

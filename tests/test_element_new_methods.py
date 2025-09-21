@@ -50,7 +50,7 @@ class TestShapeElementToMarkdown:
 
     def test_to_markdown_with_text(self, slide_3_shape_element):
         """Test to_markdown() with a shape element that has text."""
-        result = slide_3_shape_element.to_markdown()
+        result = slide_3_shape_element.read_text(as_markdown=True)
 
         # The first element should contain "Section title & body slide\n"
         assert result is not None
@@ -69,8 +69,8 @@ class TestShapeElementToMarkdown:
             ),
         )
 
-        result = shape_element.to_markdown()
-        assert result is None
+        result = shape_element.read_text(as_markdown=True)
+        assert result == ""
 
     def test_to_markdown_with_empty_text_elements(self):
         """Test to_markdown() with a shape that has text but no text elements."""
@@ -86,8 +86,8 @@ class TestShapeElementToMarkdown:
             ),
         )
 
-        result = shape_element.to_markdown()
-        assert result is None
+        result = shape_element.read_text(as_markdown=True)
+        assert result == ""
 
 
 class TestImageElementToMarkdown:
