@@ -239,7 +239,7 @@ class TestElementsFromPresentationData:
 
         for i, page_element_data in enumerate(slide_3.pageElements):
             element = page_element_adapter.validate_python(page_element_data.model_dump())
-            result = element.to_markdown()
+            result = element.read_text(as_markdown=True)
 
             assert result is not None, f"Element {i} should have markdown content"
             assert expected_texts[i] in result, f"Element {i} should contain '{expected_texts[i]}'"

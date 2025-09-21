@@ -131,17 +131,6 @@ class ShapeElement(PageElementBase):
 
         return styles
 
-    def to_markdown(self) -> str | None:
-        """Convert the shape's text content back to markdown format.
-
-        This method reconstructs markdown from the Google Slides API response,
-        handling formatting like bold, italic, bullet points, nested lists, and code spans.
-        """
-        if self.shape.text is None:
-            return None
-
-        return self.shape.text.to_markdown()
-
     @property
     def has_text(self):
         return self.shape.text is not None and self.shape.text.has_text
@@ -176,6 +165,17 @@ class ShapeElement(PageElementBase):
         if requests:
             client = api_client or default_api_client
             return client.batch_update(requests, self.presentation_id)
+
+    # def to_markdown(self) -> str | None:
+    #     """Convert the shape's text content back to markdown format.
+    #
+    #     This method reconstructs markdown from the Google Slides API response,
+    #     handling formatting like bold, italic, bullet points, nested lists, and code spans.
+    #     """
+    #     if self.shape.text is None:
+    #         return None
+    #
+    #     return self.shape.text.to_markdown()
 
     def read_text(self, as_markdown: bool = True):
         if not self.has_text:
