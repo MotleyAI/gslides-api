@@ -10,7 +10,7 @@ import pytest
 
 from gslides_api.client import api_client, initialize_credentials
 from gslides_api.element.table import TableElement
-from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
+from gslides_api.agnostic.element import MarkdownTableElement as MarkdownTableElement
 from gslides_api.presentation import Presentation
 
 

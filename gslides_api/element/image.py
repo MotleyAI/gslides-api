@@ -11,7 +11,7 @@ from gslides_api.client import GoogleAPIClient
 from gslides_api.domain.domain import Image, ImageReplaceMethod, PageElementProperties
 from gslides_api.agnostic.domain import ImageData
 from gslides_api.element.base import ElementKind, PageElementBase
-from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
+from gslides_api.agnostic.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.request.request import (
     CreateImageRequest,

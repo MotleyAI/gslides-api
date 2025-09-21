@@ -8,13 +8,13 @@ Also tests the new create_element_from_markdown_requests method for TableElement
 import pytest
 
 from gslides_api.element.table import TableElement as GSlidesTableElement
-from gslides_api.markdown.element import (
-    MarkdownChartElement,
+from gslides_api.agnostic.element import (
     ContentType,
+    MarkdownChartElement,
     MarkdownImageElement,
-    TableData,
     MarkdownTableElement,
     MarkdownTextElement,
+    TableData,
 )
 from gslides_api.request.table import CreateTableRequest
 from gslides_api.request.request import InsertTextRequest, UpdateTextStyleRequest

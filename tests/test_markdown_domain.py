@@ -2,15 +2,15 @@ import logging
 
 import pytest
 
-from gslides_api.markdown.domain import MarkdownDeck, MarkdownSlide
-from gslides_api.markdown.element import (
-    MarkdownChartElement,
+from gslides_api.agnostic.presentation import MarkdownDeck, MarkdownSlide
+from gslides_api.agnostic.element import (
     ContentType,
+    MarkdownChartElement,
     MarkdownImageElement,
     MarkdownSlideElement,
-    TableData,
     MarkdownTableElement,
     MarkdownTextElement,
+    TableData,
 )
 
 

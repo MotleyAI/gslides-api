@@ -19,7 +19,7 @@ from gslides_api.domain.text import Type
 from gslides_api.domain.text import Type as ShapeType
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.text_content import TextContent
-from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
+from gslides_api.agnostic.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
 from gslides_api.request.parent import GSlidesAPIRequest

@@ -4,14 +4,15 @@ from typing import Literal, Union
 
 from pydantic import BaseModel, Field
 
-from gslides_api.markdown.element import (ContentType, MarkdownChartElement,
-                                          MarkdownImageElement,
-                                          MarkdownTableElement,
-                                          MarkdownTextElement)
+from gslides_api.agnostic.element import (
+    ContentType,
+    MarkdownChartElement,
+    MarkdownImageElement,
+    MarkdownTableElement,
+    MarkdownTextElement,
+)
 
 logger = logging.getLogger(__name__)
-
-# Union type for all element types
 MarkdownSlideElementUnion = Union[
     MarkdownTextElement,
     MarkdownImageElement,
@@ -33,9 +34,7 @@ class MarkdownSlide(BaseModel):
             lines.append(f"<!-- slide: {self.name} -->")
 
         # Add element content
-        element_content = "\n\n".join(
-            element.to_markdown() for element in self.elements
-        )
+        element_content = "\n\n".join(element.to_markdown() for element in self.elements)
         if element_content:
             lines.append(element_content)
 
@@ -50,9 +49,7 @@ class MarkdownSlide(BaseModel):
             return MarkdownTextElement(name=name, content=content)
         elif content_type == ContentType.IMAGE:
             # For images, use from_markdown to properly parse URL and metadata
-            return MarkdownImageElement.from_markdown(
-                name=name, markdown_content=content
-            )
+            return MarkdownImageElement.from_markdown(name=name, markdown_content=content)
         elif content_type == ContentType.TABLE:
             # TableElement will validate and parse the content in its validator
             return MarkdownTableElement(name=name, content=content)
@@ -71,9 +68,7 @@ class MarkdownSlide(BaseModel):
         slide_name = None
 
         # Check for slide name comment at the beginning
-        slide_name_match = re.match(
-            r"^\s*<!--\s*slide:\s*([^>]+)\s*-->\s*", slide_content
-        )
+        slide_name_match = re.match(r"^\s*<!--\s*slide:\s*([^>]+)\s*-->\s*", slide_content)
         if slide_name_match:
             slide_name = slide_name_match.group(1).strip()
             # Remove the slide name comment from content
@@ -109,9 +104,7 @@ class MarkdownSlide(BaseModel):
                     if on_invalid_element == "raise":
                         raise ValueError(f"Invalid element type: {element_type}")
                     else:
-                        logger.warning(
-                            f"Invalid element type '{element_type}', treating as text"
-                        )
+                        logger.warning(f"Invalid element type '{element_type}', treating as text")
                         content_type = ContentType.TEXT
 
                 if content:
@@ -132,9 +125,7 @@ class MarkdownSlide(BaseModel):
                                 f"Invalid content for {content_type.value} element '{element_name}': {e}. Converting to text element."
                             )
                             # Create as text element if validation fails
-                            elements.append(
-                                MarkdownTextElement(name=element_name, content=content)
-                            )
+                            elements.append(MarkdownTextElement(name=element_name, content=content))
 
                 i += 4
             else:
@@ -232,9 +223,7 @@ Final thoughts
         import pandas as pd
 
         print("\n=== DataFrame to TableElement example ===")
-        df = pd.DataFrame(
-            {"Name": ["Alice", "Bob"], "Age": [25, 30], "City": ["NYC", "SF"]}
-        )
+        df = pd.DataFrame({"Name": ["Alice", "Bob"], "Age": [25, 30], "City": ["NYC", "SF"]})
 
         table_element = MarkdownTableElement.from_df(df, name="People")
         print("Generated markdown:")
