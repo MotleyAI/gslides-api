@@ -62,28 +62,6 @@ class ImageElement(PageElementBase):
 
         return requests
 
-    @staticmethod
-    def create_image_element_like(
-        e: PageElementBase,
-        api_client: GoogleAPIClient | None = None,
-        parent_id: str | None = None,
-        url: str | None = None,
-    ) -> str:
-
-        api_client = api_client or globals()["api_client"]
-        parent_id = parent_id or e.slide_id
-
-        # Create the image element
-        image_id = uuid.uuid4().hex
-        requests = ImageElement.create_image_request_like(
-            e,
-            parent_id=parent_id,
-            url=url,
-            image_id=image_id,
-        )
-        api_client.batch_update(requests, e.presentation_id)
-        return image_id
-
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert an ImageElement to a create request for the Google Slides API."""
         element_properties = self.element_properties(parent_id)
