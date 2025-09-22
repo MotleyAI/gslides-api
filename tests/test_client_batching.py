@@ -9,6 +9,7 @@ from typing import Any, Dict
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from typeguard import TypeCheckError
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.request.request import (
@@ -239,13 +240,13 @@ class TestGoogleAPIClientBatching:
         mock_flush.assert_called_once()
 
     def test_batch_update_assertion_error_for_invalid_requests(self):
-        """Test that batch_update raises assertion error for invalid request types."""
+        """Test that batch_update raises error for invalid request types."""
         client = GoogleAPIClient()
 
         # Pass non-GSlidesAPIRequest objects
         invalid_requests = ["not_a_request", {"also": "not_a_request"}]
 
-        with pytest.raises(AssertionError):
+        with pytest.raises((AssertionError, TypeCheckError)):
             client.batch_update(invalid_requests, "presentation_id")
 
     def test_batch_update_exception_handling(self):
