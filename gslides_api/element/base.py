@@ -5,6 +5,7 @@ import uuid
 
 from pydantic import Field
 
+import gslides_api
 from gslides_api.agnostic.element import MarkdownSlideElement
 from gslides_api.client import GoogleAPIClient, api_client
 from gslides_api.domain.domain import (
@@ -232,6 +233,29 @@ class PageElementBase(GSlidesBaseModel):
             return out
         else:
             return {}
+
+    def force_same_shape_as_me(self, target_id: str, api_client: Optional[GoogleAPIClient] = None):
+        api_client = api_client or gslides_api.client.api_client
+        """Force the target image to have the same shape as this image."""
+        api_client.flush_batch_update()
+        # This retrieves the actual data on the target element
+        target = self.__class__.from_ids(
+            presentation_id=self.presentation_id,
+            slide_id=self.slide_id,
+            element_id=target_id,
+            api_client=api_client,
+        )
+
+        old_shape = self.element_properties()
+        new_shape = target.element_properties()
+
+        reshape_requests = api_client.reshape_like_request(
+            target_shape=old_shape, current_shape=new_shape, object_id=target_id
+        )
+        api_client.batch_update(
+            requests=reshape_requests,
+            presentation_id=self.presentation_id,
+        )
 
     def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to an update request for the Google Slides API.

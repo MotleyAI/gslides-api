@@ -129,17 +129,6 @@ class ImageElement(PageElementBase):
         method: ImageReplaceMethod | None = None,
         api_client: Optional[GoogleAPIClient] = None,
     ):
-        # if url is None and file is None:
-        #     raise ValueError("Must specify either url or file")
-        # if url is not None and file is not None:
-        #     raise ValueError("Must specify either url or file, not both")
-        #
-        # client = api_client or globals()["api_client"]
-        # if file is not None:
-        #     url = client.upload_image_to_drive(file)
-        #
-        # requests = self._replace_image_requests(url, method)
-        # return client.batch_update(requests, self.presentation_id)
         return ImageElement.replace_image_from_id(
             self.objectId,
             self.presentation_id,
