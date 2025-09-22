@@ -1,7 +1,7 @@
 import logging
 import mimetypes
 import uuid
-from typing import List, Optional
+from typing import List, Literal, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -128,8 +128,9 @@ class ImageElement(PageElementBase):
         file: str | None = None,
         method: ImageReplaceMethod | None = None,
         api_client: Optional[GoogleAPIClient] = None,
+        enforce_size: bool | Literal["auto"] = "auto",
     ):
-        return ImageElement.replace_image_from_id(
+        ImageElement.replace_image_from_id(
             self.objectId,
             self.presentation_id,
             url=url,
@@ -137,6 +138,22 @@ class ImageElement(PageElementBase):
             method=method,
             api_client=api_client,
         )
+
+        """
+        Google Slides API can randomly change the size of the image when you write to it,
+        especially if target element has "unusual" aspect ratios
+        so might need to rescale it back to the desired shape.
+
+        Let's use a heuristic to decide when to do that:
+        """
+        sizes = self.absolute_size(units="in")
+        aspect_ratio = sizes[0] / sizes[1]
+
+        thresh = 1.8
+        strange_ratio = aspect_ratio < 1 / thresh or aspect_ratio > thresh
+        if (enforce_size == "auto" and strange_ratio) or enforce_size == True:
+            # THis will re-read the object from the cloud so will be slow
+            self.force_same_shape_as_me(target_id=self.objectId, api_client=api_client)
 
     @staticmethod
     def replace_image_from_id(
