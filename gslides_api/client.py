@@ -141,6 +141,20 @@ class GoogleAPIClient:
         else:
             raise RuntimeError("Must run set_credentials before executing method")
 
+    @property
+    def is_initialized(self) -> bool:
+        """Returns True if initialize_credentials has been properly called and all services are initialized.
+
+        :return: True if all API services are initialized, False otherwise
+        :rtype: bool
+        """
+        return (
+            self.crdtls is not None
+            and self.sht_srvc is not None
+            and self.sld_srvc is not None
+            and self.drive_srvc is not None
+        )
+
     def flush_batch_update(self) -> Dict[str, Any]:
         if not len(self.pending_batch_requests):
             return {}

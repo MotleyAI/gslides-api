@@ -36,31 +36,31 @@ class ImageElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.IMAGE
 
-    @staticmethod
-    def create_image_request_like(
-        e: PageElementBase,
-        image_id: str | None = None,
-        url: str | None = None,
-        parent_id: str | None = None,
-    ) -> List[GSlidesAPIRequest]:
-        """Create a request to create an image element like the given element."""
-        url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
-        element_properties = e.element_properties(parent_id or e.slide_id)
-        logger.info(f"Creating image request with properties: {element_properties.model_dump()}")
-        requests = [
-            CreateImageRequest(
-                objectId=image_id,
-                elementProperties=element_properties,
-                url=url,
-            )
-        ]
-        if e.type == ElementKind.IMAGE:
-            requests += e.element_to_update_request(image_id)
-        else:
-            # Only alt-text can be copied, other properties are different
-            requests += e.alt_text_update_request(image_id)
-
-        return requests
+    # @staticmethod
+    # def create_image_request_like(
+    #     e: PageElementBase,
+    #     image_id: str | None = None,
+    #     url: str | None = None,
+    #     parent_id: str | None = None,
+    # ) -> List[GSlidesAPIRequest]:
+    #     """Create a request to create an image element like the given element."""
+    #     url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
+    #     element_properties = e.element_properties(parent_id or e.slide_id)
+    #     logger.info(f"Creating image request with properties: {element_properties.model_dump()}")
+    #     requests = [
+    #         CreateImageRequest(
+    #             objectId=image_id,
+    #             elementProperties=element_properties,
+    #             url=url,
+    #         )
+    #     ]
+    #     if e.type == ElementKind.IMAGE:
+    #         requests += e.element_to_update_request(image_id)
+    #     else:
+    #         # Only alt-text can be copied, other properties are different
+    #         requests += e.alt_text_update_request(image_id)
+    #
+    #     return requests
 
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert an ImageElement to a create request for the Google Slides API."""
@@ -129,10 +129,19 @@ class ImageElement(PageElementBase):
         method: ImageReplaceMethod | None = None,
         api_client: Optional[GoogleAPIClient] = None,
         enforce_size: bool | Literal["auto"] = "auto",
+        recreate_element: bool = False,
     ):
+        if recreate_element:
+            image = self.create_image_element_like(
+                parent_id=self.slide_id, url=url, api_client=api_client
+            )
+            api_client.delete_object(self.objectId, self.presentation_id)
+        else:
+            image = self
+
         ImageElement.replace_image_from_id(
-            self.objectId,
-            self.presentation_id,
+            image.objectId,
+            image.presentation_id,
             url=url,
             file=file,
             method=method,
@@ -146,14 +155,15 @@ class ImageElement(PageElementBase):
 
         Let's use a heuristic to decide when to do that:
         """
-        sizes = self.absolute_size(units="in")
+        sizes = image.absolute_size(units="in")
         aspect_ratio = sizes[0] / sizes[1]
 
         thresh = 1.8
         strange_ratio = aspect_ratio < 1 / thresh or aspect_ratio > thresh
         if (enforce_size == "auto" and strange_ratio) or enforce_size == True:
             # THis will re-read the object from the cloud so will be slow
-            self.force_same_shape_as_me(target_id=self.objectId, api_client=api_client)
+            image.force_same_shape_as_me(target_id=image.objectId, api_client=api_client)
+        return image
 
     @staticmethod
     def replace_image_from_id(

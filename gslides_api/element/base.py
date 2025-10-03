@@ -148,6 +148,8 @@ class PageElementBase(GSlidesBaseModel):
 
         api_client = api_client or globals()["api_client"]
         parent_id = parent_id or self.slide_id
+        if isinstance(self, ImageElement):
+            url = url or self.image.contentUrl
         url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
 
         # Create the image element
