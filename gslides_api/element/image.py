@@ -1,24 +1,24 @@
 import logging
 import mimetypes
 import uuid
-from typing import List, Optional
+from typing import List, Literal, Optional
 from urllib.parse import urlparse
 
 import requests
 from pydantic import Field, field_validator
 
 from gslides_api.client import GoogleAPIClient
-from gslides_api.domain.domain import (Image, ImageData, ImageReplaceMethod,
-                                       PageElementProperties)
+from gslides_api.domain.domain import Image, ImageReplaceMethod, PageElementProperties
+from gslides_api.agnostic.domain import ImageData
 from gslides_api.element.base import ElementKind, PageElementBase
-from gslides_api.markdown.element import \
-    MarkdownImageElement as MarkdownImageElement
+from gslides_api.agnostic.element import MarkdownImageElement as MarkdownImageElement
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.request.request import (CreateImageRequest,
-                                         ReplaceImageRequest,
-                                         UpdateImagePropertiesRequest)
-from gslides_api.utils import (dict_to_dot_separated_field_list,
-                               image_url_is_valid)
+from gslides_api.request.request import (
+    CreateImageRequest,
+    ReplaceImageRequest,
+    UpdateImagePropertiesRequest,
+)
+from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
 
 logger = logging.getLogger(__name__)
 
@@ -36,58 +36,31 @@ class ImageElement(PageElementBase):
     def validate_type(cls, v):
         return ElementKind.IMAGE
 
-    @staticmethod
-    def create_image_request_like(
-        e: PageElementBase,
-        image_id: str | None = None,
-        url: str | None = None,
-        parent_id: str | None = None,
-    ) -> List[GSlidesAPIRequest]:
-        """Create a request to create an image element like the given element."""
-        url = (
-            url
-            or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
-        )
-        element_properties = e.element_properties(parent_id or e.slide_id)
-        logger.info(
-            f"Creating image request with properties: {element_properties.model_dump()}"
-        )
-        requests = [
-            CreateImageRequest(
-                objectId=image_id,
-                elementProperties=element_properties,
-                url=url,
-            )
-        ]
-        if e.type == ElementKind.IMAGE:
-            requests += e.element_to_update_request(image_id)
-        else:
-            # Only alt-text can be copied, other properties are different
-            requests += e.alt_text_update_request(image_id)
-
-        return requests
-
-    @staticmethod
-    def create_image_element_like(
-        e: PageElementBase,
-        api_client: GoogleAPIClient | None = None,
-        parent_id: str | None = None,
-        url: str | None = None,
-    ) -> str:
-
-        api_client = api_client or globals()["api_client"]
-        parent_id = parent_id or e.slide_id
-
-        # Create the image element
-        image_id = uuid.uuid4().hex
-        requests = ImageElement.create_image_request_like(
-            e,
-            parent_id=parent_id,
-            url=url,
-            image_id=image_id,
-        )
-        api_client.batch_update(requests, e.presentation_id)
-        return image_id
+    # @staticmethod
+    # def create_image_request_like(
+    #     e: PageElementBase,
+    #     image_id: str | None = None,
+    #     url: str | None = None,
+    #     parent_id: str | None = None,
+    # ) -> List[GSlidesAPIRequest]:
+    #     """Create a request to create an image element like the given element."""
+    #     url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
+    #     element_properties = e.element_properties(parent_id or e.slide_id)
+    #     logger.info(f"Creating image request with properties: {element_properties.model_dump()}")
+    #     requests = [
+    #         CreateImageRequest(
+    #             objectId=image_id,
+    #             elementProperties=element_properties,
+    #             url=url,
+    #         )
+    #     ]
+    #     if e.type == ElementKind.IMAGE:
+    #         requests += e.element_to_update_request(image_id)
+    #     else:
+    #         # Only alt-text can be copied, other properties are different
+    #         requests += e.alt_text_update_request(image_id)
+    #
+    #     return requests
 
     def create_request(self, parent_id: str) -> List[GSlidesAPIRequest]:
         """Convert an ImageElement to a create request for the Google Slides API."""
@@ -102,10 +75,7 @@ class ImageElement(PageElementBase):
         """Convert an ImageElement to an update request for the Google Slides API."""
         requests = self.alt_text_update_request(element_id)
 
-        if (
-            hasattr(self.image, "imageProperties")
-            and self.image.imageProperties is not None
-        ):
+        if hasattr(self.image, "imageProperties") and self.image.imageProperties is not None:
             image_properties = self.image.imageProperties.to_api_format()
             # "fields": "*" causes an error
             request = UpdateImagePropertiesRequest(
@@ -158,26 +128,42 @@ class ImageElement(PageElementBase):
         file: str | None = None,
         method: ImageReplaceMethod | None = None,
         api_client: Optional[GoogleAPIClient] = None,
+        enforce_size: bool | Literal["auto"] = "auto",
+        recreate_element: bool = False,
     ):
-        # if url is None and file is None:
-        #     raise ValueError("Must specify either url or file")
-        # if url is not None and file is not None:
-        #     raise ValueError("Must specify either url or file, not both")
-        #
-        # client = api_client or globals()["api_client"]
-        # if file is not None:
-        #     url = client.upload_image_to_drive(file)
-        #
-        # requests = self._replace_image_requests(url, method)
-        # return client.batch_update(requests, self.presentation_id)
-        return ImageElement.replace_image_from_id(
-            self.objectId,
-            self.presentation_id,
+        if recreate_element:
+            image = self.create_image_element_like(
+                parent_id=self.slide_id, url=url, api_client=api_client
+            )
+            api_client.delete_object(self.objectId, self.presentation_id)
+        else:
+            image = self
+
+        ImageElement.replace_image_from_id(
+            image.objectId,
+            image.presentation_id,
             url=url,
             file=file,
             method=method,
             api_client=api_client,
         )
+
+        """
+        Google Slides API can randomly change the size of the image when you write to it,
+        especially if target element has "unusual" aspect ratios
+        so might need to rescale it back to the desired shape.
+
+        Let's use a heuristic to decide when to do that:
+        """
+        sizes = image.absolute_size(units="in")
+        aspect_ratio = sizes[0] / sizes[1]
+
+        thresh = 1.8
+        strange_ratio = aspect_ratio < 1 / thresh or aspect_ratio > thresh
+        if (enforce_size == "auto" and strange_ratio) or enforce_size == True:
+            # THis will re-read the object from the cloud so will be slow
+            image.force_same_shape_as_me(target_id=image.objectId, api_client=api_client)
+        return image
 
     @staticmethod
     def replace_image_from_id(
@@ -217,9 +203,7 @@ class ImageElement(PageElementBase):
 
         if not url:
             logger.error("No image URL available for element %s", self.objectId)
-            raise ValueError(
-                "No image URL available (neither contentUrl nor sourceUrl)"
-            )
+            raise ValueError("No image URL available (neither contentUrl nor sourceUrl)")
 
         logger.info("Downloading image from URL: %s", url)
 
@@ -253,9 +237,7 @@ class ImageElement(PageElementBase):
             if path:
                 guessed_type, _ = mimetypes.guess_type(path)
                 if guessed_type and guessed_type.startswith("image/"):
-                    logger.debug(
-                        "Guessed MIME type from URL: %s -> %s", path, guessed_type
-                    )
+                    logger.debug("Guessed MIME type from URL: %s -> %s", path, guessed_type)
                     mime_type = guessed_type
                 else:
                     logger.warning(
@@ -280,9 +262,7 @@ class ImageElement(PageElementBase):
             mime_type,
         )
 
-        return ImageData(
-            content=response.content, mime_type=mime_type, filename=filename
-        )
+        return ImageData(content=response.content, mime_type=mime_type, filename=filename)
 
     def to_markdown_element(self, name: str = "Image") -> MarkdownImageElement:
         """Convert ImageElement to MarkdownImageElement for round-trip conversion."""
@@ -313,9 +293,7 @@ class ImageElement(PageElementBase):
 
         if hasattr(self, "transform") and self.transform:
             metadata["transform"] = (
-                self.transform.to_api_format()
-                if hasattr(self.transform, "to_api_format")
-                else None
+                self.transform.to_api_format() if hasattr(self.transform, "to_api_format") else None
             )
 
         # Store title and description if available
@@ -332,9 +310,7 @@ class ImageElement(PageElementBase):
                 else None
             )
 
-        return MarkdownImageElement(
-            name=name, content=markdown_content, metadata=metadata
-        )
+        return MarkdownImageElement(name=name, content=markdown_content, metadata=metadata)
 
     @classmethod
     def from_markdown_element(
@@ -374,12 +350,8 @@ class ImageElement(PageElementBase):
             from gslides_api.domain.domain import Dimension, Size, Unit
 
             element_props.size = Size(
-                width=Dimension(
-                    magnitude=size_data["width"], unit=Unit(size_data["unit"])
-                ),
-                height=Dimension(
-                    magnitude=size_data["height"], unit=Unit(size_data["unit"])
-                ),
+                width=Dimension(magnitude=size_data["width"], unit=Unit(size_data["unit"])),
+                height=Dimension(magnitude=size_data["height"], unit=Unit(size_data["unit"])),
             )
         else:
             # Provide default size for images

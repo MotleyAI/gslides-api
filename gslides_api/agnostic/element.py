@@ -153,9 +153,7 @@ class MarkdownImageElement(MarkdownSlideElement):
         """Create ImageElement from markdown, extracting URL and metadata."""
         image_match = re.search(r"!\[([^]]*)\]\(([^)]+)\)", markdown_content.strip())
         if not image_match:
-            raise ValueError(
-                "Image element must contain at least one markdown image (![alt](url))"
-            )
+            raise ValueError("Image element must contain at least one markdown image (![alt](url))")
 
         alt_text = image_match.group(1)
         url = image_match.group(2)
@@ -267,18 +265,14 @@ class MarkdownTableElement(MarkdownSlideElement):
             table_rows = [
                 child
                 for child in table_element.children
-                if hasattr(child, "__class__")
-                and child.__class__.__name__ == "TableRow"
+                if hasattr(child, "__class__") and child.__class__.__name__ == "TableRow"
             ]
 
             if table_rows:
                 # Extract headers from first row
                 header_row = table_rows[0]
                 for cell in header_row.children:
-                    if (
-                        hasattr(cell, "__class__")
-                        and cell.__class__.__name__ == "TableCell"
-                    ):
+                    if hasattr(cell, "__class__") and cell.__class__.__name__ == "TableCell":
                         cell_text = cls._extract_text_from_node(cell)
                         headers.append(cell_text.strip())
 
@@ -286,10 +280,7 @@ class MarkdownTableElement(MarkdownSlideElement):
                 for row in table_rows[1:]:
                     row_data = []
                     for cell in row.children:
-                        if (
-                            hasattr(cell, "__class__")
-                            and cell.__class__.__name__ == "TableCell"
-                        ):
+                        if hasattr(cell, "__class__") and cell.__class__.__name__ == "TableCell":
                             cell_text = cls._extract_text_from_node(cell)
                             row_data.append(cell_text.strip())
                     if row_data:
@@ -301,9 +292,7 @@ class MarkdownTableElement(MarkdownSlideElement):
         return TableData(headers=headers, rows=rows)
 
     @classmethod
-    def _parse_table_dual_method(
-        cls, markdown_content: str
-    ) -> tuple[list[list], list[list[str]]]:
+    def _parse_table_dual_method(cls, markdown_content: str) -> tuple[list[list], list[list[str]]]:
         """Parse table using both Marko AST and manual regex methods.
 
         Returns:
@@ -352,17 +341,13 @@ class MarkdownTableElement(MarkdownSlideElement):
             table_rows = [
                 child
                 for child in table_element.children
-                if hasattr(child, "__class__")
-                and child.__class__.__name__ == "TableRow"
+                if hasattr(child, "__class__") and child.__class__.__name__ == "TableRow"
             ]
 
             for row in table_rows:
                 row_cells = []
                 for cell in row.children:
-                    if (
-                        hasattr(cell, "__class__")
-                        and cell.__class__.__name__ == "TableCell"
-                    ):
+                    if hasattr(cell, "__class__") and cell.__class__.__name__ == "TableCell":
                         row_cells.append(cell)
                 cell_grid.append(row_cells)
 
@@ -388,9 +373,7 @@ class MarkdownTableElement(MarkdownSlideElement):
         cell_grid = []
         for line in table_lines:
             # Remove leading and trailing |
-            content = (
-                line[1:-1] if line.startswith("|") and line.endswith("|") else line
-            )
+            content = line[1:-1] if line.startswith("|") and line.endswith("|") else line
 
             # Split by | but preserve escaped pipes
             cells = []
@@ -432,9 +415,7 @@ class MarkdownTableElement(MarkdownSlideElement):
                     f"Column count mismatch at row {i}: Marko={len(marko_row)}, Manual={len(markdown_row)}"
                 )
 
-            for j, (marko_cell, markdown_cell) in enumerate(
-                zip(marko_row, markdown_row)
-            ):
+            for j, (marko_cell, markdown_cell) in enumerate(zip(marko_row, markdown_row)):
                 # Extract text from marko cell
                 marko_text = cls._extract_text_from_node(marko_cell)
 
@@ -474,15 +455,10 @@ class MarkdownTableElement(MarkdownSlideElement):
         if hasattr(node, "children"):
             text_parts = []
             for child in node.children:
-                if (
-                    hasattr(child, "__class__")
-                    and child.__class__.__name__ == "RawText"
-                ):
+                if hasattr(child, "__class__") and child.__class__.__name__ == "RawText":
                     text_parts.append(str(child.children))
                 else:
-                    text_parts.append(
-                        MarkdownTableElement._extract_text_from_node(child)
-                    )
+                    text_parts.append(MarkdownTableElement._extract_text_from_node(child))
             return "".join(text_parts)
         elif hasattr(node, "children") and isinstance(node.children, str):
             return node.children
@@ -518,9 +494,7 @@ class MarkdownTableElement(MarkdownSlideElement):
     def from_markdown(cls, name: str, markdown_content: str) -> "MarkdownTableElement":
         """Create TableElement from markdown table content with styling preservation."""
         # Use dual parsing to get both structure validation and styling preservation
-        marko_cells, markdown_cells = cls._parse_table_dual_method(
-            markdown_content.strip()
-        )
+        marko_cells, markdown_cells = cls._parse_table_dual_method(markdown_content.strip())
 
         # Create TableData using the styled markdown snippets
         if not markdown_cells:
@@ -543,9 +517,7 @@ class MarkdownTableElement(MarkdownSlideElement):
         return cls(name=name, content=table_data)
 
     @classmethod
-    def from_df(
-        cls, df, name: str, metadata: dict[str, Any] = None
-    ) -> "MarkdownTableElement":
+    def from_df(cls, df, name: str, metadata: dict[str, Any] = None) -> "MarkdownTableElement":
         """Create TableElement from pandas DataFrame.
 
         Args:
@@ -624,9 +596,7 @@ class MarkdownTableElement(MarkdownSlideElement):
         elif isinstance(key, int):
             return RowProxy(self, key)
         else:
-            raise TypeError(
-                "Table indexing requires either (row, col) tuple or row integer"
-            )
+            raise TypeError("Table indexing requires either (row, col) tuple or row integer")
 
     def __setitem__(self, key, value: str) -> None:
         """Set table cell value with Marko validation.
@@ -655,9 +625,7 @@ class MarkdownTableElement(MarkdownSlideElement):
             row_idx = total_rows + row_idx
 
         if row_idx < 0 or row_idx >= total_rows:
-            raise IndexError(
-                f"Row index {row_idx} out of range for table with {total_rows} rows"
-            )
+            raise IndexError(f"Row index {row_idx} out of range for table with {total_rows} rows")
 
         # Row 0 is headers
         if row_idx == 0:
@@ -702,9 +670,7 @@ class MarkdownTableElement(MarkdownSlideElement):
             row_idx = total_rows + row_idx
 
         if row_idx < 0 or row_idx >= total_rows:
-            raise IndexError(
-                f"Row index {row_idx} out of range for table with {total_rows} rows"
-            )
+            raise IndexError(f"Row index {row_idx} out of range for table with {total_rows} rows")
 
         # Create a copy of current table data for validation
         new_headers = self.content.headers.copy()

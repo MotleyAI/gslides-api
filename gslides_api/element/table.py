@@ -7,23 +7,22 @@ from typeguard import typechecked
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
 from gslides_api.domain.domain import Dimension, OutputUnit, Size, Transform
-from gslides_api.domain.table import (Table, TableColumnProperties,
-                                      TableRowProperties)
+from gslides_api.domain.table import Table, TableColumnProperties, TableRowProperties
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.text import TextStyle
 from gslides_api.element.base import ElementKind, PageElementBase
-from gslides_api.markdown.element import \
-    MarkdownTableElement as MarkdownTableElement
-from gslides_api.markdown.element import TableData
+from gslides_api.agnostic.element import MarkdownTableElement as MarkdownTableElement, TableData
 from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.request.request import UpdatePageElementAltTextRequest
-from gslides_api.request.table import (CreateTableRequest,
-                                       DeleteTableColumnRequest,
-                                       DeleteTableRowRequest,
-                                       InsertTableColumnsRequest,
-                                       InsertTableRowsRequest,
-                                       UpdateTableColumnPropertiesRequest,
-                                       UpdateTableRowPropertiesRequest)
+from gslides_api.request.table import (
+    CreateTableRequest,
+    DeleteTableColumnRequest,
+    DeleteTableRowRequest,
+    InsertTableColumnsRequest,
+    InsertTableRowsRequest,
+    UpdateTableColumnPropertiesRequest,
+    UpdateTableRowPropertiesRequest,
+)
 
 
 @typechecked
@@ -59,9 +58,7 @@ class TableElement(PageElementBase):
                 or location.rowIndex >= len(self.table.tableRows)
                 or not self.table.tableRows[location.rowIndex].rowHeight
             ):
-                raise ValueError(
-                    f"Row height not available for row {location.rowIndex}"
-                )
+                raise ValueError(f"Row height not available for row {location.rowIndex}")
 
             row_height_dim = self.table.tableRows[location.rowIndex].rowHeight
 
@@ -71,9 +68,7 @@ class TableElement(PageElementBase):
                 or location.columnIndex >= len(self.table.tableColumns)
                 or not self.table.tableColumns[location.columnIndex].columnWidth
             ):
-                raise ValueError(
-                    f"Column width not available for column {location.columnIndex}"
-                )
+                raise ValueError(f"Column width not available for column {location.columnIndex}")
 
             column_width_dim = self.table.tableColumns[location.columnIndex].columnWidth
 
@@ -85,13 +80,9 @@ class TableElement(PageElementBase):
             element_props = self.element_properties()
             return element_props.absolute_cell_size(units, width_emu, height_emu)
 
-    def _read_text(
-        self, location: Optional[TableCellLocation] = None
-    ) -> str | list[list[str]]:
+    def _read_text(self, location: Optional[TableCellLocation] = None) -> str | list[list[str]]:
         if location is not None:
-            cell = self.table.tableRows[location.rowIndex].tableCells[
-                location.columnIndex
-            ]
+            cell = self.table.tableRows[location.rowIndex].tableCells[location.columnIndex]
             if cell.text is not None:
                 return cell.text.read_text()
             else:
@@ -120,9 +111,7 @@ class TableElement(PageElementBase):
         elif isinstance(key, tuple) and len(key) == 2:
             row_idx, col_idx = key
         else:
-            raise TypeError(
-                "Table indexing requires either (row, col) tuple or TableCellLocation"
-            )
+            raise TypeError("Table indexing requires either (row, col) tuple or TableCellLocation")
 
         return self.table.tableRows[row_idx].tableCells[col_idx]
 
@@ -156,8 +145,7 @@ class TableElement(PageElementBase):
             self.table.tableRows is not None
             and location.rowIndex < len(self.table.tableRows)
             and self.table.tableRows[location.rowIndex].tableCells is not None
-            and location.columnIndex
-            < len(self.table.tableRows[location.rowIndex].tableCells)
+            and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
         ):
             cell = self[location.rowIndex, location.columnIndex]
             size_inches = self.absolute_size(OutputUnit.IN, location)
@@ -272,9 +260,7 @@ class TableElement(PageElementBase):
             client = api_client or default_api_client
             return client.batch_update(requests, self.presentation_id)
 
-    def delete_text_in_cell_requests(
-        self, location: TableCellLocation
-    ) -> List[GSlidesAPIRequest]:
+    def delete_text_in_cell_requests(self, location: TableCellLocation) -> List[GSlidesAPIRequest]:
         # Validate cell location is within table bounds
         if (
             location.rowIndex >= self.table.rows
@@ -292,8 +278,7 @@ class TableElement(PageElementBase):
             self.table.tableRows is not None
             and location.rowIndex < len(self.table.tableRows)
             and self.table.tableRows[location.rowIndex].tableCells is not None
-            and location.columnIndex
-            < len(self.table.tableRows[location.rowIndex].tableCells)
+            and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
         ):
             cell = self[location.rowIndex, location.columnIndex]
             requests = cell.text.delete_text_request(self.objectId)
@@ -334,9 +319,7 @@ class TableElement(PageElementBase):
                 rows.append(row_cells[: len(headers)])
 
         except (AttributeError, IndexError):
-            raise ValueError(
-                "Could not extract table data - table structure may be invalid"
-            )
+            raise ValueError("Could not extract table data - table structure may be invalid")
 
         if not headers:
             raise ValueError("No headers found in table")
@@ -374,9 +357,7 @@ class TableElement(PageElementBase):
 
         if hasattr(self, "transform") and self.transform:
             metadata["transform"] = (
-                self.transform.to_api_format()
-                if hasattr(self.transform, "to_api_format")
-                else None
+                self.transform.to_api_format() if hasattr(self.transform, "to_api_format") else None
             )
 
         # Store title and description if available
@@ -435,9 +416,7 @@ class TableElement(PageElementBase):
                 width=Dimension(magnitude=default_width, unit=Unit.PT),
                 height=Dimension(magnitude=default_height, unit=Unit.PT),
             ),
-            transform=Transform(
-                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
-            ),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
             table=Table(rows=num_rows, columns=num_cols),
             slide_id=slide_id,
             presentation_id="",
@@ -471,10 +450,7 @@ class TableElement(PageElementBase):
         requests = []
 
         # Only proceed if we have column width information
-        if (
-            not self.table.tableColumns
-            or len(self.table.tableColumns) != self.table.columns
-        ):
+        if not self.table.tableColumns or len(self.table.tableColumns) != self.table.columns:
             return requests
 
         # Calculate total width of remaining columns
@@ -515,9 +491,7 @@ class TableElement(PageElementBase):
 
             # Create new column properties with adjusted width
             new_column_props = TableColumnProperties(
-                columnWidth=Dimension(
-                    magnitude=new_width, unit=original_col.columnWidth.unit
-                )
+                columnWidth=Dimension(magnitude=new_width, unit=original_col.columnWidth.unit)
             )
 
             requests.append(
@@ -544,16 +518,12 @@ class TableElement(PageElementBase):
             List of UpdateTableColumnPropertiesRequest to set column widths
         """
         from gslides_api.domain.table import TableColumnProperties
-        from gslides_api.request.table import \
-            UpdateTableColumnPropertiesRequest
+        from gslides_api.request.table import UpdateTableColumnPropertiesRequest
 
         requests = []
 
         # Only proceed if we have column width information
-        if (
-            not self.table.tableColumns
-            or len(self.table.tableColumns) != original_columns
-        ):
+        if not self.table.tableColumns or len(self.table.tableColumns) != original_columns:
             return requests
 
         # Get the width of the rightmost original column
@@ -571,9 +541,7 @@ class TableElement(PageElementBase):
                     UpdateTableColumnPropertiesRequest(
                         objectId=self.objectId,
                         columnIndices=[col_idx],
-                        tableColumnProperties=TableColumnProperties(
-                            columnWidth=col.columnWidth
-                        ),
+                        tableColumnProperties=TableColumnProperties(columnWidth=col.columnWidth),
                         fields="columnWidth",
                     )
                 )
@@ -584,9 +552,7 @@ class TableElement(PageElementBase):
                 UpdateTableColumnPropertiesRequest(
                     objectId=self.objectId,
                     columnIndices=[col_idx],
-                    tableColumnProperties=TableColumnProperties(
-                        columnWidth=rightmost_width
-                    ),
+                    tableColumnProperties=TableColumnProperties(columnWidth=rightmost_width),
                     fields="columnWidth",
                 )
             )
@@ -615,10 +581,7 @@ class TableElement(PageElementBase):
         remaining_heights = []
 
         for row_idx in remaining_row_indices:
-            if (
-                row_idx < len(self.table.tableRows)
-                and self.table.tableRows[row_idx].rowHeight
-            ):
+            if row_idx < len(self.table.tableRows) and self.table.tableRows[row_idx].rowHeight:
                 height = self.table.tableRows[row_idx].rowHeight.magnitude
                 remaining_heights.append(height)
                 total_remaining_height += height
@@ -648,9 +611,7 @@ class TableElement(PageElementBase):
 
             # Create new row properties with adjusted height
             new_row_props = TableRowProperties(
-                minRowHeight=Dimension(
-                    magnitude=new_height, unit=original_row.rowHeight.unit
-                )
+                minRowHeight=Dimension(magnitude=new_height, unit=original_row.rowHeight.unit)
             )
 
             requests.append(
@@ -778,9 +739,7 @@ class TableElement(PageElementBase):
             requests.append(
                 InsertTableRowsRequest(
                     tableObjectId=self.objectId,
-                    cellLocation=TableCellLocation(
-                        rowIndex=current_rows - 1, columnIndex=0
-                    ),
+                    cellLocation=TableCellLocation(rowIndex=current_rows - 1, columnIndex=0),
                     insertBelow=True,
                     number=rows_to_add,
                 )
@@ -823,9 +782,7 @@ class TableElement(PageElementBase):
             requests.append(
                 InsertTableColumnsRequest(
                     tableObjectId=self.objectId,
-                    cellLocation=TableCellLocation(
-                        rowIndex=0, columnIndex=current_columns - 1
-                    ),
+                    cellLocation=TableCellLocation(rowIndex=0, columnIndex=current_columns - 1),
                     insertRight=True,
                     number=columns_to_add,
                 )
@@ -833,10 +790,8 @@ class TableElement(PageElementBase):
 
             # Add width adjustment requests if fix_width=False
             if not fix_width:
-                width_requests = (
-                    self._generate_width_preserving_requests_after_addition(
-                        current_columns, n_columns
-                    )
+                width_requests = self._generate_width_preserving_requests_after_addition(
+                    current_columns, n_columns
                 )
                 requests.extend(width_requests)
 
@@ -852,9 +807,7 @@ class TableElement(PageElementBase):
                 requests.append(
                     DeleteTableColumnRequest(
                         tableObjectId=self.objectId,
-                        cellLocation=TableCellLocation(
-                            rowIndex=0, columnIndex=column_index
-                        ),
+                        cellLocation=TableCellLocation(rowIndex=0, columnIndex=column_index),
                     )
                 )
 

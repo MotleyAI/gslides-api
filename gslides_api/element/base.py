@@ -1,14 +1,23 @@
 import logging
+import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
+import gslides_api
+from gslides_api.agnostic.element import MarkdownSlideElement
 from gslides_api.client import GoogleAPIClient, api_client
-from gslides_api.domain.domain import (GSlidesBaseModel, OutputUnit,
-                                       PageElementProperties, Size, Transform)
+from gslides_api.domain.domain import (
+    GSlidesBaseModel,
+    OutputUnit,
+    PageElementProperties,
+    Size,
+    Transform,
+)
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.request.request import UpdatePageElementAltTextRequest
+from gslides_api.request.request import CreateImageRequest, UpdatePageElementAltTextRequest
+from gslides_api.request.reshape import reshape_like_request
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +111,70 @@ class PageElementBase(GSlidesBaseModel):
         )
         self.__dict__ = new_state.__dict__
 
+    def create_image_request_like(
+        self,
+        image_id: str | None = None,
+        url: str | None = None,
+        parent_id: str | None = None,
+    ) -> List[GSlidesAPIRequest]:
+        """Create a request to create an image element like the given element."""
+        url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
+        element_properties = self.element_properties(parent_id or self.slide_id)
+        logger.info(f"Creating image request with properties: {element_properties.model_dump()}")
+        requests = [
+            CreateImageRequest(
+                objectId=image_id,
+                elementProperties=element_properties,
+                url=url,
+            )
+        ]
+        if self.type == ElementKind.IMAGE:
+            requests += self.element_to_update_request(image_id)
+        else:
+            # Only alt-text can be copied, other properties are different
+            requests += self.alt_text_update_request(image_id)
+
+        return requests
+
+    def create_image_element_like(
+        self,
+        api_client: GoogleAPIClient | None = None,
+        parent_id: str | None = None,
+        url: str | None = None,
+    ) -> "ImageElement":
+        # Import inside method to avoid circular imports
+        from gslides_api.domain.domain import Image
+        from gslides_api.element.image import ImageElement
+
+        api_client = api_client or globals()["api_client"]
+        parent_id = parent_id or self.slide_id
+        if isinstance(self, ImageElement):
+            url = url or self.image.contentUrl
+        url = url or "https://upload.wikimedia.org/wikipedia/commons/2/2d/Logo_Google_blanco.png"
+
+        # Create the image element
+        image_id = uuid.uuid4().hex
+        requests = self.create_image_request_like(
+            parent_id=parent_id,
+            url=url,
+            image_id=image_id,
+        )
+        api_client.batch_update(requests, self.presentation_id)
+
+        # Construct and return ImageElement object with reused fields
+        image = Image(sourceUrl=url, contentUrl=None)  # Will be populated by Google Slides
+
+        image_element = ImageElement(
+            objectId=image_id,
+            size=self.size,
+            transform=self.transform,
+            image=image,
+            slide_id=self.slide_id,
+            presentation_id=self.presentation_id,
+        )
+
+        return image_element
+
     def alt_text_update_request(
         self, element_id: str, title: str | None = None, description: str | None = None
     ) -> List[GSlidesAPIRequest]:
@@ -122,9 +195,7 @@ class PageElementBase(GSlidesBaseModel):
                 UpdatePageElementAltTextRequest(
                     objectId=element_id,
                     title=title if title is not None else self.title,
-                    description=(
-                        description if description is not None else self.description
-                    ),
+                    description=(description if description is not None else self.description),
                 )
             ]
         else:
@@ -182,14 +253,35 @@ class PageElementBase(GSlidesBaseModel):
         else:
             return {}
 
+    def force_same_shape_as_me(self, target_id: str, api_client: Optional[GoogleAPIClient] = None):
+        api_client = api_client or gslides_api.client.api_client
+        """Force the target image to have the same shape as this image."""
+        api_client.flush_batch_update()
+        # This retrieves the actual data on the target element
+        target = self.__class__.from_ids(
+            presentation_id=self.presentation_id,
+            slide_id=self.slide_id,
+            element_id=target_id,
+            api_client=api_client,
+        )
+
+        old_shape = self.element_properties()
+        new_shape = target.element_properties()
+
+        reshape_requests = reshape_like_request(
+            target_shape=old_shape, current_shape=new_shape, object_id=target_id
+        )
+        api_client.batch_update(
+            requests=reshape_requests,
+            presentation_id=self.presentation_id,
+        )
+
     def element_to_update_request(self, element_id: str) -> List[GSlidesAPIRequest]:
         """Convert a PageElement to an update request for the Google Slides API.
 
         This method should be overridden by subclasses.
         """
-        raise NotImplementedError(
-            "Subclasses must implement element_to_update_request method"
-        )
+        raise NotImplementedError("Subclasses must implement element_to_update_request method")
 
     def to_markdown(self) -> str | None:
         """Convert a PageElement to markdown.
@@ -219,9 +311,7 @@ class PageElementBase(GSlidesBaseModel):
         element_props = self.element_properties()
         return element_props.absolute_size(units)
 
-    def absolute_position(
-        self, units: OutputUnit = OutputUnit.CM
-    ) -> Tuple[float, float]:
+    def absolute_position(self, units: OutputUnit = OutputUnit.CM) -> Tuple[float, float]:
         """Calculate the absolute position of the element on the page in the specified units.
 
         Position represents the distance of the top-left corner of the element
@@ -237,3 +327,10 @@ class PageElementBase(GSlidesBaseModel):
         """
         element_props = self.element_properties()
         return element_props.absolute_position(units)
+
+    def to_markdown_element(self, name: str = "Element") -> MarkdownSlideElement:
+        """Convert a PageElement to a MarkdownElement.
+
+        This method should be overridden by subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement to_markdown_element method")

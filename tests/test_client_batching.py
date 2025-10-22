@@ -9,6 +9,9 @@ from typing import Any, Dict
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from typeguard import TypeCheckError
+
+from google.oauth2.credentials import Credentials
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.request.request import (
@@ -239,13 +242,13 @@ class TestGoogleAPIClientBatching:
         mock_flush.assert_called_once()
 
     def test_batch_update_assertion_error_for_invalid_requests(self):
-        """Test that batch_update raises assertion error for invalid request types."""
+        """Test that batch_update raises error for invalid request types."""
         client = GoogleAPIClient()
 
         # Pass non-GSlidesAPIRequest objects
         invalid_requests = ["not_a_request", {"also": "not_a_request"}]
 
-        with pytest.raises(AssertionError):
+        with pytest.raises((AssertionError, TypeCheckError)):
             client.batch_update(invalid_requests, "presentation_id")
 
     def test_batch_update_exception_handling(self):
@@ -284,3 +287,76 @@ class TestGoogleAPIClientBatching:
 
         call_args = self.mock_presentations.batchUpdate.call_args
         assert len(call_args[1]["body"]["requests"]) == 3
+
+
+class TestGoogleAPIClientInitialization:
+    """Test cases for GoogleAPIClient initialization status."""
+
+    def test_is_initialized_false_by_default(self):
+        """Test that is_initialized returns False for a new client."""
+        client = GoogleAPIClient()
+        assert client.is_initialized is False
+
+    def test_is_initialized_false_with_partial_setup(self):
+        """Test that is_initialized returns False when only some services are set."""
+        client = GoogleAPIClient()
+
+        # Set credentials but no services
+        mock_credentials = Mock(spec=Credentials)
+        client.crdtls = mock_credentials
+        assert client.is_initialized is False
+
+        # Set one service
+        client.sht_srvc = Mock()
+        assert client.is_initialized is False
+
+        # Set two services
+        client.sld_srvc = Mock()
+        assert client.is_initialized is False
+
+    def test_is_initialized_true_when_fully_set(self):
+        """Test that is_initialized returns True when all services are initialized."""
+        client = GoogleAPIClient()
+
+        # Mock all required components
+        mock_credentials = Mock(spec=Credentials)
+        mock_sheet_service = Mock()
+        mock_slide_service = Mock()
+        mock_drive_service = Mock()
+
+        client.crdtls = mock_credentials
+        client.sht_srvc = mock_sheet_service
+        client.sld_srvc = mock_slide_service
+        client.drive_srvc = mock_drive_service
+
+        assert client.is_initialized is True
+
+    @patch('gslides_api.client.build')
+    def test_is_initialized_after_set_credentials(self, mock_build):
+        """Test that is_initialized returns True after set_credentials is called."""
+        client = GoogleAPIClient()
+
+        # Mock the build function to return mock services
+        mock_sheet_service = Mock()
+        mock_slide_service = Mock()
+        mock_drive_service = Mock()
+        mock_build.side_effect = [mock_sheet_service, mock_slide_service, mock_drive_service]
+
+        # Mock credentials
+        mock_credentials = Mock(spec=Credentials)
+
+        # Should be False before setting credentials
+        assert client.is_initialized is False
+
+        # Set credentials
+        client.set_credentials(mock_credentials)
+
+        # Should be True after setting credentials
+        assert client.is_initialized is True
+
+        # Verify all services were built
+        assert mock_build.call_count == 3
+        assert client.crdtls == mock_credentials
+        assert client.sht_srvc == mock_sheet_service
+        assert client.sld_srvc == mock_slide_service
+        assert client.drive_srvc == mock_drive_service

@@ -45,16 +45,16 @@ class TextContent(GSlidesBaseModel):
                 styles.append(te.textRun.style)
         return styles
 
-    def to_markdown(self) -> str | None:
-        """Convert the shape's text content back to markdown format.
-
-        This method reconstructs markdown from the Google Slides API response,
-        handling formatting like bold, italic, bullet points, nested lists, and code spans.
-        """
-        if not self.textElements:
-            return None
-
-        return text_elements_to_markdown(self.textElements)
+    # def to_markdown(self) -> str | None:
+    #     """Convert the shape's text content back to markdown format.
+    #
+    #     This method reconstructs markdown from the Google Slides API response,
+    #     handling formatting like bold, italic, bullet points, nested lists, and code spans.
+    #     """
+    #     if not self.textElements:
+    #         return None
+    #
+    #     return text_elements_to_markdown(self.textElements)
 
     def to_requests(
         self, element_id: str, location: TableCellLocation | None = None
@@ -74,7 +74,10 @@ class TextContent(GSlidesBaseModel):
         if not self.has_text:
             return ""
         if as_markdown:
-            return self.to_markdown()
+            if not self.textElements:
+                return ""
+
+            return text_elements_to_markdown(self.textElements)
         else:
             out = []
             for te in self.textElements:
@@ -210,7 +213,7 @@ class TextContent(GSlidesBaseModel):
             # Text doesn't fit, scale down
             scaling_factor = (
                 total_chars_that_fit / actual_text_length
-            ) ** 0.25  # Square root for more gradual scaling
+            ) ** 0.5  # Square root because we're scaling both width and height
 
         # Apply minimum scaling factor to ensure text remains readable
         scaling_factor = max(scaling_factor, 0.6)  # Don't scale below 30% of original size

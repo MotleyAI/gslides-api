@@ -14,8 +14,7 @@ from typeguard import typechecked
 
 from gslides_api.domain.domain import ThumbnailProperties
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.request.request import (DeleteObjectRequest,
-                                         DuplicateObjectRequest)
+from gslides_api.request.request import DeleteObjectRequest, DuplicateObjectRequest
 from gslides_api.response import ImageThumbnail
 
 
@@ -62,9 +61,7 @@ class GoogleAPIClient:
                         # Check if it's a rate limit error (429) or server error (5xx)
                         if e.resp.status in [429, 500, 502, 503, 504]:
                             last_exception = e
-                            if (
-                                attempt < self.n_backoffs
-                            ):  # Don't wait after the last attempt
+                            if attempt < self.n_backoffs:  # Don't wait after the last attempt
                                 wait_time = self.initial_wait_s * (2**attempt)
                                 logger.warning(
                                     f"Rate limit/server error encountered (status {e.resp.status}), "
@@ -144,6 +141,20 @@ class GoogleAPIClient:
         else:
             raise RuntimeError("Must run set_credentials before executing method")
 
+    @property
+    def is_initialized(self) -> bool:
+        """Returns True if initialize_credentials has been properly called and all services are initialized.
+
+        :return: True if all API services are initialized, False otherwise
+        :rtype: bool
+        """
+        return (
+            self.crdtls is not None
+            and self.sht_srvc is not None
+            and self.sld_srvc is not None
+            and self.drive_srvc is not None
+        )
+
     def flush_batch_update(self) -> Dict[str, Any]:
         if not len(self.pending_batch_requests):
             return {}
@@ -171,7 +182,7 @@ class GoogleAPIClient:
             raise e
 
     def batch_update(
-        self, requests: list, presentation_id: str, flush: bool = False
+        self, requests: list[GSlidesAPIRequest], presentation_id: str, flush: bool = False
     ) -> Dict[str, Any]:
         if len(requests) == 0:
             return {}
@@ -267,11 +278,7 @@ class GoogleAPIClient:
 
         @self._with_exponential_backoff
         def _get():
-            return (
-                self.slide_service.presentations()
-                .get(presentationId=presentation_id)
-                .execute()
-            )
+            return self.slide_service.presentations().get(presentationId=presentation_id).execute()
 
         return _get()
 
@@ -297,11 +304,7 @@ class GoogleAPIClient:
 
         @self._with_exponential_backoff
         def _copy():
-            return (
-                self.drive_service.files()
-                .copy(fileId=presentation_id, body=body)
-                .execute()
-            )
+            return self.drive_service.files().copy(fileId=presentation_id, body=body).execute()
 
         return _copy()
 
@@ -326,11 +329,7 @@ class GoogleAPIClient:
 
             @self._with_exponential_backoff
             def _list_folders():
-                return (
-                    self.drive_service.files()
-                    .list(q=query, fields="files(id,name)")
-                    .execute()
-                )
+                return self.drive_service.files().list(q=query, fields="files(id,name)").execute()
 
             existing_folders = _list_folders()
 
@@ -344,9 +343,7 @@ class GoogleAPIClient:
 
         @self._with_exponential_backoff
         def _create_folder():
-            return (
-                self.drive_service.files().create(body=body, fields="id,name").execute()
-            )
+            return self.drive_service.files().create(body=body, fields="id,name").execute()
 
         return _create_folder()
 
@@ -460,9 +457,7 @@ class GoogleAPIClient:
                         properties.mimeType.value if properties.mimeType else None
                     ),
                     thumbnailProperties_thumbnailSize=(
-                        properties.thumbnailSize.value
-                        if properties.thumbnailSize
-                        else None
+                        properties.thumbnailSize.value if properties.thumbnailSize else None
                     ),
                 )
                 .execute()

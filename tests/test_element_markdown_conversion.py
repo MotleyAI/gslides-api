@@ -23,11 +23,13 @@ from gslides_api.element.image import ImageElement
 from gslides_api.element.table import TableElement
 from gslides_api.domain.table import Table
 from gslides_api.element.shape import Shape, ShapeElement
-from gslides_api.markdown.element import ContentType
-from gslides_api.markdown.element import MarkdownImageElement as MarkdownImageElement
-from gslides_api.markdown.element import TableData
-from gslides_api.markdown.element import MarkdownTableElement as MarkdownTableElement
-from gslides_api.markdown.element import MarkdownTextElement as MarkdownTextElement
+from gslides_api.agnostic.element import (
+    ContentType,
+    MarkdownImageElement as MarkdownImageElement,
+    MarkdownTableElement as MarkdownTableElement,
+    MarkdownTextElement as MarkdownTextElement,
+    TableData,
+)
 from gslides_api.element.text_content import TextContent
 from gslides_api.domain.text import (
     ParagraphMarker,
@@ -60,7 +62,7 @@ class TestTextElementConversion:
 
         # Convert back to MarkdownTextElement
         with patch(
-            "gslides_api.element.shape.ShapeElement.to_markdown",
+            "gslides_api.element.shape.ShapeElement.read_text",
             return_value=original_markdown,
         ):
             converted_markdown_elem = shape_elem.to_markdown_element(name="Test Text")
@@ -332,7 +334,7 @@ class TestIntegrationRoundTrip:
         markdown_elem = MarkdownTextElement(name="Special", content=special_text)
 
         with patch(
-            "gslides_api.element.shape.ShapeElement.to_markdown",
+            "gslides_api.element.shape.ShapeElement.read_text",
             return_value=special_text,
         ):
             shape = ShapeElement.from_markdown_element(markdown_elem, "slide_123")
