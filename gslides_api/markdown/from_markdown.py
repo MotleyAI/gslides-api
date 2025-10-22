@@ -2,8 +2,6 @@ import copy
 from typing import Any, List, Optional, Tuple, Union
 
 import marko
-from marko.ext.gfm import gfm
-from marko.ext.gfm.elements import Strikethrough
 from marko.inline import RawText
 from pydantic import BaseModel, field_validator
 
@@ -12,9 +10,11 @@ from gslides_api.domain.request import Range, RangeType
 from gslides_api.domain.text import Link as GSlidesLink
 from gslides_api.domain.text import TextElement, TextRun, TextStyle
 from gslides_api.request.parent import GSlidesAPIRequest
-from gslides_api.request.request import (CreateParagraphBulletsRequest,
-                                         InsertTextRequest,
-                                         UpdateTextStyleRequest)
+from gslides_api.request.request import (
+    CreateParagraphBulletsRequest,
+    InsertTextRequest,
+    UpdateTextStyleRequest,
+)
 
 
 class LineBreakAfterParagraph(TextElement):
@@ -35,9 +35,7 @@ class ItemList(BaseModel):
 
     @field_validator("children", mode="before")
     @classmethod
-    def flatten_children(
-        cls, v: List[Union[TextElement, "ItemList"]]
-    ) -> List[TextElement]:
+    def flatten_children(cls, v: List[Union[TextElement, "ItemList"]]) -> List[TextElement]:
         """Flatten nested ItemLists by replacing them with their children."""
         flattened = []
         for item in v:
@@ -77,9 +75,7 @@ def markdown_to_text_elements(
     base_style: Optional[TextStyle] = None,
     heading_style: Optional[TextStyle] = None,
     start_index: int = 0,
-    bullet_glyph_preset: Optional[
-        BulletGlyphPreset
-    ] = BulletGlyphPreset.BULLET_DISC_CIRCLE_SQUARE,
+    bullet_glyph_preset: Optional[BulletGlyphPreset] = BulletGlyphPreset.BULLET_DISC_CIRCLE_SQUARE,
     numbered_glyph_preset: Optional[
         BulletGlyphPreset
     ] = BulletGlyphPreset.NUMBERED_DIGIT_ALPHA_ROMAN,
@@ -90,8 +86,8 @@ def markdown_to_text_elements(
     heading_style.bold = True
     # TODO: handle heading levels properly, with font size bumps for heading levels?
 
-    # Use GFM parser to support strikethrough and other GitHub Flavored Markdown features
-    doc = gfm.parse(markdown_text)
+    # Use standard markdown parser
+    doc = marko.Markdown().parse(markdown_text)
     elements_and_bullets = markdown_ast_to_text_elements(
         doc, base_style=base_style, heading_style=heading_style
     )
@@ -138,9 +134,7 @@ def markdown_to_text_elements(
                 endIndex=item.end_index,
             ),
             bulletPreset=(
-                bullet_glyph_preset
-                if isinstance(item, BulletPointGroup)
-                else numbered_glyph_preset
+                bullet_glyph_preset if isinstance(item, BulletPointGroup) else numbered_glyph_preset
             ),
         )
         requests.append(bullet_request)
@@ -172,8 +166,7 @@ def adjust_text_style_indices_for_tab_removal(
     style_requests = [
         r
         for r in requests
-        if isinstance(r, UpdateTextStyleRequest)
-        and not isinstance(r, UpdateWholeListStyleRequest)
+        if isinstance(r, UpdateTextStyleRequest) and not isinstance(r, UpdateWholeListStyleRequest)
     ]
     list_style_requests = [
         UpdateTextStyleRequest.model_validate(r.model_dump())
@@ -184,12 +177,8 @@ def adjust_text_style_indices_for_tab_removal(
     all_style_requests = list_style_requests + style_requests
 
     for s in all_style_requests:
-        s.textRange.startIndex -= sum(
-            [t <= s.textRange.startIndex for t in tab_end_indices]
-        )
-        s.textRange.endIndex -= sum(
-            [t <= s.textRange.endIndex for t in tab_end_indices]
-        )
+        s.textRange.startIndex -= sum([t <= s.textRange.startIndex for t in tab_end_indices])
+        s.textRange.endIndex -= sum([t <= s.textRange.endIndex for t in tab_end_indices])
         if s.textRange.startIndex < s.textRange.endIndex:
             other_requests.append(s)
 
@@ -232,9 +221,7 @@ def markdown_ast_to_text_elements(
         if list_depth == 0:
             out = [line_break]
         else:
-            raise ValueError(
-                "Google Slides API doesn't support newlines inside list items"
-            )
+            raise ValueError("Google Slides API doesn't support newlines inside list items")
             # out = [line_break_inside_list]
 
     elif isinstance(markdown_ast, marko.inline.CodeSpan):
@@ -280,20 +267,6 @@ def markdown_ast_to_text_elements(
             [],
         )
 
-    elif isinstance(markdown_ast, Strikethrough):
-        # Handle strikethrough text
-        base_style = copy.deepcopy(base_style)
-        base_style.strikethrough = True
-        out = sum(
-            [
-                markdown_ast_to_text_elements(
-                    child, base_style, heading_style, list_depth=list_depth
-                )
-                for child in markdown_ast.children
-            ],
-            [],
-        )
-
     elif isinstance(markdown_ast, marko.block.Paragraph):
         out = sum(
             [
@@ -329,14 +302,10 @@ def markdown_ast_to_text_elements(
         )
         # Create the appropriate group type based on whether this is an ordered list
         if list_depth == 0:
-            children_no_line_breaks = [
-                c for c in pre_out if not isinstance(c, LineBreakInsideList)
-            ]
+            children_no_line_breaks = [c for c in pre_out if not isinstance(c, LineBreakInsideList)]
             if markdown_ast.ordered:
                 out = pre_out + [
-                    NumberedListGroup(
-                        children=children_no_line_breaks, style=base_style
-                    )
+                    NumberedListGroup(children=children_no_line_breaks, style=base_style)
                 ]
             else:
                 out = pre_out + [
