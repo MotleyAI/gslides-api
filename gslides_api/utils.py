@@ -25,31 +25,30 @@ def image_url_is_valid(url: str) -> bool:
     Returns:
         True if URL appears to be valid and accessible
     """
-    import urllib.error
-    import urllib.request
 
     if not url or not url.startswith(("http://", "https://")):
         return False
 
+    # This check was considered excessive and was removed
     # Check for common image extensions
-    valid_extensions = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp")
-    url_lower = url.lower()
+    # valid_extensions = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp")
+    # url_lower = url.lower()
 
-    # Allow URLs with parameters that might contain image extensions
-    if not any(ext in url_lower for ext in valid_extensions):
-        # If no obvious image extension, try a quick HEAD request
-        try:
-            req = urllib.request.Request(url, method="HEAD")
-            req.add_header(
-                "User-Agent", "Mozilla/5.0 (compatible; Google-Slides-Templater/1.0)"
-            )
+    # # Allow URLs with parameters that might contain image extensions
+    # if not any(ext in url_lower for ext in valid_extensions):
+    #     # If no obvious image extension, try a quick HEAD request
+    #     try:
+    #         req = urllib.request.Request(url, method="HEAD")
+    #         req.add_header(
+    #             "User-Agent", "Mozilla/5.0 (compatible; Google-Slides-Templater/1.0)"
+    #         )
 
-            with urllib.request.urlopen(req, timeout=5) as response:
-                content_type = response.headers.get("Content-Type", "")
-                return content_type.startswith("image/")
+    #         with urllib.request.urlopen(req, timeout=5) as response:
+    #             content_type = response.headers.get("Content-Type", "")
+    #             return content_type.startswith("image/")
 
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
-            logger.warning(f"Could not validate image URL: {url}")
-            return False
+    #     except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
+    #         logger.warning(f"Could not validate image URL: {url}")
+    #         return False
 
     return True
