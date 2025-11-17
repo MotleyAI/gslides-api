@@ -18,7 +18,7 @@ from gslides_api.request.request import (
     ReplaceImageRequest,
     UpdateImagePropertiesRequest,
 )
-from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
+from gslides_api.utils import dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +110,6 @@ class ImageElement(PageElementBase):
         """
         if not new_url.startswith(("http://", "https://")):
             raise ValueError("Image URL must start with http:// or https://")
-
-        # Validate URL before attempting replacement
-        if not image_url_is_valid(new_url):
-            raise ValueError(f"Image URL is not accessible or invalid: {new_url}")
 
         request = ReplaceImageRequest(
             imageObjectId=objectId,
