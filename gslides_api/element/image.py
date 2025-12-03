@@ -111,10 +111,6 @@ class ImageElement(PageElementBase):
         if not new_url.startswith(("http://", "https://")):
             raise ValueError("Image URL must start with http:// or https://")
 
-        # # Validate URL before attempting replacement
-        # if not image_url_is_valid(new_url):
-        #     raise ValueError(f"Image URL is not accessible or invalid: {new_url}")
-
         request = ReplaceImageRequest(
             imageObjectId=objectId,
             url=new_url,

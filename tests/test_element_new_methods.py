@@ -135,23 +135,12 @@ class TestImageElementToMarkdown:
 class TestImageElementReplaceImageRequests:
     """Test ImageElement._replace_image_requests() method."""
 
-    @patch("gslides_api.element.image.image_url_is_valid")
-    def test_replace_image_requests_success(self, mock_validate):
+    def test_replace_image_requests_success(self):
         """Test successful image replacement request generation."""
-        mock_validate.return_value = True
-
-        image_element = ImageElement(
-            objectId="test_image",
-            size=Size(width=100, height=100),
-            transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-            image=Image(contentUrl="https://example.com/old_image.jpg"),
-        )
-
         result = ImageElement._replace_image_requests(
             "test_image", "https://example.com/new_image.jpg"
         )
 
-        mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
         # Now returns a domain object instead of a dictionary
         assert len(result) == 1
         assert hasattr(result[0], "imageObjectId")
@@ -170,40 +159,14 @@ class TestImageElementReplaceImageRequests:
         with pytest.raises(ValueError, match="Image URL must start with http:// or https://"):
             ImageElement._replace_image_requests("test_image", "ftp://example.com/image.jpg")
 
-    @patch("gslides_api.element.image.image_url_is_valid")
-    def test_replace_image_requests_url_not_accessible(self, mock_validate):
-        """Test _replace_image_requests with URL that's not accessible."""
-        mock_validate.return_value = False
-
-        image_element = ImageElement(
-            objectId="test_image",
-            size=Size(width=100, height=100),
-            transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-            image=Image(contentUrl="https://example.com/image.jpg"),
-        )
-
-        with pytest.raises(ValueError, match="Image URL is not accessible or invalid"):
-            ImageElement._replace_image_requests("test_image", "https://invalid-url.com/image.jpg")
-
-    @patch("gslides_api.element.image.image_url_is_valid")
-    def test_replace_image_requests_with_method(self, mock_validate):
+    def test_replace_image_requests_with_method(self):
         """Test _replace_image_requests with ImageReplaceMethod."""
-        mock_validate.return_value = True
-
-        image_element = ImageElement(
-            objectId="test_image",
-            size=Size(width=100, height=100),
-            transform=Transform(translateX=0, translateY=0, scaleX=1, scaleY=1),
-            image=Image(contentUrl="https://example.com/old_image.jpg"),
-        )
-
         result = ImageElement._replace_image_requests(
             "test_image",
             "https://example.com/new_image.jpg",
             ImageReplaceMethod.CENTER_CROP,
         )
 
-        mock_validate.assert_called_once_with("https://example.com/new_image.jpg")
         # Now returns a domain object instead of a dictionary
         assert len(result) == 1
         assert hasattr(result[0], "imageObjectId")

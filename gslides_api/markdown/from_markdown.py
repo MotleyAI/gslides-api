@@ -1,4 +1,5 @@
 import copy
+import logging
 from typing import Any, List, Optional, Tuple, Union
 
 import marko
@@ -15,6 +16,8 @@ from gslides_api.request.request import (
     InsertTextRequest,
     UpdateTextStyleRequest,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class LineBreakAfterParagraph(TextElement):
@@ -221,8 +224,8 @@ def markdown_ast_to_text_elements(
         if list_depth == 0:
             out = [line_break]
         else:
+            # Google Slides API doesn't support newlines inside list items
             raise ValueError("Google Slides API doesn't support newlines inside list items")
-            # out = [line_break_inside_list]
 
     elif isinstance(markdown_ast, marko.inline.CodeSpan):
         base_style = copy.deepcopy(base_style)
@@ -342,7 +345,8 @@ def markdown_ast_to_text_elements(
         )
 
     else:
-        raise NotImplementedError(f"Unsupported markdown element: {markdown_ast}")
+        logger.warning(f"Unsupported markdown element: {markdown_ast}")
+        out = []
 
     for element in out:
         assert isinstance(
