@@ -18,7 +18,7 @@ from gslides_api.request.request import (
     ReplaceImageRequest,
     UpdateImagePropertiesRequest,
 )
-from gslides_api.utils import dict_to_dot_separated_field_list, image_url_is_valid
+from gslides_api.utils import dict_to_dot_separated_field_list
 
 logger = logging.getLogger(__name__)
 

@@ -5,6 +5,7 @@ from functools import wraps
 from typing import Any, Callable, Dict, Optional
 
 from google.auth.transport.requests import Request
+from google.auth.credentials import Credentials as BaseCredentials
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
@@ -84,11 +85,11 @@ class GoogleAPIClient:
 
         return decorator
 
-    def set_credentials(self, credentials: Optional[Credentials]) -> None:
+    def set_credentials(self, credentials: Optional[BaseCredentials]) -> None:
         """Sets the credentials
 
-        :param credentials: :class:`google.oauth2.credentials.Credentials`
-        :type credentials: :class:`google.oauth2.credentials.Credentials`
+        :param credentials: :class:`google.auth.credentials.Credentials`
+        :type credentials: :class:`google.auth.credentials.Credentials`
 
         """
         self.crdtls = credentials
