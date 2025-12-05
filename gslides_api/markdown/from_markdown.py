@@ -6,6 +6,7 @@ import marko
 from marko.inline import RawText
 from pydantic import BaseModel, field_validator
 
+from gslides_api.agnostic.ir import FormattedDocument, FormattedList, FormattedParagraph
 from gslides_api.domain.domain import BulletGlyphPreset
 from gslides_api.domain.request import Range, RangeType
 from gslides_api.domain.text import Link as GSlidesLink
@@ -71,6 +72,80 @@ class NumberedListGroup(ItemList):
 
 class UpdateWholeListStyleRequest(UpdateTextStyleRequest):
     pass
+
+
+def _ir_to_text_elements(
+    ir_doc: FormattedDocument, base_style: Optional[TextStyle] = None
+) -> list[TextElement | BulletPointGroup | NumberedListGroup]:
+    """Convert platform-agnostic IR to Google Slides TextElement format.
+
+    This function converts the IR to the internal format used by Google Slides,
+    including special markers like LineBreakAfterParagraph and ListItemTab.
+
+    Args:
+        ir_doc: The intermediate representation document
+        base_style: Base text style
+
+    Returns:
+        List of TextElement objects and ItemList objects (BulletPointGroup/NumberedListGroup)
+    """
+    base_style = base_style or TextStyle()
+    elements = []
+
+    for element in ir_doc.elements:
+        if isinstance(element, FormattedParagraph):
+            # Convert paragraph runs to TextElements
+            for run in element.runs:
+                elements.append(
+                    TextElement(
+                        endIndex=0,
+                        textRun=TextRun(content=run.content, style=run.style),
+                    )
+                )
+            # Add line break after paragraph (create new instance each time)
+            elements.append(
+                LineBreakAfterParagraph(
+                    endIndex=0,
+                    textRun=TextRun(content="\n", style=base_style),
+                )
+            )
+
+        elif isinstance(element, FormattedList):
+            # Convert list to TextElements with tabs
+            list_elements = []
+            for item in element.items:
+                # Add tabs for nesting level (Google Slides quirk)
+                for _ in range(item.nesting_level + 1):
+                    tab_elem = ListItemTab(
+                        endIndex=0, textRun=TextRun(content="\t", style=element.style or base_style)
+                    )
+                    list_elements.append(tab_elem)
+                    elements.append(tab_elem)
+
+                # Add the item content
+                for para in item.paragraphs:
+                    for run in para.runs:
+                        text_elem = TextElement(
+                            endIndex=0,
+                            textRun=TextRun(content=run.content, style=run.style),
+                        )
+                        list_elements.append(text_elem)
+                        elements.append(text_elem)
+                    # Add line break after paragraph within list item (create new instance)
+                    line_break = LineBreakAfterParagraph(
+                        endIndex=0,
+                        textRun=TextRun(content="\n", style=base_style),
+                    )
+                    elements.append(line_break)
+                    list_elements.append(line_break)
+
+            # Create the appropriate list group that references the elements
+            if element.ordered:
+                elements.append(NumberedListGroup(children=list_elements, style=element.style))
+            else:
+                elements.append(BulletPointGroup(children=list_elements, style=element.style))
+
+    return elements
 
 
 def markdown_to_text_elements(
