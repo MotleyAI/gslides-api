@@ -2,6 +2,11 @@
 
 This module provides data structures that represent formatted text in a way
 that can be converted to either Google Slides or PowerPoint (or other formats).
+
+The IR uses platform-agnostic style classes:
+- FullTextStyle: Complete style with both markdown-renderable and rich parts
+- RichStyle: Non-markdown-renderable properties (colors, fonts, etc.)
+- MarkdownRenderableStyle: Properties that can be encoded in markdown (bold, etc.)
 """
 
 from enum import Enum
@@ -9,7 +14,7 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from gslides_api.domain.text import TextStyle
+from gslides_api.agnostic.text import FullTextStyle, RichStyle
 
 
 class IRElementType(Enum):
@@ -24,11 +29,13 @@ class FormattedTextRun(BaseModel):
     """Platform-agnostic representation of a styled text run.
 
     A text run is a contiguous piece of text with consistent styling.
+    The style includes both markdown-renderable properties (bold, italic, etc.)
+    and rich properties (colors, fonts, etc.).
     """
 
     content: str = Field(description="The text content")
-    style: TextStyle = Field(
-        default_factory=TextStyle, description="Style applied to this text run"
+    style: FullTextStyle = Field(
+        default_factory=FullTextStyle, description="Style applied to this text run"
     )
 
 
@@ -67,14 +74,16 @@ class FormattedList(BaseModel):
     """Platform-agnostic representation of a list.
 
     A list contains list items and can be ordered (numbered) or unordered (bullets).
+    The style is RichStyle (non-markdown-renderable) since markdown formatting
+    is stored in the markdown string itself.
     """
 
     items: List[FormattedListItem] = Field(
         default_factory=list, description="Items in this list"
     )
     ordered: bool = Field(default=False, description="Whether this is an ordered list")
-    style: Optional[TextStyle] = Field(
-        default=None, description="Base style applied to all items in the list"
+    style: Optional[RichStyle] = Field(
+        default=None, description="Base rich style applied to all items in the list"
     )
 
 

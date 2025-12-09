@@ -2,6 +2,8 @@ from typing import List, Optional
 
 from pydantic import Field, field_validator
 
+from gslides_api.agnostic.element import MarkdownTextElement as MarkdownTextElement
+from gslides_api.agnostic.text import RichStyle
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
 from gslides_api.domain.domain import (
@@ -19,7 +21,6 @@ from gslides_api.domain.text import Type
 from gslides_api.domain.text import Type as ShapeType
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.text_content import TextContent
-from gslides_api.agnostic.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
 from gslides_api.markdown.to_markdown import text_elements_to_markdown
 from gslides_api.request.parent import GSlidesAPIRequest
@@ -50,7 +51,11 @@ class Shape(GSlidesBaseModel):
     placeholder: Optional[Placeholder] = None
 
     @property
-    def placeholder_styles(self) -> list[TextStyle]:
+    def placeholder_styles(self) -> list[RichStyle]:
+        """Get styles from the placeholder's parent object.
+
+        Returns RichStyle objects (non-markdown-renderable properties).
+        """
         if self.placeholder is None or self.placeholder.parent_object is None:
             return []
         return self.placeholder.parent_object.styles(skip_whitespace=False)
@@ -117,7 +122,15 @@ class ShapeElement(PageElementBase):
         client = api_client or default_api_client
         return client.batch_update(self.delete_text_request(), self.presentation_id)
 
-    def styles(self, skip_whitespace: bool = True) -> List[TextStyle] | None:
+    def styles(self, skip_whitespace: bool = True) -> List[RichStyle] | None:
+        """Extract all unique RichStyle objects from the shape's text.
+
+        Returns only RichStyle (non-markdown-renderable properties like colors, fonts).
+        Text that differs only in bold/italic/strikethrough is considered ONE style,
+        since those properties are stored in the markdown string itself.
+
+        If no styles are found in the text, falls back to placeholder styles.
+        """
         if not hasattr(self.shape, "text") or self.shape.text is None:
             styles = None
         else:
@@ -139,11 +152,23 @@ class ShapeElement(PageElementBase):
         self,
         text: str,
         as_markdown: bool = True,
-        styles: List[TextStyle] | None = None,
+        styles: List[RichStyle] | None = None,
         overwrite: bool = True,
         autoscale: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
     ):
+        """Write text to the shape, optionally parsing as markdown.
+
+        Args:
+            text: The text content to write (can be markdown if as_markdown=True)
+            as_markdown: If True, parse text as markdown and apply formatting
+            styles: List of RichStyle objects to apply. If None, uses self.styles().
+                   RichStyle contains non-markdown properties (colors, fonts, etc.)
+                   Markdown formatting (bold, italic) is derived from parsing the text.
+            overwrite: If True, delete existing text before writing
+            autoscale: If True, scale font size to fit text in the element
+            api_client: Optional client to use for the API call
+        """
         size_inches = self.absolute_size(OutputUnit.IN)
         if not self.shape.text:
             self.shape.text = TextContent(textElements=[])
