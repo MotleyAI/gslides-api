@@ -8,7 +8,9 @@ from gslides_api.agnostic.text import (
     BaselineOffset,
     FullTextStyle,
     MarkdownRenderableStyle,
+    ParagraphStyle,
     RichStyle,
+    SpacingValue,
 )
 
 
@@ -394,3 +396,129 @@ class TestStyleUniqueness:
 
         # Should be TWO unique styles
         assert len(styles) == 2
+
+
+class TestSpacingValue:
+    """Tests for SpacingValue class."""
+
+    def test_default_values(self):
+        """Should have None defaults."""
+        spacing = SpacingValue()
+        assert spacing.points is None
+        assert spacing.percentage is None
+
+    def test_from_pptx_pts(self):
+        """Should create from PPTX spcPts val (100ths of a point)."""
+        spacing = SpacingValue.from_pptx_pts("900")  # 9pt
+        assert spacing.points == 9.0
+        assert spacing.percentage is None
+
+    def test_from_pptx_pct(self):
+        """Should create from PPTX spcPct val (1/1000ths of percent)."""
+        spacing = SpacingValue.from_pptx_pct("110000")  # 110%
+        assert spacing.percentage == 1.1
+        assert spacing.points is None
+
+    def test_to_pptx_pts(self):
+        """Should convert to PPTX spcPts val."""
+        spacing = SpacingValue(points=9.0)
+        assert spacing.to_pptx_pts() == "900"
+
+    def test_to_pptx_pct(self):
+        """Should convert to PPTX spcPct val."""
+        spacing = SpacingValue(percentage=1.1)
+        assert spacing.to_pptx_pct() == "110000"
+
+    def test_roundtrip_pts(self):
+        """Should roundtrip through PPTX pts format."""
+        original = SpacingValue(points=12.0)
+        roundtripped = SpacingValue.from_pptx_pts(original.to_pptx_pts())
+        assert roundtripped.points == 12.0
+
+    def test_roundtrip_pct(self):
+        """Should roundtrip through PPTX pct format."""
+        original = SpacingValue(percentage=1.15)
+        roundtripped = SpacingValue.from_pptx_pct(original.to_pptx_pct())
+        # Allow small floating point difference
+        assert abs(roundtripped.percentage - 1.15) < 0.00001
+
+
+class TestParagraphAlignment:
+    """Tests for ParagraphAlignment enum."""
+
+    def test_alignment_values(self):
+        """Should have correct PPTX values."""
+        from gslides_api.agnostic.text import ParagraphAlignment
+
+        assert ParagraphAlignment.LEFT.value == "l"
+        assert ParagraphAlignment.CENTER.value == "ctr"
+        assert ParagraphAlignment.RIGHT.value == "r"
+        assert ParagraphAlignment.JUSTIFIED.value == "just"
+
+
+class TestParagraphStyle:
+    """Tests for ParagraphStyle class."""
+
+    def test_default_values(self):
+        """Should have None defaults."""
+        style = ParagraphStyle()
+        assert style.margin_left is None
+        assert style.margin_right is None
+        assert style.indent is None
+        assert style.alignment is None
+        assert style.line_spacing is None
+        assert style.space_before is None
+        assert style.space_after is None
+        assert style.level is None
+
+    def test_with_margins_and_indent(self):
+        """Should support margin and indent values."""
+        style = ParagraphStyle(
+            margin_left=520700,
+            margin_right=0,
+            indent=-209550,
+        )
+        assert style.margin_left == 520700
+        assert style.margin_right == 0
+        assert style.indent == -209550
+
+    def test_with_spacing(self):
+        """Should support spacing values."""
+        style = ParagraphStyle(
+            space_before=SpacingValue(points=9.0),
+            space_after=SpacingValue(points=0.0),
+            line_spacing=SpacingValue(percentage=1.1),
+        )
+        assert style.space_before.points == 9.0
+        assert style.space_after.points == 0.0
+        assert style.line_spacing.percentage == 1.1
+
+    def test_has_bullet_properties_true(self):
+        """Should detect bullet paragraph properties."""
+        style = ParagraphStyle(
+            margin_left=520700,
+            indent=-209550,
+        )
+        assert style.has_bullet_properties() is True
+
+    def test_has_bullet_properties_false_no_margin(self):
+        """Should not detect bullet without margin."""
+        style = ParagraphStyle(indent=-209550)
+        assert style.has_bullet_properties() is False
+
+    def test_has_bullet_properties_false_no_indent(self):
+        """Should not detect bullet without indent."""
+        style = ParagraphStyle(margin_left=520700)
+        assert style.has_bullet_properties() is False
+
+    def test_has_bullet_properties_false_positive_indent(self):
+        """Should not detect bullet with positive indent."""
+        style = ParagraphStyle(margin_left=520700, indent=100000)
+        assert style.has_bullet_properties() is False
+
+    def test_with_alignment(self):
+        """Should support alignment."""
+        from gslides_api.agnostic.text import ParagraphAlignment
+
+        style = ParagraphStyle(alignment=ParagraphAlignment.CENTER)
+        assert style.alignment == ParagraphAlignment.CENTER

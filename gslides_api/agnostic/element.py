@@ -451,14 +451,63 @@ class MarkdownTableElement(MarkdownSlideElement):
 
     @staticmethod
     def _extract_text_from_node(node) -> str:
-        """Extract text content from a Marko AST node."""
+        """Extract text content from a Marko AST node, preserving markdown formatting.
+
+        Handles:
+        - Strong (bold) -> **text**
+        - Emphasis (italic) -> *text*
+        - Strikethrough -> ~~text~~
+        - Code -> `text`
+        - RawText -> plain text
+        """
+        node_class = getattr(node, "__class__", None)
+        node_name = node_class.__name__ if node_class else None
+
+        # Handle formatting nodes by wrapping their content
+        # Note: Marko uses "StrongEmphasis" for ** and "Emphasis" for *
+        if node_name in ("Strong", "StrongEmphasis"):
+            inner_text = ""
+            if hasattr(node, "children"):
+                inner_text = "".join(
+                    MarkdownTableElement._extract_text_from_node(child)
+                    for child in node.children
+                )
+            return f"**{inner_text}**"
+        elif node_name in ("Emphasis",):
+            inner_text = ""
+            if hasattr(node, "children"):
+                inner_text = "".join(
+                    MarkdownTableElement._extract_text_from_node(child)
+                    for child in node.children
+                )
+            return f"*{inner_text}*"
+        elif node_name == "Strikethrough":
+            inner_text = ""
+            if hasattr(node, "children"):
+                inner_text = "".join(
+                    MarkdownTableElement._extract_text_from_node(child)
+                    for child in node.children
+                )
+            return f"~~{inner_text}~~"
+        elif node_name == "CodeSpan":
+            inner_text = ""
+            if hasattr(node, "children"):
+                if isinstance(node.children, str):
+                    inner_text = node.children
+                else:
+                    inner_text = "".join(
+                        MarkdownTableElement._extract_text_from_node(child)
+                        for child in node.children
+                    )
+            return f"`{inner_text}`"
+        elif node_name == "RawText":
+            return str(node.children) if node.children else ""
+
+        # For other nodes, recursively process children
         if hasattr(node, "children"):
             text_parts = []
             for child in node.children:
-                if hasattr(child, "__class__") and child.__class__.__name__ == "RawText":
-                    text_parts.append(str(child.children))
-                else:
-                    text_parts.append(MarkdownTableElement._extract_text_from_node(child))
+                text_parts.append(MarkdownTableElement._extract_text_from_node(child))
             return "".join(text_parts)
         elif hasattr(node, "children") and isinstance(node.children, str):
             return node.children

@@ -22,7 +22,10 @@ from gslides_api.agnostic.text import (
     BaselineOffset,
     FullTextStyle,
     MarkdownRenderableStyle,
+    ParagraphAlignment,
+    ParagraphStyle,
     RichStyle,
+    SpacingValue,
 )
 
 __all__ = [
@@ -32,7 +35,10 @@ __all__ = [
     "BaselineOffset",
     "FullTextStyle",
     "MarkdownRenderableStyle",
+    "ParagraphAlignment",
+    "ParagraphStyle",
     "RichStyle",
+    "SpacingValue",
     # Converters
     "full_style_to_gslides",
     "gslides_style_to_full",

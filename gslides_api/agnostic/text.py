@@ -158,3 +158,149 @@ class AbstractTextRun(BaseModel):
 
     content: str
     style: FullTextStyle = Field(default_factory=FullTextStyle)
+
+
+class ParagraphAlignment(Enum):
+    """Paragraph horizontal alignment."""
+
+    LEFT = "l"
+    CENTER = "ctr"
+    RIGHT = "r"
+    JUSTIFIED = "just"
+    JUSTIFIED_LOW = "justLow"  # Low kashida justify
+    DISTRIBUTED = "dist"
+    THAI_DISTRIBUTED = "thaiDist"
+
+
+class SpacingValue(BaseModel):
+    """Spacing value that can be either points or percentage.
+
+    In PPTX XML:
+    - spcPts val="900" means 9pt (value is in 100ths of a point)
+    - spcPct val="110000" means 110% (value is in 1/1000ths of a percent)
+    """
+
+    points: Optional[float] = None  # In points (e.g., 9.0 for 9pt)
+    percentage: Optional[float] = None  # As decimal (e.g., 1.1 for 110%)
+
+    @classmethod
+    def from_pptx_pts(cls, val: str) -> "SpacingValue":
+        """Create from PPTX spcPts val (100ths of a point)."""
+        return cls(points=int(val) / 100)
+
+    @classmethod
+    def from_pptx_pct(cls, val: str) -> "SpacingValue":
+        """Create from PPTX spcPct val (1/1000ths of percent)."""
+        return cls(percentage=int(val) / 100000)
+
+    def to_pptx_pts(self) -> str:
+        """Convert to PPTX spcPts val string."""
+        if self.points is not None:
+            return str(int(self.points * 100))
+        return "0"
+
+    def to_pptx_pct(self) -> str:
+        """Convert to PPTX spcPct val string."""
+        if self.percentage is not None:
+            return str(int(self.percentage * 100000))
+        return "100000"
+
+
+class ParagraphStyle(BaseModel):
+    """Platform-agnostic paragraph-level formatting properties.
+
+    These are distinct from text/run-level styles (FullTextStyle) and control
+    paragraph layout: margins, indents, spacing, alignment, etc.
+
+    All EMU (English Metric Unit) values are stored in their native EMU format.
+    1 inch = 914400 EMU, 1 point = 12700 EMU.
+    """
+
+    # Margins and indents (EMU values stored as integers)
+    margin_left: Optional[int] = None  # marL - left margin
+    margin_right: Optional[int] = None  # marR - right margin
+    indent: Optional[int] = None  # indent - first line (negative = hanging)
+
+    # Alignment
+    alignment: Optional[ParagraphAlignment] = None  # algn
+    right_to_left: Optional[bool] = None  # rtl
+
+    # Spacing
+    line_spacing: Optional[SpacingValue] = None  # lnSpc
+    space_before: Optional[SpacingValue] = None  # spcBef
+    space_after: Optional[SpacingValue] = None  # spcAft
+
+    # Other properties
+    level: Optional[int] = None  # lvl - outline/list level (0-8)
+    default_tab_size: Optional[int] = None  # defTabSz (EMU)
+
+    @classmethod
+    def from_pptx_pPr(cls, pPr, ns: str) -> "ParagraphStyle":
+        """Create from a PPTX paragraph properties XML element.
+
+        Args:
+            pPr: The <a:pPr> XML element
+            ns: The DrawingML namespace string
+
+        Returns:
+            ParagraphStyle with extracted properties
+        """
+        style = cls()
+
+        # Extract attributes
+        if pPr.get("marL"):
+            style.margin_left = int(pPr.get("marL"))
+        if pPr.get("marR"):
+            style.margin_right = int(pPr.get("marR"))
+        if pPr.get("indent"):
+            style.indent = int(pPr.get("indent"))
+        if pPr.get("algn"):
+            try:
+                style.alignment = ParagraphAlignment(pPr.get("algn"))
+            except ValueError:
+                pass
+        if pPr.get("rtl"):
+            style.right_to_left = pPr.get("rtl") == "1"
+        if pPr.get("lvl"):
+            style.level = int(pPr.get("lvl"))
+        if pPr.get("defTabSz"):
+            style.default_tab_size = int(pPr.get("defTabSz"))
+
+        # Extract child elements for spacing
+        lnSpc = pPr.find(f"{{{ns}}}lnSpc")
+        if lnSpc is not None:
+            spcPct = lnSpc.find(f"{{{ns}}}spcPct")
+            spcPts = lnSpc.find(f"{{{ns}}}spcPts")
+            if spcPct is not None and spcPct.get("val"):
+                style.line_spacing = SpacingValue.from_pptx_pct(spcPct.get("val"))
+            elif spcPts is not None and spcPts.get("val"):
+                style.line_spacing = SpacingValue.from_pptx_pts(spcPts.get("val"))
+
+        spcBef = pPr.find(f"{{{ns}}}spcBef")
+        if spcBef is not None:
+            spcPct = spcBef.find(f"{{{ns}}}spcPct")
+            spcPts = spcBef.find(f"{{{ns}}}spcPts")
+            if spcPct is not None and spcPct.get("val"):
+                style.space_before = SpacingValue.from_pptx_pct(spcPct.get("val"))
+            elif spcPts is not None and spcPts.get("val"):
+                style.space_before = SpacingValue.from_pptx_pts(spcPts.get("val"))
+
+        spcAft = pPr.find(f"{{{ns}}}spcAft")
+        if spcAft is not None:
+            spcPct = spcAft.find(f"{{{ns}}}spcPct")
+            spcPts = spcAft.find(f"{{{ns}}}spcPts")
+            if spcPct is not None and spcPct.get("val"):
+                style.space_after = SpacingValue.from_pptx_pct(spcPct.get("val"))
+            elif spcPts is not None and spcPts.get("val"):
+                style.space_after = SpacingValue.from_pptx_pts(spcPts.get("val"))
+
+        return style
+
+    def has_bullet_properties(self) -> bool:
+        """Check if this style looks like a bullet paragraph (has marL and negative indent)."""
+        return (
+            self.margin_left is not None
+            and self.margin_left > 0
+            and self.indent is not None
+            and self.indent < 0
+        )
