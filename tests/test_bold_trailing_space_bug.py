@@ -2,13 +2,29 @@
 
 import pytest
 
-from gslides_api.markdown.to_markdown import (
-    text_elements_to_markdown,
-    _apply_markdown_formatting,
-)
+from gslides_api.agnostic.converters import gslides_style_to_full, text_elements_to_ir
+from gslides_api.agnostic.ir_to_markdown import ir_to_markdown, _format_run_to_markdown
 from gslides_api.markdown.from_markdown import markdown_to_text_elements
 from gslides_api.domain.text import TextElement, TextRun, TextStyle
 from gslides_api.request.request import InsertTextRequest
+
+
+def _apply_markdown_formatting(content: str, style: TextStyle) -> str:
+    """Wrapper to convert old-style calls to new IR-based formatting.
+
+    This provides backward compatibility for tests.
+    """
+    full_style = gslides_style_to_full(style)
+    return _format_run_to_markdown(content, full_style)
+
+
+def text_elements_to_markdown(elements):
+    """Wrapper to convert old-style calls to new IR-based conversion.
+
+    This provides backward compatibility for tests.
+    """
+    ir_doc = text_elements_to_ir(elements)
+    return ir_to_markdown(ir_doc)
 
 
 class TestBoldTrailingSpaceBug:

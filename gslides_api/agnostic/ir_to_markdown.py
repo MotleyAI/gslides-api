@@ -35,6 +35,9 @@ def ir_to_markdown(doc: FormattedDocument) -> str:
             line = _paragraph_to_markdown(element)
             if line is not None:
                 result_lines.append(line)
+            else:
+                # Empty paragraph represents a blank line - preserve it
+                result_lines.append("")
         elif isinstance(element, FormattedList):
             list_lines = _list_to_markdown(element)
             result_lines.extend(list_lines)
@@ -77,9 +80,28 @@ def _list_to_markdown(list_element: FormattedList) -> List[str]:
         List of markdown lines
     """
     lines = []
+    # Track item numbers per nesting level (each level has its own counter)
+    item_numbers_by_level = {}
+
     for item in list_element.items:
-        indent = "  " * item.nesting_level
-        bullet = "1. " if list_element.ordered else "- "
+        nesting_level = item.nesting_level
+        indent = "    " * nesting_level  # 4 spaces per level
+
+        # Initialize or increment counter for this nesting level
+        if nesting_level not in item_numbers_by_level:
+            item_numbers_by_level[nesting_level] = 1
+        else:
+            item_numbers_by_level[nesting_level] += 1
+
+        # Reset counters for all deeper nesting levels when we go back to a higher level
+        levels_to_reset = [lvl for lvl in item_numbers_by_level if lvl > nesting_level]
+        for lvl in levels_to_reset:
+            del item_numbers_by_level[lvl]
+
+        if list_element.ordered:
+            bullet = f"{item_numbers_by_level[nesting_level]}. "
+        else:
+            bullet = "* "
 
         for i, para in enumerate(item.paragraphs):
             para_md = _paragraph_to_markdown(para)
@@ -88,7 +110,7 @@ def _list_to_markdown(list_element: FormattedList) -> List[str]:
                     lines.append(f"{indent}{bullet}{para_md}")
                 else:
                     # Continuation lines in the same list item
-                    lines.append(f"{indent}  {para_md}")
+                    lines.append(f"{indent}    {para_md}")
 
     return lines
 

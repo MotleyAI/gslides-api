@@ -361,8 +361,8 @@ class TestIrToMarkdown:
             ]
         )
         result = ir_to_markdown(doc)
-        assert "- Item one" in result
-        assert "- Item two" in result
+        assert "* Item one" in result
+        assert "* Item two" in result
 
     def test_ordered_list(self):
         """Ordered list should use number markers."""
@@ -391,7 +391,7 @@ class TestIrToMarkdown:
         )
         result = ir_to_markdown(doc)
         assert "1. First" in result
-        assert "1. Second" in result
+        assert "2. Second" in result
 
 
 class TestBugScenarios:

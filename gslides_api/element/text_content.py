@@ -3,14 +3,18 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typeguard import typechecked
 
-from gslides_api.agnostic.converters import gslides_style_to_rich, rich_style_to_gslides
+from gslides_api.agnostic.converters import (
+    gslides_style_to_rich,
+    rich_style_to_gslides,
+    text_elements_to_ir,
+)
+from gslides_api.agnostic.ir_to_markdown import ir_to_markdown
 from gslides_api.agnostic.text import RichStyle
 from gslides_api.domain.domain import Dimension, GSlidesBaseModel, Unit
 from gslides_api.domain.request import Range, RangeType
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.text import TextElement, TextStyle
 from gslides_api.markdown.from_markdown import markdown_to_text_elements, text_elements_to_requests
-from gslides_api.markdown.to_markdown import text_elements_to_markdown
 from gslides_api.request.parent import GSlidesAPIRequest
 from gslides_api.request.request import (
     DeleteParagraphBulletsRequest,
@@ -84,7 +88,9 @@ class TextContent(GSlidesBaseModel):
             if not self.textElements:
                 return ""
 
-            return text_elements_to_markdown(self.textElements)
+            # Convert to IR first, then to markdown (uses run consolidation)
+            ir_doc = text_elements_to_ir(self.textElements)
+            return ir_to_markdown(ir_doc)
         else:
             out = []
             for te in self.textElements:
