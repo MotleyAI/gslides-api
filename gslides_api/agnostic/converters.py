@@ -4,8 +4,15 @@ This module provides bidirectional conversion between Google Slides API
 text styles and the platform-agnostic MarkdownRenderableStyle/RichStyle classes.
 """
 
-from typing import Optional
+from typing import List, Optional
 
+from gslides_api.agnostic.ir import (
+    FormattedDocument,
+    FormattedList,
+    FormattedListItem,
+    FormattedParagraph,
+    FormattedTextRun,
+)
 from gslides_api.agnostic.text import (
     AbstractColor,
     BaselineOffset,
@@ -23,6 +30,7 @@ from gslides_api.domain.domain import (
 from gslides_api.domain.text import (
     BaselineOffset as GSlidesBaselineOffset,
     Link,
+    TextElement,
     TextStyle,
     WeightedFontFamily,
 )
@@ -273,3 +281,176 @@ def markdown_style_to_gslides(markdown: MarkdownRenderableStyle) -> TextStyle:
         fontFamily=font_family,
         link=link,
     )
+
+
+def _is_numbered_list_glyph(glyph: str) -> bool:
+    """Determine if a glyph represents a numbered list item."""
+    if not glyph:
+        return False
+    # Check if the glyph contains digits or letters (indicating numbering)
+    return any(char.isdigit() for char in glyph) or any(
+        char.isalpha() for char in glyph
+    )
+
+
+def text_elements_to_ir(elements: List[TextElement]) -> FormattedDocument:
+    """Convert Google Slides TextElements to platform-agnostic IR.
+
+    This function parses Google Slides TextElement objects and produces a
+    FormattedDocument with FormattedParagraphs and FormattedLists.
+
+    Args:
+        elements: List of TextElement objects from Google Slides API
+
+    Returns:
+        FormattedDocument containing the converted content
+    """
+    if not elements:
+        return FormattedDocument()
+
+    result_elements = []
+    current_paragraph_runs = []
+
+    # Track list state
+    current_list = None  # FormattedList being built
+    current_list_item_runs = []  # Runs for the current list item
+    pending_bullet_info = None  # (nesting_level, is_ordered) for next text
+    in_list_item = False  # Whether we're currently building a list item
+    current_item_nesting_level = 0  # Nesting level of the current item being built
+
+    for te in elements:
+        # Handle paragraph markers (for bullets and paragraph breaks)
+        if te.paragraphMarker is not None:
+            if te.paragraphMarker.bullet is not None:
+                bullet = te.paragraphMarker.bullet
+                nesting_level = bullet.nestingLevel if bullet.nestingLevel is not None else 0
+                glyph = bullet.glyph if bullet.glyph else "●"
+                is_ordered = _is_numbered_list_glyph(glyph)
+
+                # Store bullet info for the next text run
+                pending_bullet_info = (nesting_level, is_ordered)
+            else:
+                # Regular paragraph marker - no bullet
+                # Flush any pending list item
+                if in_list_item and current_list_item_runs and current_list is not None:
+                    item_para = FormattedParagraph(runs=current_list_item_runs)
+                    list_item = FormattedListItem(
+                        paragraphs=[item_para],
+                        nesting_level=pending_bullet_info[0] if pending_bullet_info else 0,
+                    )
+                    current_list.items.append(list_item)
+                    current_list_item_runs = []
+                    in_list_item = False
+
+                pending_bullet_info = None
+            continue
+
+        # Handle text runs
+        if te.textRun is not None:
+            content = te.textRun.content
+            style = gslides_style_to_full(te.textRun.style)
+
+            # Check if we're starting a new bullet item
+            if pending_bullet_info is not None:
+                nesting_level, is_ordered = pending_bullet_info
+
+                # Check if we need to start a new list or if the list type changed
+                if current_list is None or current_list.ordered != is_ordered:
+                    # Flush any pending paragraph
+                    if current_paragraph_runs:
+                        para = FormattedParagraph(runs=current_paragraph_runs)
+                        result_elements.append(para)
+                        current_paragraph_runs = []
+
+                    # Flush the old list if type changed
+                    if current_list is not None and current_list.ordered != is_ordered:
+                        result_elements.append(current_list)
+                        current_list = None
+
+                    # Start a new list
+                    current_list = FormattedList(ordered=is_ordered, items=[])
+
+                # We're now in a list item
+                in_list_item = True
+                current_item_nesting_level = nesting_level  # Track for continuation runs
+
+                # Strip the trailing newline from the content
+                has_newline = "\n" in content
+                item_content = content.rstrip("\n")
+
+                if item_content:
+                    item_run = FormattedTextRun(content=item_content, style=style)
+                    current_list_item_runs.append(item_run)
+
+                # If content ends with newline, complete this list item
+                if has_newline and current_list_item_runs:
+                    item_para = FormattedParagraph(runs=current_list_item_runs)
+                    list_item = FormattedListItem(
+                        paragraphs=[item_para],
+                        nesting_level=nesting_level,
+                    )
+                    current_list.items.append(list_item)
+                    current_list_item_runs = []
+                    in_list_item = False
+
+                pending_bullet_info = None  # Clear after processing first run
+            elif in_list_item:
+                # We're continuing a list item (subsequent run after bullet)
+                has_newline = "\n" in content
+                item_content = content.rstrip("\n")
+
+                if item_content:
+                    item_run = FormattedTextRun(content=item_content, style=style)
+                    current_list_item_runs.append(item_run)
+
+                # If content ends with newline, complete this list item
+                if has_newline and current_list_item_runs and current_list is not None:
+                    # Use the nesting level from when the item started
+                    item_para = FormattedParagraph(runs=current_list_item_runs)
+                    list_item = FormattedListItem(
+                        paragraphs=[item_para],
+                        nesting_level=current_item_nesting_level,
+                    )
+                    current_list.items.append(list_item)
+                    current_list_item_runs = []
+                    in_list_item = False
+            else:
+                # Regular text (not in a list)
+                # Flush any pending list first
+                if current_list is not None:
+                    # Flush any remaining list item runs
+                    if current_list_item_runs:
+                        item_para = FormattedParagraph(runs=current_list_item_runs)
+                        list_item = FormattedListItem(paragraphs=[item_para], nesting_level=0)
+                        current_list.items.append(list_item)
+                        current_list_item_runs = []
+                    result_elements.append(current_list)
+                    current_list = None
+                    in_list_item = False
+
+                # Create the formatted run
+                run = FormattedTextRun(content=content, style=style)
+
+                # Add the run to the current paragraph
+                current_paragraph_runs.append(run)
+
+                # Handle line breaks - if content ends with newline, complete the paragraph
+                if "\n" in content:
+                    # Create paragraph from accumulated runs
+                    para = FormattedParagraph(runs=current_paragraph_runs)
+                    result_elements.append(para)
+                    current_paragraph_runs = []
+
+    # Flush any remaining content
+    if current_list is not None:
+        # Flush any remaining list item runs
+        if current_list_item_runs:
+            item_para = FormattedParagraph(runs=current_list_item_runs)
+            list_item = FormattedListItem(paragraphs=[item_para], nesting_level=0)
+            current_list.items.append(list_item)
+        result_elements.append(current_list)
+    if current_paragraph_runs:
+        para = FormattedParagraph(runs=current_paragraph_runs)
+        result_elements.append(para)
+
+    return FormattedDocument(elements=result_elements)
