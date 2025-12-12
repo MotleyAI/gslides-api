@@ -98,7 +98,13 @@ def text_elements_to_markdown(elements: List[TextElement]):
 
 def _apply_markdown_formatting(content: str, style) -> str:
     """Apply markdown formatting to content based on text style."""
-    if style is None or (len(set(content)) == 1 and next(iter(set(content))) == " "):
+    # No formatting needed if no style
+    if style is None:
+        return content
+
+    # Don't apply formatting markers to whitespace-only content
+    # This prevents issues like "** **", doubling, or invalid markdown
+    if not content.strip(" \t\n"):
         return content
 
     # Handle hyperlinks first (they take precedence)

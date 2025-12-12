@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typeguard import typechecked
 
+from gslides_api.agnostic.converters import gslides_style_to_rich, rich_style_to_gslides
+from gslides_api.agnostic.text import RichStyle
 from gslides_api.domain.domain import Dimension, GSlidesBaseModel, Unit
 from gslides_api.domain.request import Range, RangeType
 from gslides_api.domain.table_cell import TableCellLocation
@@ -26,8 +28,12 @@ class TextContent(GSlidesBaseModel):
     textElements: Optional[List[TextElement]] = None
     lists: Optional[Dict[str, Any]] = None
 
-    def styles(self, skip_whitespace: bool = True) -> List[TextStyle] | None:
-        """Extract all unique text styles from the text elements.
+    def styles(self, skip_whitespace: bool = True) -> List[RichStyle] | None:
+        """Extract all unique RichStyle objects from the text elements.
+
+        Returns only RichStyle (non-markdown-renderable properties like colors, fonts).
+        Text that differs only in bold/italic/strikethrough is considered ONE style,
+        since those properties are stored in the markdown string itself.
 
         Args:
             skip_whitespace: If True, skip text runs that contain only whitespace.
@@ -41,8 +47,9 @@ class TextContent(GSlidesBaseModel):
                 continue
             if skip_whitespace and te.textRun.content.strip() == "":
                 continue
-            if te.textRun.style not in styles:
-                styles.append(te.textRun.style)
+            rich_style = gslides_style_to_rich(te.textRun.style)
+            if rich_style not in styles:
+                styles.append(rich_style)
         return styles
 
     # def to_markdown(self) -> str | None:
@@ -115,12 +122,23 @@ class TextContent(GSlidesBaseModel):
         self,
         text: str,
         as_markdown: bool = True,
-        styles: List[TextStyle] | None = None,
+        styles: List[RichStyle] | None = None,
         overwrite: bool = True,
         autoscale: bool = False,
         size_inches: Tuple[float, float] | None = None,
     ):
         """Convert the text content to a list of requests to update the text in the element.
+
+        Args:
+            text: The text content to write (can be markdown if as_markdown=True)
+            as_markdown: If True, parse text as markdown and apply formatting
+            styles: List of RichStyle objects to apply. If None, uses self.styles().
+                   RichStyle contains non-markdown properties (colors, fonts, etc.)
+                   Markdown formatting (bold, italic) is derived from parsing the text.
+            overwrite: If True, delete existing text before writing
+            autoscale: If True, scale font size to fit text in the element
+            size_inches: Required if autoscale=True, the size of the element in inches
+
         IMPORTANT: This does not set the objectId on the requests as the container doesn't know it,
         so the caller must set it before sending the requests, ditto for CellLocation if needed.
         """
@@ -136,13 +154,15 @@ class TextContent(GSlidesBaseModel):
         else:
             requests = []
 
+        # Convert RichStyle to TextStyle for the markdown parser
+        # The markdown parser will add bold/italic/etc based on the markdown AST
         style_args = {}
         if styles is not None:
             if len(styles) == 1:
-                style_args["base_style"] = styles[0]
+                style_args["base_style"] = rich_style_to_gslides(styles[0])
             elif len(styles) > 1:
-                style_args["heading_style"] = styles[0]
-                style_args["base_style"] = styles[1]
+                style_args["heading_style"] = rich_style_to_gslides(styles[0])
+                style_args["base_style"] = rich_style_to_gslides(styles[1])
 
         requests += markdown_to_text_elements(text, **style_args)
 
@@ -156,11 +176,18 @@ class TextContent(GSlidesBaseModel):
         self,
         text: str,
         size_inches: Tuple[float, float],
-        styles: List[TextStyle] | None = None,
-    ) -> List[TextStyle]:
-        # Unfortunately, GS
+        styles: List[RichStyle] | None = None,
+    ) -> List[RichStyle]:
+        """Scale font sizes in RichStyle objects to fit text in the given dimensions.
 
-        # For now, just derive the scaling factor based on first style
+        Args:
+            text: The text content (used to estimate how much space is needed)
+            size_inches: The dimensions (width, height) of the container in inches
+            styles: List of RichStyle objects to scale
+
+        Returns:
+            New list of RichStyle objects with scaled font sizes
+        """
         if not styles or len(styles) == 0:
             logger.warning("No styles provided, cannot autoscale text")
             return styles or []
@@ -168,28 +195,18 @@ class TextContent(GSlidesBaseModel):
         first_style = styles[0]
 
         my_width_in, my_height_in = size_inches
-        # if location is not None:  # this must be a table, with overridden absolute_size
-        #     my_width_in, my_height_in = self.absolute_size(OutputUnit.IN, location=location)
-        # else:
-        #     my_width_in, my_height_in = self.absolute_size(OutputUnit.IN)
 
         # Get current font size in points (default to 12pt if not specified)
-        current_font_size_pt = 12.0
-        if first_style.fontSize and first_style.fontSize.magnitude:
-            if first_style.fontSize.unit.value == "PT":
-                current_font_size_pt = first_style.fontSize.magnitude
-            elif first_style.fontSize.unit.value == "EMU":
-                # Convert EMU to points: 1 point = 12,700 EMUs
-                current_font_size_pt = first_style.fontSize.magnitude / 12700.0
+        current_font_size_pt = first_style.font_size_pt or 12.0
 
         # Determine the estimated width of the text based on font size and length
         # Rough approximation: average character width is about 0.6 * font_size_pt / 72 inches
         avg_char_width_in = (current_font_size_pt * 0.6) / 72.0
         line_height_in = (current_font_size_pt * 1.2) / 72.0  # 1.2 line spacing factor
 
-        # Account for some padding/margins (assume 10% on each side)
-        usable_width_in = my_width_in  # * 0.8
-        usable_height_in = my_height_in  # * 0.8
+        # Account for some padding/margins
+        usable_width_in = my_width_in
+        usable_height_in = my_height_in
 
         # Determine how many characters would fit per line at current size
         chars_per_line = int(usable_width_in / avg_char_width_in)
@@ -216,28 +233,20 @@ class TextContent(GSlidesBaseModel):
             ) ** 0.5  # Square root because we're scaling both width and height
 
         # Apply minimum scaling factor to ensure text remains readable
-        scaling_factor = max(scaling_factor, 0.6)  # Don't scale below 30% of original size
+        scaling_factor = max(scaling_factor, 0.6)  # Don't scale below 60% of original size
         scaling_factor = min(scaling_factor, 1.0)  # Don't scale above original size
 
         # Apply the scaling factor to the font size of ALL styles
-
         scaled_styles = []
 
         for style in styles:
             scaled_style = style.model_copy()  # Create a copy to avoid modifying the original
 
-            # Get the current font size for this style
-            style_font_size_pt = 12.0  # default
-            if scaled_style.fontSize and scaled_style.fontSize.magnitude:
-                if scaled_style.fontSize.unit.value == "PT":
-                    style_font_size_pt = scaled_style.fontSize.magnitude
-                elif scaled_style.fontSize.unit.value == "EMU":
-                    # Convert EMU to points: 1 point = 12,700 EMUs
-                    style_font_size_pt = scaled_style.fontSize.magnitude / 12700.0
+            # Get the current font size for this style (default to 12pt)
+            style_font_size_pt = scaled_style.font_size_pt or 12.0
 
             # Apply scaling factor to this style's font size
-            new_font_size_pt = style_font_size_pt * scaling_factor
-            scaled_style.fontSize = Dimension(magnitude=new_font_size_pt, unit=Unit.PT)
+            scaled_style.font_size_pt = style_font_size_pt * scaling_factor
 
             scaled_styles.append(scaled_style)
 

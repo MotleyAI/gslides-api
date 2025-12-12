@@ -6,6 +6,7 @@ import marko
 from marko.inline import RawText
 from pydantic import BaseModel, field_validator
 
+from gslides_api.agnostic.converters import full_style_to_gslides, rich_style_to_gslides
 from gslides_api.agnostic.ir import FormattedDocument, FormattedList, FormattedParagraph
 from gslides_api.domain.domain import BulletGlyphPreset
 from gslides_api.domain.request import Range, RangeType
@@ -96,10 +97,12 @@ def _ir_to_text_elements(
         if isinstance(element, FormattedParagraph):
             # Convert paragraph runs to TextElements
             for run in element.runs:
+                # Convert FullTextStyle to GSlides TextStyle
+                gslides_style = full_style_to_gslides(run.style)
                 elements.append(
                     TextElement(
                         endIndex=0,
-                        textRun=TextRun(content=run.content, style=run.style),
+                        textRun=TextRun(content=run.content, style=gslides_style),
                     )
                 )
             # Add line break after paragraph (create new instance each time)
@@ -113,11 +116,13 @@ def _ir_to_text_elements(
         elif isinstance(element, FormattedList):
             # Convert list to TextElements with tabs
             list_elements = []
+            # Convert RichStyle to GSlides TextStyle for list style
+            list_gslides_style = rich_style_to_gslides(element.style) if element.style else base_style
             for item in element.items:
                 # Add tabs for nesting level (Google Slides quirk)
                 for _ in range(item.nesting_level + 1):
                     tab_elem = ListItemTab(
-                        endIndex=0, textRun=TextRun(content="\t", style=element.style or base_style)
+                        endIndex=0, textRun=TextRun(content="\t", style=list_gslides_style)
                     )
                     list_elements.append(tab_elem)
                     elements.append(tab_elem)
@@ -125,9 +130,11 @@ def _ir_to_text_elements(
                 # Add the item content
                 for para in item.paragraphs:
                     for run in para.runs:
+                        # Convert FullTextStyle to GSlides TextStyle
+                        gslides_style = full_style_to_gslides(run.style)
                         text_elem = TextElement(
                             endIndex=0,
-                            textRun=TextRun(content=run.content, style=run.style),
+                            textRun=TextRun(content=run.content, style=gslides_style),
                         )
                         list_elements.append(text_elem)
                         elements.append(text_elem)
@@ -140,10 +147,12 @@ def _ir_to_text_elements(
                     list_elements.append(line_break)
 
             # Create the appropriate list group that references the elements
+            # The style here is kept as RichStyle for the list group but will be converted
+            # when creating the actual API request
             if element.ordered:
-                elements.append(NumberedListGroup(children=list_elements, style=element.style))
+                elements.append(NumberedListGroup(children=list_elements, style=list_gslides_style))
             else:
-                elements.append(BulletPointGroup(children=list_elements, style=element.style))
+                elements.append(BulletPointGroup(children=list_elements, style=list_gslides_style))
 
     return elements
 

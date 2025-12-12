@@ -17,16 +17,15 @@ from gslides_api.agnostic.ir import (
     FormattedParagraph,
     FormattedTextRun,
 )
-from gslides_api.domain.text import Link as GSlidesLink
-from gslides_api.domain.text import TextStyle
+from gslides_api.agnostic.text import FullTextStyle
 
 logger = logging.getLogger(__name__)
 
 
 def parse_markdown_to_ir(
     markdown_text: str,
-    base_style: Optional[TextStyle] = None,
-    heading_style: Optional[TextStyle] = None,
+    base_style: Optional[FullTextStyle] = None,
+    heading_style: Optional[FullTextStyle] = None,
 ) -> FormattedDocument:
     """Parse markdown string into platform-agnostic intermediate representation.
 
@@ -38,11 +37,11 @@ def parse_markdown_to_ir(
     Returns:
         FormattedDocument containing the parsed and styled content
     """
-    base_style = base_style or TextStyle()
+    base_style = base_style or FullTextStyle()
 
     if heading_style is None:
         heading_style = copy.deepcopy(base_style)
-        heading_style.bold = True
+        heading_style.markdown.bold = True
 
     # Parse markdown with marko
     doc = marko.Markdown().parse(markdown_text)
@@ -53,8 +52,8 @@ def parse_markdown_to_ir(
 
 def _markdown_ast_to_ir(
     markdown_ast: Any,
-    base_style: Optional[TextStyle] = None,
-    heading_style: Optional[TextStyle] = None,
+    base_style: Optional[FullTextStyle] = None,
+    heading_style: Optional[FullTextStyle] = None,
     list_depth: int = 0,
 ) -> FormattedDocument:
     """Convert marko AST to platform-agnostic IR.
@@ -68,10 +67,10 @@ def _markdown_ast_to_ir(
     Returns:
         FormattedDocument with parsed content
     """
-    base_style = base_style or TextStyle()
+    base_style = base_style or FullTextStyle()
     if heading_style is None:
         heading_style = copy.deepcopy(base_style)
-        heading_style.bold = True
+        heading_style.markdown.bold = True
 
     document = FormattedDocument()
 
@@ -92,8 +91,8 @@ def _markdown_ast_to_ir(
 
 def _process_ast_node(
     node: Any,
-    base_style: TextStyle,
-    heading_style: TextStyle,
+    base_style: FullTextStyle,
+    heading_style: FullTextStyle,
     list_depth: int = 0,
 ) -> list[FormattedParagraph | FormattedList]:
     """Process a single AST node and return IR elements.
@@ -127,8 +126,8 @@ def _process_ast_node(
 
 def _process_paragraph(
     para: marko.block.Paragraph,
-    base_style: TextStyle,
-    heading_style: TextStyle,
+    base_style: FullTextStyle,
+    heading_style: FullTextStyle,
     list_depth: int = 0,
 ) -> FormattedParagraph:
     """Process a paragraph node into a FormattedParagraph.
@@ -151,7 +150,7 @@ def _process_paragraph(
 
 def _process_heading(
     heading: marko.block.Heading,
-    heading_style: TextStyle,
+    heading_style: FullTextStyle,
     list_depth: int = 0,
 ) -> FormattedParagraph:
     """Process a heading node into a FormattedParagraph with heading flag.
@@ -177,8 +176,8 @@ def _process_heading(
 
 def _process_list(
     list_node: marko.block.List,
-    base_style: TextStyle,
-    heading_style: TextStyle,
+    base_style: FullTextStyle,
+    heading_style: FullTextStyle,
     list_depth: int = 0,
 ) -> FormattedList:
     """Process a list node into a FormattedList.
@@ -201,14 +200,14 @@ def _process_list(
     return FormattedList(
         items=items,
         ordered=list_node.ordered if hasattr(list_node, 'ordered') else False,
-        style=base_style
+        style=base_style.rich if base_style else None
     )
 
 
 def _process_list_item(
     list_item: marko.block.ListItem,
-    base_style: TextStyle,
-    heading_style: TextStyle,
+    base_style: FullTextStyle,
+    heading_style: FullTextStyle,
     list_depth: int = 0,
 ) -> FormattedListItem:
     """Process a list item node into a FormattedListItem.
@@ -246,8 +245,8 @@ def _process_list_item(
 
 def _process_inline_node(
     node: Any,
-    base_style: TextStyle,
-    heading_style: TextStyle,
+    base_style: FullTextStyle,
+    heading_style: FullTextStyle,
     list_depth: int = 0,
 ) -> list[FormattedTextRun]:
     """Process an inline node into text runs.
@@ -269,16 +268,13 @@ def _process_inline_node(
 
     elif isinstance(node, marko.inline.CodeSpan):
         code_style = copy.deepcopy(base_style)
-        code_style.fontFamily = "Courier New"
-        code_style.weightedFontFamily = None
-        code_style.foregroundColor = {
-            "opaqueColor": {"rgbColor": {"red": 0.8, "green": 0.2, "blue": 0.2}}
-        }
+        code_style.markdown.is_code = True
+        code_style.rich.font_family = "Courier New"
         return [FormattedTextRun(content=node.children, style=code_style)]
 
     elif isinstance(node, marko.inline.Emphasis):
         italic_style = copy.deepcopy(base_style)
-        italic_style.italic = not italic_style.italic
+        italic_style.markdown.italic = not italic_style.markdown.italic
         runs = []
         for child in node.children:
             runs.extend(_process_inline_node(child, italic_style, heading_style, list_depth))
@@ -286,7 +282,7 @@ def _process_inline_node(
 
     elif isinstance(node, marko.inline.StrongEmphasis):
         bold_style = copy.deepcopy(base_style)
-        bold_style.bold = True
+        bold_style.markdown.bold = True
         runs = []
         for child in node.children:
             runs.extend(_process_inline_node(child, bold_style, heading_style, list_depth))
@@ -294,8 +290,8 @@ def _process_inline_node(
 
     elif isinstance(node, marko.inline.Link):
         link_style = copy.deepcopy(base_style)
-        link_style.link = GSlidesLink(url=node.dest)
-        link_style.underline = True
+        link_style.markdown.hyperlink = node.dest
+        link_style.rich.underline = True
         runs = []
         for child in node.children:
             runs.extend(_process_inline_node(child, link_style, heading_style, list_depth))
