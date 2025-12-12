@@ -56,17 +56,6 @@ class TextContent(GSlidesBaseModel):
                 styles.append(rich_style)
         return styles
 
-    # def to_markdown(self) -> str | None:
-    #     """Convert the shape's text content back to markdown format.
-    #
-    #     This method reconstructs markdown from the Google Slides API response,
-    #     handling formatting like bold, italic, bullet points, nested lists, and code spans.
-    #     """
-    #     if not self.textElements:
-    #         return None
-    #
-    #     return text_elements_to_markdown(self.textElements)
-
     def to_requests(
         self, element_id: str, location: TableCellLocation | None = None
     ) -> List[GSlidesAPIRequest]:
