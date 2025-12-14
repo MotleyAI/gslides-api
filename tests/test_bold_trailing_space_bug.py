@@ -38,7 +38,7 @@ class TestBoldTrailingSpaceBug:
         result = _apply_markdown_formatting(content, style)
 
         # Should produce: "**This is my title**  " (spaces outside markers)
-        assert result == "**This is my title**  ", f"Got: {repr(result)}"
+        assert result == "**This is my title**  ", f"Got: {result!r}"
         assert not result.endswith("** "), "Spaces should be OUTSIDE the closing **"
 
     def test_whitespace_only_with_bold_style_not_doubled(self):
@@ -47,12 +47,12 @@ class TestBoldTrailingSpaceBug:
 
         # Test pure spaces
         result = _apply_markdown_formatting("  ", style)
-        assert result == "  ", f"Pure spaces should return as-is, got: {repr(result)}"
+        assert result == "  ", f"Pure spaces should return as-is, got: {result!r}"
         assert "**" not in result
 
         # Test mixed whitespace (this is where the bug manifests)
         result = _apply_markdown_formatting("\t ", style)
-        assert result == "\t ", f"Mixed whitespace should return as-is, got: {repr(result)}"
+        assert result == "\t ", f"Mixed whitespace should return as-is, got: {result!r}"
         assert len(result) == 2, f"Whitespace should not be doubled, got length {len(result)}"
 
     def test_text_elements_to_markdown_bold_trailing_spaces(self):
@@ -97,8 +97,8 @@ class TestBoldTrailingSpaceBug:
         result = text_elements_to_markdown(elements)
 
         assert "**This is my title**" in result
-        assert "****" not in result, f"Adjacent asterisks found: {repr(result)}"
-        assert "** **" not in result, f"Empty bold found: {repr(result)}"
+        assert "****" not in result, f"Adjacent asterisks found: {result!r}"
+        assert "** **" not in result, f"Empty bold found: {result!r}"
 
     def test_roundtrip_bold_with_trailing_spaces(self):
         """Scenario B: Read bold text with trailing spaces, write it back."""
@@ -124,7 +124,7 @@ class TestBoldTrailingSpaceBug:
         full_text = "".join(r.text for r in insert_requests)
 
         # Text should NOT contain literal asterisks
-        assert "**" not in full_text, f"Literal asterisks in output: {repr(full_text)}"
+        assert "**" not in full_text, f"Literal asterisks in output: {full_text!r}"
         assert "This is my title" in full_text
 
 
@@ -135,7 +135,7 @@ class TestWhitespaceEdgeCases:
         """Tabs-only content with bold should not be formatted."""
         style = TextStyle(bold=True)
         result = _apply_markdown_formatting("\t\t", style)
-        assert result == "\t\t", f"Got: {repr(result)}"
+        assert result == "\t\t", f"Got: {result!r}"
         assert "**" not in result
 
     def test_leading_and_trailing_spaces_with_text(self):
@@ -144,17 +144,17 @@ class TestWhitespaceEdgeCases:
         content = "  bold text  "
 
         result = _apply_markdown_formatting(content, style)
-        assert result == "  **bold text**  ", f"Got: {repr(result)}"
+        assert result == "  **bold text**  ", f"Got: {result!r}"
 
     def test_single_space_with_bold(self):
         """Single space with bold style."""
         style = TextStyle(bold=True)
         result = _apply_markdown_formatting(" ", style)
-        assert result == " ", f"Got: {repr(result)}"
+        assert result == " ", f"Got: {result!r}"
         assert "**" not in result
 
     def test_newline_handling_with_bold(self):
         """Test bold text ending with newline."""
         style = TextStyle(bold=True)
         result = _apply_markdown_formatting("Bold text\n", style)
-        assert result == "**Bold text**\n", f"Got: {repr(result)}"
+        assert result == "**Bold text**\n", f"Got: {result!r}"
