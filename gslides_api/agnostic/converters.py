@@ -336,7 +336,7 @@ def text_elements_to_ir(elements: List[TextElement]) -> FormattedDocument:
                     item_para = FormattedParagraph(runs=current_list_item_runs)
                     list_item = FormattedListItem(
                         paragraphs=[item_para],
-                        nesting_level=pending_bullet_info[0] if pending_bullet_info else 0,
+                        nesting_level=current_item_nesting_level,
                     )
                     current_list.items.append(list_item)
                     current_list_item_runs = []
@@ -421,7 +421,7 @@ def text_elements_to_ir(elements: List[TextElement]) -> FormattedDocument:
                     # Flush any remaining list item runs
                     if current_list_item_runs:
                         item_para = FormattedParagraph(runs=current_list_item_runs)
-                        list_item = FormattedListItem(paragraphs=[item_para], nesting_level=0)
+                        list_item = FormattedListItem(paragraphs=[item_para], nesting_level=current_item_nesting_level)
                         current_list.items.append(list_item)
                         current_list_item_runs = []
                     result_elements.append(current_list)
@@ -446,7 +446,7 @@ def text_elements_to_ir(elements: List[TextElement]) -> FormattedDocument:
         # Flush any remaining list item runs
         if current_list_item_runs:
             item_para = FormattedParagraph(runs=current_list_item_runs)
-            list_item = FormattedListItem(paragraphs=[item_para], nesting_level=0)
+            list_item = FormattedListItem(paragraphs=[item_para], nesting_level=current_item_nesting_level)
             current_list.items.append(list_item)
         result_elements.append(current_list)
     if current_paragraph_runs:

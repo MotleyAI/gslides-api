@@ -120,6 +120,20 @@ def _ir_to_text_elements(
             # Convert RichStyle to GSlides TextStyle for list style
             list_gslides_style = rich_style_to_gslides(element.style) if element.style else base_style
             for item in element.items:
+                # Google Slides doesn't support multiple paragraphs or line breaks per list item
+                # (PowerPoint does via <a:br/> elements, but that's handled separately)
+                if len(item.paragraphs) > 1:
+                    raise ValueError(
+                        "Google Slides API doesn't support newlines inside list items"
+                    )
+                # Also check for newline runs within a single paragraph
+                for para in item.paragraphs:
+                    for run in para.runs:
+                        if run.content == "\n" or "\n" in run.content:
+                            raise ValueError(
+                                "Google Slides API doesn't support newlines inside list items"
+                            )
+
                 # Add tabs for nesting level (Google Slides quirk)
                 for _ in range(item.nesting_level + 1):
                     tab_elem = ListItemTab(

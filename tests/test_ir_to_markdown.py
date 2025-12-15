@@ -254,6 +254,62 @@ class TestFormatRunToMarkdown:
         result = _format_run_to_markdown("code", style)
         assert result == "`code`"
 
+    def test_hyperlink_with_trailing_space(self):
+        """Hyperlink with trailing space should preserve it."""
+        style = FullTextStyle(
+            markdown=MarkdownRenderableStyle(hyperlink="https://example.com")
+        )
+        result = _format_run_to_markdown("Click here ", style)
+        assert result == "[Click here](https://example.com) "
+
+    def test_hyperlink_with_leading_space(self):
+        """Hyperlink with leading space should preserve it."""
+        style = FullTextStyle(
+            markdown=MarkdownRenderableStyle(hyperlink="https://example.com")
+        )
+        result = _format_run_to_markdown(" Click here", style)
+        assert result == " [Click here](https://example.com)"
+
+    def test_hyperlink_with_both_leading_and_trailing_space(self):
+        """Hyperlink with both leading and trailing spaces should preserve them."""
+        style = FullTextStyle(
+            markdown=MarkdownRenderableStyle(hyperlink="https://example.com")
+        )
+        result = _format_run_to_markdown("  Click here  ", style)
+        assert result == "  [Click here](https://example.com)  "
+
+    def test_hyperlink_with_trailing_newline(self):
+        """Hyperlink with trailing newline should preserve it."""
+        style = FullTextStyle(
+            markdown=MarkdownRenderableStyle(hyperlink="https://example.com")
+        )
+        result = _format_run_to_markdown("Click here\n", style)
+        assert result == "[Click here](https://example.com)\n"
+
+    def test_code_span_with_trailing_space(self):
+        """Code span with trailing space should preserve it."""
+        style = FullTextStyle(markdown=MarkdownRenderableStyle(is_code=True))
+        result = _format_run_to_markdown("code ", style)
+        assert result == "`code` "
+
+    def test_code_span_with_leading_space(self):
+        """Code span with leading space should preserve it."""
+        style = FullTextStyle(markdown=MarkdownRenderableStyle(is_code=True))
+        result = _format_run_to_markdown(" code", style)
+        assert result == " `code`"
+
+    def test_code_span_with_both_leading_and_trailing_space(self):
+        """Code span with both leading and trailing spaces should preserve them."""
+        style = FullTextStyle(markdown=MarkdownRenderableStyle(is_code=True))
+        result = _format_run_to_markdown("  code  ", style)
+        assert result == "  `code`  "
+
+    def test_code_span_with_trailing_newline(self):
+        """Code span with trailing newline should preserve it."""
+        style = FullTextStyle(markdown=MarkdownRenderableStyle(is_code=True))
+        result = _format_run_to_markdown("code\n", style)
+        assert result == "`code`\n"
+
 
 class TestIrToMarkdown:
     """Tests for full IR to markdown conversion."""

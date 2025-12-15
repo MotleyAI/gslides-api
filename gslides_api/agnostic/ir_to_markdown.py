@@ -172,6 +172,39 @@ def _same_markdown_style(a: MarkdownRenderableStyle, b: MarkdownRenderableStyle)
     )
 
 
+def _extract_whitespace_parts(content: str) -> tuple:
+    """Extract leading spaces, inner text, trailing spaces, and trailing newlines.
+
+    This helper ensures consistent whitespace handling across all formatting types
+    (hyperlinks, code spans, bold, italic, etc.).
+
+    Args:
+        content: The text content to split
+
+    Returns:
+        Tuple of (leading_space, text_content, trailing_space, trailing_newlines)
+    """
+    leading_space = ""
+    for char in content:
+        if char in " \t":
+            leading_space += char
+        else:
+            break
+
+    temp_content = content.rstrip("\n")
+    trailing_newlines = content[len(temp_content):]
+
+    trailing_space = ""
+    for char in reversed(temp_content):
+        if char in " \t":
+            trailing_space = char + trailing_space
+        else:
+            break
+
+    text_content = content.strip(" \t").rstrip("\n")
+    return leading_space, text_content, trailing_space, trailing_newlines
+
+
 def _format_run_to_markdown(content: str, style: FullTextStyle) -> str:
     """Apply markdown formatting to content, moving spaces outside markers.
 
@@ -194,60 +227,36 @@ def _format_run_to_markdown(content: str, style: FullTextStyle) -> str:
     if not content.strip(" \t\n"):
         return content
 
+    # Extract whitespace parts once for all formatting types
+    leading, text, trailing, newlines = _extract_whitespace_parts(content)
+
     # Handle hyperlinks first (they take precedence)
     if md.hyperlink:
-        clean_content = content.strip()
-        if clean_content:
-            return f"[{clean_content}]({md.hyperlink})"
+        if text:
+            return leading + f"[{text}]({md.hyperlink})" + trailing + newlines
         return content
 
     # Handle code spans
     if md.is_code or (style.rich.font_family and style.rich.is_monospace()):
-        if content.strip():
-            return f"`{content.strip()}`"
+        if text:
+            return leading + f"`{text}`" + trailing + newlines
         return content
 
-    # Extract leading and trailing spaces
-    leading_space = ""
-    trailing_space = ""
-    trailing_newlines = ""
-
-    # Extract leading spaces
-    for char in content:
-        if char in " \t":
-            leading_space += char
-        else:
-            break
-
-    # Extract trailing newlines first
-    temp_content = content.rstrip("\n")
-    trailing_newlines = content[len(temp_content):]
-
-    # Extract trailing spaces (but not newlines)
-    for char in reversed(temp_content):
-        if char in " \t":
-            trailing_space = char + trailing_space
-        else:
-            break
-
-    # Get the actual text content without leading/trailing spaces
-    text_content = content.strip(" \t").rstrip("\n")
-
     # Apply formatting only to the text content
-    if text_content:
+    if text:
         # Handle strikethrough first (can combine with other formatting)
         if md.strikethrough:
-            text_content = f"~~{text_content}~~"
+            text = f"~~{text}~~"
 
         # Handle combined bold and italic (***text***)
         if md.bold and md.italic:
-            text_content = f"***{text_content}***"
+            text = f"***{text}***"
         # Handle bold only
         elif md.bold:
-            text_content = f"**{text_content}**"
+            text = f"**{text}**"
         # Handle italic only
         elif md.italic:
-            text_content = f"*{text_content}*"
+            text = f"*{text}*"
 
     # Reconstruct with preserved spacing OUTSIDE markers
-    return leading_space + text_content + trailing_space + trailing_newlines
+    return leading + text + trailing + newlines
