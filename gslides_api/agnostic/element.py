@@ -117,6 +117,11 @@ class MarkdownTextElement(MarkdownSlideElement):
 
         return "\n".join(lines)
 
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownTextElement":
+        """Create a placeholder text element with default content."""
+        return cls.from_markdown(name=name, markdown_content="Placeholder text")
+
 
 class MarkdownImageElement(MarkdownSlideElement):
     """Image element containing image URL with metadata for reconstruction."""
@@ -185,6 +190,14 @@ class MarkdownImageElement(MarkdownSlideElement):
             lines.append(f"![{alt_text}]({self.content})")
 
         return "\n".join(lines)
+
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownImageElement":
+        """Create a placeholder image element with a sample image URL."""
+        return cls.from_markdown(
+            name=name,
+            markdown_content="![Placeholder image](https://via.placeholder.com/400x300)",
+        )
 
 
 class RowProxy:
@@ -597,6 +610,15 @@ class MarkdownTableElement(MarkdownSlideElement):
 
         return cls(name=name, content=table_data, metadata=metadata or {})
 
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownTableElement":
+        """Create a placeholder table element with sample data."""
+        table_md = """| Column A | Column B | Column C |
+|----------|----------|----------|
+| Row 1 A  | Row 1 B  | Row 1 C  |
+| Row 2 A  | Row 2 B  | Row 2 C  |"""
+        return cls.from_markdown(name=name, markdown_content=table_md)
+
     @property
     def shape(self) -> tuple[int, int]:
         """Return the shape of the table as (rows, columns).
@@ -838,3 +860,14 @@ class MarkdownChartElement(MarkdownSlideElement):
         lines.append(self.content.rstrip())
 
         return "\n".join(lines)
+
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownChartElement":
+        """Create a placeholder chart element with a basic chart config."""
+        chart_json = {
+            "type": "bar",
+            "title": "Placeholder Chart",
+            "data": {"labels": ["A", "B", "C"], "values": [10, 20, 30]},
+        }
+        content = "```json\n" + json.dumps(chart_json, indent=2) + "\n```"
+        return cls.from_markdown(name=name, markdown_content=content)
