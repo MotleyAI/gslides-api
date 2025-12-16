@@ -502,7 +502,10 @@ def initialize_credentials(credential_location: str):
             flow = InstalledAppFlow.from_client_secrets_file(
                 os.path.join(credential_location, "credentials.json"), SCOPES
             )
-            _creds = flow.run_local_server()
+            _creds = flow.run_local_server(
+                prompt="consent",
+                access_type="offline",
+            )
         # Save the credentials for the next run
         with open(os.path.join(credential_location, "token.json"), "w") as token:
             token.write(_creds.to_json())
