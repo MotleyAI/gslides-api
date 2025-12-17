@@ -2,7 +2,7 @@ import logging
 import re
 from typing import Literal, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from gslides_api.agnostic.element import (
     ContentType,
@@ -22,8 +22,22 @@ MarkdownSlideElementUnion = Union[
 
 
 class MarkdownSlide(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+
     elements: list[MarkdownSlideElementUnion] = Field(default_factory=list)
     name: str | None = None
+
+    @field_validator("elements")
+    @classmethod
+    def validate_unique_element_names(
+        cls, elements: list[MarkdownSlideElementUnion]
+    ) -> list[MarkdownSlideElementUnion]:
+        """Ensure all element names are unique within the slide."""
+        names = [el.name for el in elements]
+        duplicates = [name for name in names if names.count(name) > 1]
+        if duplicates:
+            raise ValueError(f"Duplicate element names found: {set(duplicates)}")
+        return elements
 
     def to_markdown(self) -> str:
         """Convert slide back to markdown format."""
