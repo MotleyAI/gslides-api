@@ -126,24 +126,16 @@ class TestMarkdownChartElementPlaceholder:
         elem = MarkdownChartElement.placeholder("MyChart")
         assert elem.content_type == ContentType.CHART
 
-    def test_has_json_content(self):
-        """Test that the chart has JSON content."""
+    def test_has_text_description_content(self):
+        """Test that the chart has text description content."""
         elem = MarkdownChartElement.placeholder("MyChart")
-        assert "```json" in elem.content
-        assert "```" in elem.content
-
-    def test_metadata_has_chart_data(self):
-        """Test that metadata contains parsed chart data."""
-        elem = MarkdownChartElement.placeholder("MyChart")
-        assert "chart_data" in elem.metadata
-        assert elem.metadata["chart_data"]["type"] == "bar"
+        assert "chart" in elem.content.lower() or "description" in elem.content.lower()
 
     def test_to_markdown_works(self):
         """Test that to_markdown() produces valid output."""
         elem = MarkdownChartElement.placeholder("MyChart")
         md = elem.to_markdown()
         assert "<!-- chart: MyChart -->" in md
-        assert "```json" in md
 
 
 class TestMarkdownSlideRoundtrip:

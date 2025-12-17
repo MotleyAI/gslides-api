@@ -100,6 +100,44 @@ class MarkdownTextElement(MarkdownSlideElement):
 
     content_type: Literal[ContentType.TEXT] = ContentType.TEXT
 
+    @model_validator(mode="after")
+    def validate_no_tables_or_images(self) -> "MarkdownTextElement":
+        """Ensure TEXT content does not contain tables or images.
+
+        This validation only applies to content_type=TEXT. Subclasses like
+        MarkdownChartElement (CHART) and MarkdownContentElement (ANY) skip this check.
+        """
+        # Only validate for TEXT content type, not CHART, ANY, etc.
+        if self.content_type != ContentType.TEXT:
+            return self
+
+        md = marko.Markdown(extensions=["gfm"])
+        doc = md.parse(self.content)
+
+        def find_forbidden_elements(node) -> list[str]:
+            """Recursively find Table or Image nodes."""
+            forbidden = []
+            node_name = getattr(node, "__class__", type(None)).__name__
+
+            if node_name == "Table":
+                forbidden.append("table")
+            elif node_name == "Image":
+                forbidden.append("image")
+
+            if hasattr(node, "children") and not isinstance(node.children, str):
+                for child in node.children:
+                    forbidden.extend(find_forbidden_elements(child))
+
+            return forbidden
+
+        forbidden = find_forbidden_elements(doc)
+        if forbidden:
+            raise ValueError(
+                f"MarkdownTextElement cannot contain {', '.join(sorted(set(forbidden)))}"
+            )
+
+        return self
+
     @classmethod
     def from_markdown(cls, name: str, markdown_content: str) -> "MarkdownTextElement":
         """Create TextElement from markdown content."""
@@ -137,70 +175,17 @@ class MarkdownContentElement(MarkdownTextElement):
         )
 
 
-class MarkdownChartElement(MarkdownSlideElement):
+class MarkdownChartElement(MarkdownTextElement):
     """Chart element containing a JSON code block."""
 
     content_type: Literal[ContentType.CHART] = ContentType.CHART
 
-    @field_validator("content")
-    @classmethod
-    def validate_chart_content(cls, v: str) -> str:
-        """Validate that content contains only a JSON code block."""
-        content = v.strip()
-
-        # Must start with ```json and end with ```
-        if not content.startswith("```json\n") or not content.endswith("\n```"):
-            raise ValueError("Chart element must contain only a ```json code block")
-
-        # Extract JSON content
-        json_content = content[8:-4]  # Remove ```json\n and \n```
-
-        try:
-            json.loads(json_content)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Chart element must contain valid JSON: {e}")
-
-        return v
-
-    @model_validator(mode="after")
-    def extract_json_to_metadata(self) -> "MarkdownChartElement":
-        """Extract JSON content to metadata field."""
-        if self.content.strip().startswith("```json\n"):
-            json_content = self.content.strip()[8:-4]  # Remove ```json\n and \n```
-            try:
-                parsed_json = json.loads(json_content)
-                self.metadata["chart_data"] = parsed_json
-            except json.JSONDecodeError:
-                pass  # Let the field validator handle the error
-        return self
-
-    @classmethod
-    def from_markdown(cls, name: str, markdown_content: str) -> "MarkdownChartElement":
-        """Create ChartElement from markdown content containing JSON code block."""
-        return cls(name=name, content=markdown_content.strip())
-
-    def to_markdown(self) -> str:
-        """Convert element back to markdown format."""
-        lines = []
-
-        # Add HTML comment for element type and name
-        lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
-
-        # Add content
-        lines.append(self.content.rstrip())
-
-        return "\n".join(lines)
-
     @classmethod
     def placeholder(cls, name: str) -> "MarkdownChartElement":
-        """Create a placeholder chart element with a basic chart config."""
-        chart_json = {
-            "type": "bar",
-            "title": "Placeholder Chart",
-            "data": {"labels": ["A", "B", "C"], "values": [10, 20, 30]},
-        }
-        content = "```json\n" + json.dumps(chart_json, indent=2) + "\n```"
-        return cls.from_markdown(name=name, markdown_content=content)
+        return cls.from_markdown(
+            name=name,
+            markdown_content="Detailed chart description, including both appearance and data aspects",
+        )
 
 
 class MarkdownImageElement(MarkdownSlideElement):
