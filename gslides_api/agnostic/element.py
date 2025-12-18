@@ -85,7 +85,7 @@ class MarkdownSlideElement(BaseModel, ABC):
     """Base class for all markdown slide elements."""
 
     name: str
-    content: str
+    content: str | None = None  # None means empty element
     content_type: ContentType
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -109,6 +109,10 @@ class MarkdownTextElement(MarkdownSlideElement):
         """
         # Only validate for TEXT content type, not CHART, ANY, etc.
         if self.content_type != ContentType.TEXT:
+            return self
+
+        # Skip validation for empty content
+        if self.content is None:
             return self
 
         md = marko.Markdown(extensions=["gfm"])
@@ -151,8 +155,9 @@ class MarkdownTextElement(MarkdownSlideElement):
         if not (self.content_type == ContentType.TEXT and self.name == "Default"):
             lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
 
-        # Add content
-        lines.append(self.content.rstrip())
+        # Add content only if not None
+        if self.content is not None:
+            lines.append(self.content.rstrip())
 
         return "\n".join(lines)
 
@@ -199,6 +204,10 @@ class MarkdownImageElement(MarkdownSlideElement):
         """Extract URL from markdown image and store metadata for reconstruction."""
         if isinstance(values, dict) and "content" in values:
             content = values["content"]
+            # Allow None or empty content
+            if content is None or content == "":
+                values["content"] = None
+                return values
             if isinstance(content, str) and content.startswith("!["):
                 image_match = re.search(r"!\[([^]]*)\]\(([^)]+)\)", content.strip())
                 if not image_match:
@@ -245,6 +254,10 @@ class MarkdownImageElement(MarkdownSlideElement):
         if not (self.content_type == ContentType.TEXT and self.name == "Default"):
             lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
 
+        # Handle None content - just return the comment
+        if self.content is None:
+            return "\n".join(lines)
+
         # Reconstruct the image markdown from content (URL) and metadata
         if "original_markdown" in self.metadata:
             # Use original markdown if available for perfect reconstruction
@@ -285,12 +298,16 @@ class MarkdownTableElement(MarkdownSlideElement):
     """Table element containing structured table data."""
 
     content_type: Literal[ContentType.TABLE] = ContentType.TABLE
-    content: TableData = Field(...)  # Override content to be TableData instead of str
+    content: TableData | None = None  # Override content to be TableData or None
 
     @field_validator("content", mode="before")
     @classmethod
-    def validate_and_parse_table(cls, v) -> TableData:
+    def validate_and_parse_table(cls, v) -> TableData | None:
         """Validate markdown table using Marko with GFM extension and convert to structured data."""
+        # Allow None content
+        if v is None:
+            return None
+
         if isinstance(v, TableData):
             return v  # Already parsed
 
@@ -303,11 +320,12 @@ class MarkdownTableElement(MarkdownSlideElement):
                 raise ValueError(f"Invalid TableData dict structure: {e}")
 
         if not isinstance(v, str):
-            raise ValueError("Table content must be a string, dict, or TableData")
+            raise ValueError("Table content must be a string, dict, TableData, or None")
 
         content_str = v.strip()
+        # Handle empty string as None
         if not content_str:
-            raise ValueError("Table element cannot be empty")
+            return None
 
         # Use Marko with GFM extension to parse the table
         try:
@@ -595,6 +613,10 @@ class MarkdownTableElement(MarkdownSlideElement):
         # Add HTML comment for element type and name
         if not (self.content_type == ContentType.TEXT and self.name == "Default"):
             lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
+
+        # Handle None content - just return the comment
+        if self.content is None:
+            return "\n".join(lines)
 
         # Add table content using TableData's to_markdown method
         lines.append(self.content.to_markdown())

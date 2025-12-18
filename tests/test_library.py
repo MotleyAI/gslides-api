@@ -39,14 +39,19 @@ Some subtitle text"""
         with pytest.raises(ValueError, match="Element names don't match"):
             library.slide_from_markdown(markdown)
 
-    def test_name_match_wrong_element_count(self, library):
-        """Should raise ValueError when slide name matches but element count differs."""
-        # Title slide has 2 elements, provide only 1
+    def test_subset_matching_with_missing_elements(self, library):
+        """Should match when parsed elements are a subset of library elements."""
+        # Title slide has 2 elements (Title, Subtitle), provide only 1
         markdown = """<!-- slide: Title -->
 <!-- text: Title -->
 Just a title, no subtitle"""
-        with pytest.raises(ValueError, match="Element names don't match"):
-            library.slide_from_markdown(markdown)
+        result = library.slide_from_markdown(markdown)
+        assert result.name == "Title"
+        assert len(result.elements) == 2  # Both elements should be present
+        assert result.elements[0].name == "Title"
+        assert result.elements[0].content == "Just a title, no subtitle"
+        assert result.elements[1].name == "Subtitle"
+        assert result.elements[1].content is None  # None content for missing element
 
     def test_name_match_wrong_element_types(self, library):
         """Should raise ValueError when element names match but types don't."""
@@ -161,3 +166,93 @@ Description of second option"""
         result = library.slide_from_markdown(markdown)
         assert result.name == "Comparison"
         assert len(result.elements) == 5
+
+    def test_subset_matching_preserves_library_order(self, library):
+        """Elements should be ordered per library template, not parsed order."""
+        # Provide Subtitle before Title (wrong order) - should still work
+        markdown = """<!-- slide: Title -->
+<!-- text: Subtitle -->
+The subtitle first
+
+<!-- text: Title -->
+The title second"""
+        result = library.slide_from_markdown(markdown)
+        assert result.name == "Title"
+        assert len(result.elements) == 2
+        # Elements should be in library order (Title, Subtitle)
+        assert result.elements[0].name == "Title"
+        assert result.elements[0].content == "The title second"
+        assert result.elements[1].name == "Subtitle"
+        assert result.elements[1].content == "The subtitle first"
+
+    def test_subset_matching_empty_parsed_slide(self, library):
+        """Empty parsed slide should fill all elements with None content."""
+        markdown = """<!-- slide: Title -->"""
+        result = library.slide_from_markdown(markdown)
+        assert result.name == "Title"
+        assert len(result.elements) == 2
+        assert result.elements[0].name == "Title"
+        assert result.elements[0].content is None
+        assert result.elements[1].name == "Subtitle"
+        assert result.elements[1].content is None
+
+    def test_subset_matching_all_elements_provided(self, library):
+        """Full match should still work with all elements provided."""
+        markdown = """<!-- slide: Title -->
+<!-- text: Title -->
+Main Title
+
+<!-- text: Subtitle -->
+The Subtitle"""
+        result = library.slide_from_markdown(markdown)
+        assert result.name == "Title"
+        assert len(result.elements) == 2
+        assert result.elements[0].content == "Main Title"
+        assert result.elements[1].content == "The Subtitle"
+
+    def test_subset_matching_fills_different_element_types(self, library):
+        """Missing elements should be filled with correct type from template."""
+        # Chart and text slide has: Title (text), Chart (chart), Text (text)
+        # Only provide Title
+        markdown = """<!-- slide: Chart and text slide -->
+<!-- text: Title -->
+Chart Slide Title"""
+        result = library.slide_from_markdown(markdown)
+        assert result.name == "Chart and text slide"
+        assert len(result.elements) == 3
+        assert result.elements[0].name == "Title"
+        assert result.elements[0].content == "Chart Slide Title"
+        assert result.elements[0].content_type == ContentType.TEXT
+        assert result.elements[1].name == "Chart"
+        assert result.elements[1].content is None
+        assert result.elements[1].content_type == ContentType.CHART
+        assert result.elements[2].name == "Text"
+        assert result.elements[2].content is None
+        assert result.elements[2].content_type == ContentType.TEXT
+
+    def test_subset_matching_fills_table_with_none(self, library):
+        """Missing table elements should be filled with None content."""
+        # Header and table has: Title (text), Table (table)
+        markdown = """<!-- slide: Header and table -->
+<!-- text: Title -->
+Table Slide Title"""
+        result = library.slide_from_markdown(markdown)
+        assert result.name == "Header and table"
+        assert len(result.elements) == 2
+        assert result.elements[1].name == "Table"
+        assert result.elements[1].content_type == ContentType.TABLE
+        # Missing table should have None content
+        assert result.elements[1].content is None
+
+    def test_subset_matching_fills_any_with_none(self, library):
+        """Missing ANY elements should be filled with None content."""
+        # Header and single content has: Title (text), Content (any)
+        markdown = """<!-- slide: Header and single content -->
+<!-- text: Title -->
+Content Slide Title"""
+        result = library.slide_from_markdown(markdown)
+        assert result.name == "Header and single content"
+        assert len(result.elements) == 2
+        assert result.elements[1].name == "Content"
+        assert result.elements[1].content_type == ContentType.ANY
+        assert result.elements[1].content is None

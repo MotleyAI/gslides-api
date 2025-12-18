@@ -412,7 +412,7 @@ Some content"""
         with pytest.raises(ValueError, match="Invalid element type: invalid"):
             MarkdownSlide.from_markdown(markdown, on_invalid_element="raise")
 
-    def test_from_markdown_empty_content_after_comment_ignored(self):
+    def test_from_markdown_empty_content_creates_empty_element(self):
         markdown = """# Title
 
 <!-- text: EmptySection -->
@@ -423,10 +423,13 @@ Valid content"""
 
         slide = MarkdownSlide.from_markdown(markdown)
 
-        # Should have Default + ValidSection only (EmptySection ignored due to empty content)
-        assert len(slide.elements) == 2
+        # Should have Default + EmptySection (with None content) + ValidSection
+        assert len(slide.elements) == 3
         assert slide.elements[0].name == "Default"
-        assert slide.elements[1].name == "ValidSection"
+        assert slide.elements[1].name == "EmptySection"
+        assert slide.elements[1].content is None
+        assert slide.elements[2].name == "ValidSection"
+        assert slide.elements[2].content == "Valid content"
 
 
 class TestMarkdownDeck:
