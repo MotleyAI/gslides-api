@@ -149,14 +149,28 @@ class TableElement(PageElementBase):
         ):
             cell = self[location.rowIndex, location.columnIndex]
             size_inches = self.absolute_size(OutputUnit.IN, location)
-            requests = cell.text.write_text_requests(
-                text=text,
-                as_markdown=as_markdown,
-                styles=styles,
-                overwrite=overwrite,
-                autoscale=autoscale,
-                size_inches=size_inches,
-            )
+            if cell.text is not None:
+                requests = cell.text.write_text_requests(
+                    text=text,
+                    as_markdown=as_markdown,
+                    styles=styles,
+                    overwrite=overwrite,
+                    autoscale=autoscale,
+                    size_inches=size_inches,
+                )
+            else:
+                # Cell exists but has no text content (empty cell from API)
+                from gslides_api.element.text_content import TextContent
+
+                temp_text_content = TextContent(textElements=[])
+                requests = temp_text_content.write_text_requests(
+                    text=text,
+                    as_markdown=as_markdown,
+                    styles=styles,
+                    overwrite=overwrite,
+                    autoscale=autoscale,
+                    size_inches=size_inches,
+                )
         else:
             # Table structure not populated yet (e.g., during creation from markdown)
             # Create a temporary TextContent to generate the requests
@@ -281,7 +295,14 @@ class TableElement(PageElementBase):
             and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
         ):
             cell = self[location.rowIndex, location.columnIndex]
-            requests = cell.text.delete_text_request(self.objectId)
+            if cell.text is not None:
+                requests = cell.text.delete_text_request(self.objectId)
+            else:
+                # Cell exists but has no text content (empty cell from API)
+                from gslides_api.element.text_content import TextContent
+
+                temp_text_content = TextContent(textElements=[])
+                requests = temp_text_content.delete_text_request(self.objectId)
         else:
             # Table structure not populated yet - create generic delete requests
             from gslides_api.element.text_content import TextContent
