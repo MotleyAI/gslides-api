@@ -179,6 +179,22 @@ class TableElement(PageElementBase):
 
             temp_text_content = TextContent(textElements=[])
 
+            # Try to copy styles from existing cells in the same row
+            # This preserves text formatting (e.g., white font color) when adding new columns
+            effective_styles = styles
+            if (
+                styles is None
+                and self.table.tableRows
+                and location.rowIndex < len(self.table.tableRows)
+            ):
+                row = self.table.tableRows[location.rowIndex]
+                if row.tableCells:
+                    # Find leftmost cell with text styles in this row
+                    for cell in row.tableCells:
+                        if cell.text and cell.text.styles():
+                            effective_styles = cell.text.styles()
+                            break
+
             # Calculate size if possible, otherwise use default
             try:
                 size_inches = self.absolute_size(OutputUnit.IN, location)
@@ -188,7 +204,7 @@ class TableElement(PageElementBase):
             requests = temp_text_content.write_text_requests(
                 text=text,
                 as_markdown=as_markdown,
-                styles=styles,
+                styles=effective_styles,
                 overwrite=overwrite,
                 autoscale=autoscale,
                 size_inches=size_inches,
