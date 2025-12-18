@@ -29,12 +29,20 @@ class AbstractColor(BaseModel):
 
     This matches Google Slides API color format and can be converted to/from
     various formats (RGB tuples, hex strings, etc.).
+
+    Can represent either:
+    - RGB color: red, green, blue values (0.0-1.0)
+    - Theme color: theme_color string (e.g., "LIGHT1", "DARK1", "ACCENT1")
+
+    If theme_color is set, it takes precedence over RGB values when converting
+    back to Google Slides format.
     """
 
     red: float = 0.0
     green: float = 0.0
     blue: float = 0.0
     alpha: float = 1.0
+    theme_color: Optional[str] = None  # e.g., "LIGHT1", "DARK1", "ACCENT1"
 
     @classmethod
     def from_rgb_tuple(cls, rgb: tuple[int, int, int]) -> "AbstractColor":

@@ -7,7 +7,7 @@ from typeguard import typechecked
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
 from gslides_api.domain.domain import Dimension, OutputUnit, Size, Transform
-from gslides_api.domain.table import Table, TableColumnProperties, TableRowProperties
+from gslides_api.domain.table import Table, TableColumnProperties, TableRange, TableRowProperties
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.text import TextStyle
 from gslides_api.element.base import ElementKind, PageElementBase
@@ -20,6 +20,7 @@ from gslides_api.request.table import (
     DeleteTableRowRequest,
     InsertTableColumnsRequest,
     InsertTableRowsRequest,
+    UpdateTableCellPropertiesRequest,
     UpdateTableColumnPropertiesRequest,
     UpdateTableRowPropertiesRequest,
 )
@@ -808,6 +809,29 @@ class TableElement(PageElementBase):
                     number=columns_to_add,
                 )
             )
+
+            # Copy header row (row 0) styling from rightmost existing cell to new columns
+            if self.table.tableRows and len(self.table.tableRows) > 0:
+                header_row = self.table.tableRows[0]
+                if header_row.tableCells and len(header_row.tableCells) >= current_columns:
+                    # Get styling from rightmost existing header cell (consistent with width inheritance)
+                    rightmost_header_cell = header_row.tableCells[current_columns - 1]
+                    if rightmost_header_cell.tableCellProperties:
+                        for new_col_idx in range(current_columns, n_columns):
+                            requests.append(
+                                UpdateTableCellPropertiesRequest(
+                                    objectId=self.objectId,
+                                    tableRange=TableRange(
+                                        location=TableCellLocation(
+                                            rowIndex=0, columnIndex=new_col_idx
+                                        ),
+                                        rowSpan=1,
+                                        columnSpan=1,
+                                    ),
+                                    tableCellProperties=rightmost_header_cell.tableCellProperties,
+                                    fields="tableCellBackgroundFill,contentAlignment",
+                                )
+                            )
 
             # Add width adjustment requests if fix_width=False
             if not fix_width:
