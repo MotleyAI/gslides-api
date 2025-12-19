@@ -194,8 +194,8 @@ def _process_list(
     items = []
     for child in list_node.children:
         if isinstance(child, marko.block.ListItem):
-            item = _process_list_item(child, base_style, heading_style, list_depth)
-            items.append(item)
+            # _process_list_item returns a list (main item + nested items)
+            items.extend(_process_list_item(child, base_style, heading_style, list_depth))
 
     return FormattedList(
         items=items,
@@ -209,8 +209,8 @@ def _process_list_item(
     base_style: FullTextStyle,
     heading_style: FullTextStyle,
     list_depth: int = 0,
-) -> FormattedListItem:
-    """Process a list item node into a FormattedListItem.
+) -> list[FormattedListItem]:
+    """Process a list item node into FormattedListItems.
 
     Args:
         list_item: Marko list item node
@@ -219,28 +219,28 @@ def _process_list_item(
         list_depth: Current list depth
 
     Returns:
-        FormattedListItem with paragraphs and nesting level
+        List of FormattedListItem objects - the main item plus any nested items
     """
     paragraphs = []
+    nested_items = []
 
     for child in list_item.children:
         if isinstance(child, marko.block.Paragraph):
             paragraphs.append(_process_paragraph(child, base_style, heading_style, list_depth + 1))
         elif isinstance(child, marko.block.List):
-            # Nested list - add as a paragraph containing the list content
-            # This will be handled specially during conversion
+            # Nested list - process and keep items with their correct nesting levels
             nested_list = _process_list(child, base_style, heading_style, list_depth + 1)
-            # Convert nested list items to paragraphs for now
-            # This is a simplification - proper handling depends on target format
-            for nested_item in nested_list.items:
-                paragraphs.extend(nested_item.paragraphs)
+            nested_items.extend(nested_list.items)
         else:
             logger.warning(f"Unsupported list item child: {type(child)}")
 
-    return FormattedListItem(
+    # Return the main item followed by any nested items
+    result = [FormattedListItem(
         paragraphs=paragraphs,
         nesting_level=list_depth
-    )
+    )]
+    result.extend(nested_items)
+    return result
 
 
 def _process_inline_node(

@@ -469,24 +469,21 @@ class MarkdownTableElement(MarkdownSlideElement):
             inner_text = ""
             if hasattr(node, "children"):
                 inner_text = "".join(
-                    MarkdownTableElement._extract_text_from_node(child)
-                    for child in node.children
+                    MarkdownTableElement._extract_text_from_node(child) for child in node.children
                 )
             return f"**{inner_text}**"
         elif node_name in ("Emphasis",):
             inner_text = ""
             if hasattr(node, "children"):
                 inner_text = "".join(
-                    MarkdownTableElement._extract_text_from_node(child)
-                    for child in node.children
+                    MarkdownTableElement._extract_text_from_node(child) for child in node.children
                 )
             return f"*{inner_text}*"
         elif node_name == "Strikethrough":
             inner_text = ""
             if hasattr(node, "children"):
                 inner_text = "".join(
-                    MarkdownTableElement._extract_text_from_node(child)
-                    for child in node.children
+                    MarkdownTableElement._extract_text_from_node(child) for child in node.children
                 )
             return f"~~{inner_text}~~"
         elif node_name == "CodeSpan":

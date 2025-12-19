@@ -6,8 +6,9 @@ import marko
 from marko.inline import RawText
 from pydantic import BaseModel, field_validator
 
-from gslides_api.agnostic.converters import full_style_to_gslides, rich_style_to_gslides
+from gslides_api.agnostic.converters import full_style_to_gslides, gslides_style_to_full, rich_style_to_gslides
 from gslides_api.agnostic.ir import FormattedDocument, FormattedList, FormattedParagraph
+from gslides_api.agnostic.markdown_parser import parse_markdown_to_ir
 from gslides_api.domain.domain import BulletGlyphPreset
 from gslides_api.domain.request import Range, RangeType
 from gslides_api.domain.text import Link as GSlidesLink
@@ -119,6 +120,20 @@ def _ir_to_text_elements(
             # Convert RichStyle to GSlides TextStyle for list style
             list_gslides_style = rich_style_to_gslides(element.style) if element.style else base_style
             for item in element.items:
+                # Google Slides doesn't support multiple paragraphs or line breaks per list item
+                # (PowerPoint does via <a:br/> elements, but that's handled separately)
+                if len(item.paragraphs) > 1:
+                    raise ValueError(
+                        "Google Slides API doesn't support newlines inside list items"
+                    )
+                # Also check for newline runs within a single paragraph
+                for para in item.paragraphs:
+                    for run in para.runs:
+                        if run.content == "\n" or "\n" in run.content:
+                            raise ValueError(
+                                "Google Slides API doesn't support newlines inside list items"
+                            )
+
                 # Add tabs for nesting level (Google Slides quirk)
                 for _ in range(item.nesting_level + 1):
                     tab_elem = ListItemTab(
@@ -173,11 +188,15 @@ def markdown_to_text_elements(
     heading_style.bold = True
     # TODO: handle heading levels properly, with font size bumps for heading levels?
 
-    # Use standard markdown parser
-    doc = marko.Markdown().parse(markdown_text)
-    elements_and_bullets = markdown_ast_to_text_elements(
-        doc, base_style=base_style, heading_style=heading_style
-    )
+    # Convert GSlides styles to agnostic styles for the parser
+    agnostic_base_style = gslides_style_to_full(base_style) if base_style else None
+    agnostic_heading_style = gslides_style_to_full(heading_style)
+
+    # Use platform-agnostic markdown parser
+    ir_doc = parse_markdown_to_ir(markdown_text, agnostic_base_style, agnostic_heading_style)
+
+    # Convert IR to GSlides TextElements (GSlides-specific logic)
+    elements_and_bullets = _ir_to_text_elements(ir_doc, base_style)
 
     elements = [e for e in elements_and_bullets if isinstance(e, TextElement)]
     list_items = [b for b in elements_and_bullets if isinstance(b, ItemList)]
