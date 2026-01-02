@@ -34,11 +34,7 @@ More content...
 ![Image](https://example.com/image.jpg)
 
 <!-- chart: Chart_1 -->
-```json
-{
-    "data": [1, 2, 3]
-}
-```
+A bar chart showing data trends with values 1, 2, and 3
 
 <!-- table: Table_1 -->
 | Header 1 | Header 2 |
@@ -312,27 +308,23 @@ class TestTableElement:
 
 
 class TestChartElement:
-    def test_create_valid_chart(self):
-        chart_md = """```json
-{
-    "data": [1, 2, 3]
-}
-```"""
+    """Test MarkdownChartElement which now stores text descriptions."""
 
-        element = MarkdownChartElement(name="Chart1", content=chart_md)
+    def test_create_valid_chart(self):
+        """Test creating chart element with text description."""
+        chart_description = "A bar chart showing quarterly sales with blue bars"
+
+        element = MarkdownChartElement(name="Chart1", content=chart_description)
         assert element.name == "Chart1"
         assert element.content_type == ContentType.CHART
-        assert element.metadata["chart_data"] == {"data": [1, 2, 3]}
+        assert element.content == chart_description
 
-    def test_invalid_chart_content_raises(self):
-        with pytest.raises(
-            ValueError, match="Chart element must contain only a ```json code block"
-        ):
-            MarkdownChartElement(name="BadChart", content="This is not a JSON code block")
-
-    def test_invalid_json_raises(self):
-        with pytest.raises(ValueError, match="Chart element must contain valid JSON"):
-            MarkdownChartElement(name="BadJSON", content="```json\n{invalid json\n```")
+    def test_chart_to_markdown(self):
+        """Test that chart element produces valid markdown output."""
+        element = MarkdownChartElement(name="SalesChart", content="Monthly revenue line chart")
+        result = element.to_markdown()
+        assert "<!-- chart: SalesChart -->" in result
+        assert "Monthly revenue line chart" in result
 
 
 class TestMarkdownSlide:
@@ -420,7 +412,7 @@ Some content"""
         with pytest.raises(ValueError, match="Invalid element type: invalid"):
             MarkdownSlide.from_markdown(markdown, on_invalid_element="raise")
 
-    def test_from_markdown_empty_content_after_comment_ignored(self):
+    def test_from_markdown_empty_content_creates_empty_element(self):
         markdown = """# Title
 
 <!-- text: EmptySection -->
@@ -431,10 +423,13 @@ Valid content"""
 
         slide = MarkdownSlide.from_markdown(markdown)
 
-        # Should have Default + ValidSection only (EmptySection ignored due to empty content)
-        assert len(slide.elements) == 2
+        # Should have Default + EmptySection (with None content) + ValidSection
+        assert len(slide.elements) == 3
         assert slide.elements[0].name == "Default"
-        assert slide.elements[1].name == "ValidSection"
+        assert slide.elements[1].name == "EmptySection"
+        assert slide.elements[1].content is None
+        assert slide.elements[2].name == "ValidSection"
+        assert slide.elements[2].content == "Valid content"
 
 
 class TestMarkdownDeck:

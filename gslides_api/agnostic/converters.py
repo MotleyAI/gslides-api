@@ -25,6 +25,7 @@ from gslides_api.domain.domain import (
     Dimension,
     OptionalColor,
     RgbColor,
+    ThemeColorType,
     Unit,
 )
 from gslides_api.domain.text import (
@@ -81,11 +82,22 @@ def _pt_to_dimension(pt: Optional[float]) -> Optional[Dimension]:
 
 
 def _optional_color_to_abstract(opt_color: Optional[OptionalColor]) -> Optional[AbstractColor]:
-    """Convert GSlides OptionalColor to AbstractColor."""
+    """Convert GSlides OptionalColor to AbstractColor.
+
+    Handles both RGB colors and theme colors. Theme colors (e.g., LIGHT1, DARK1)
+    are preserved in the AbstractColor.theme_color field so they can be
+    converted back without loss.
+    """
     if opt_color is None or opt_color.opaqueColor is None:
         return None
 
     color = opt_color.opaqueColor
+
+    # Check for theme color first - this takes precedence
+    if color.themeColor is not None:
+        return AbstractColor(theme_color=color.themeColor.value)
+
+    # Fall back to RGB color
     if color.rgbColor is None:
         return None
 
@@ -98,10 +110,24 @@ def _optional_color_to_abstract(opt_color: Optional[OptionalColor]) -> Optional[
 
 
 def _abstract_to_optional_color(abstract_color: Optional[AbstractColor]) -> Optional[OptionalColor]:
-    """Convert AbstractColor to GSlides OptionalColor."""
+    """Convert AbstractColor to GSlides OptionalColor.
+
+    If the AbstractColor has a theme_color set, it is converted back to a
+    theme color (preserving the original). Otherwise, RGB values are used.
+    """
     if abstract_color is None:
         return None
 
+    # Check for theme color first - this takes precedence
+    if abstract_color.theme_color is not None:
+        try:
+            theme_color_type = ThemeColorType(abstract_color.theme_color)
+            return OptionalColor(opaqueColor=Color(themeColor=theme_color_type))
+        except ValueError:
+            # Invalid theme color string, fall through to RGB
+            pass
+
+    # Use RGB color
     return OptionalColor(
         opaqueColor=Color(
             rgbColor=RgbColor(

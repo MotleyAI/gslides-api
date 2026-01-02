@@ -244,105 +244,55 @@ class TestTableElementFromMarkdown:
 
 
 class TestChartElementFromMarkdown:
-    """Test ChartElement.from_markdown() method."""
+    """Test ChartElement.from_markdown() method.
 
-    def test_simple_chart_from_markdown(self):
-        """Test creating ChartElement from JSON code block."""
-        markdown = """```json
-{
-    "type": "bar",
-    "data": [1, 2, 3, 4, 5]
-}
-```"""
+    MarkdownChartElement now inherits from MarkdownTextElement and stores
+    text descriptions of charts rather than JSON code blocks.
+    """
+
+    def test_simple_chart_description_from_markdown(self):
+        """Test creating ChartElement from text description."""
+        markdown = "A bar chart showing sales data by quarter"
 
         element = MarkdownChartElement.from_markdown("BarChart", markdown)
 
         assert element.name == "BarChart"
         assert element.content == markdown
         assert element.content_type == ContentType.CHART
-        assert element.metadata["chart_data"]["type"] == "bar"
-        assert element.metadata["chart_data"]["data"] == [1, 2, 3, 4, 5]
 
-    def test_complex_chart_from_markdown(self):
-        """Test creating ChartElement with complex JSON."""
-        markdown = """```json
-{
-    "type": "line",
-    "data": {
-        "labels": ["Jan", "Feb", "Mar"],
-        "datasets": [
-            {
-                "label": "Sales",
-                "data": [100, 150, 200],
-                "borderColor": "blue"
-            }
-        ]
-    },
-    "options": {
-        "responsive": true,
-        "scales": {
-            "y": {
-                "beginAtZero": true
-            }
-        }
-    }
-}
-```"""
+    def test_detailed_chart_description_from_markdown(self):
+        """Test creating ChartElement with detailed description."""
+        markdown = """A line chart displaying monthly revenue trends.
 
-        element = MarkdownChartElement.from_markdown("SalesChart", markdown)
+The X-axis shows months from January to December.
+The Y-axis represents revenue in thousands of dollars.
+The line is blue with data points marked."""
 
-        assert element.name == "SalesChart"
+        element = MarkdownChartElement.from_markdown("RevenueChart", markdown)
+
+        assert element.name == "RevenueChart"
         assert element.content_type == ContentType.CHART
-        chart_data = element.metadata["chart_data"]
-        assert chart_data["type"] == "line"
-        assert chart_data["data"]["labels"] == ["Jan", "Feb", "Mar"]
-        assert chart_data["options"]["responsive"] is True
+        assert "revenue" in element.content.lower()
 
     def test_chart_with_whitespace_from_markdown(self):
         """Test creating ChartElement with surrounding whitespace."""
-        markdown = """  ```json
-{"simple": "chart"}
-```  """
+        markdown = "  A simple pie chart showing market share  "
 
         element = MarkdownChartElement.from_markdown("Simple", markdown)
 
         assert element.content_type == ContentType.CHART
-        assert element.metadata["chart_data"]["simple"] == "chart"
-
-    def test_invalid_chart_format_raises(self):
-        """Test that non-JSON code block raises ValueError."""
-        with pytest.raises(
-            ValueError, match="Chart element must contain only a ```json code block"
-        ):
-            MarkdownChartElement.from_markdown("Invalid", "This is not a JSON code block")
-
-    def test_non_json_code_block_raises(self):
-        """Test that non-JSON code block raises ValueError."""
-        with pytest.raises(
-            ValueError, match="Chart element must contain only a ```json code block"
-        ):
-            MarkdownChartElement.from_markdown("Python", "```python\nprint('hello')\n```")
-
-    def test_invalid_json_raises(self):
-        """Test that invalid JSON raises ValueError."""
-        with pytest.raises(ValueError, match="Chart element must contain valid JSON"):
-            MarkdownChartElement.from_markdown("BadJSON", "```json\n{invalid json}\n```")
+        assert element.content == "A simple pie chart showing market share"
 
     def test_chart_from_markdown_round_trip(self):
         """Test that ChartElement can be created from markdown and converted back."""
-        original_markdown = """```json
-{
-    "title": "My Chart",
-    "values": [10, 20, 30]
-}
-```"""
+        original_markdown = "A bar chart with product categories on X-axis and sales on Y-axis"
 
         element = MarkdownChartElement.from_markdown("MyChart", original_markdown)
 
         # Convert back to markdown
         result = element.to_markdown()
 
-        # Should include comment and preserve JSON block
+        # Should include comment and original content
         expected = f"<!-- chart: MyChart -->\n{original_markdown}"
         assert result == expected
 
@@ -356,7 +306,7 @@ class TestFromMarkdownIntegration:
         text_elem = MarkdownTextElement.from_markdown("Title", "# Welcome")
         image_elem = MarkdownImageElement.from_markdown("Logo", "![Logo](logo.png)")
         table_elem = MarkdownTableElement.from_markdown("Data", "| A | B |\n|---|---|\n| 1 | 2 |")
-        chart_elem = MarkdownChartElement.from_markdown("Chart", '```json\n{"data": [1, 2]}\n```')
+        chart_elem = MarkdownChartElement.from_markdown("Chart", "A chart showing data trends")
 
         # Verify all have correct types
         elements = [text_elem, image_elem, table_elem, chart_elem]
@@ -408,7 +358,7 @@ class TestFromMarkdownIntegration:
             elif cls == MarkdownTableElement:
                 result = method("test", "| A |\n|---|\n| 1 |")
             elif cls == MarkdownChartElement:
-                result = method("test", '```json\n{"data": 1}\n```')
+                result = method("test", "Chart description text")
 
             assert result is not None
             assert isinstance(result, cls)
@@ -615,3 +565,134 @@ class TestTableElementMarkdownToRequests:
                 assert hasattr(req, "cellLocation")
                 assert req.objectId == element_id
                 assert isinstance(req.cellLocation, TableCellLocation)
+
+
+class TestMarkdownTextElementContentValidation:
+    """Test content validation for MarkdownTextElement - rejects tables and images."""
+
+    def test_text_element_rejects_table(self):
+        """Test that MarkdownTextElement raises ValueError for table content."""
+        markdown_with_table = """Some text
+
+| A | B |
+|---|---|
+| 1 | 2 |
+
+More text"""
+
+        with pytest.raises(ValueError, match="MarkdownTextElement cannot contain table"):
+            MarkdownTextElement.from_markdown(name="Test", markdown_content=markdown_with_table)
+
+    def test_text_element_rejects_image(self):
+        """Test that MarkdownTextElement raises ValueError for image content."""
+        markdown_with_image = "Here is an image: ![alt](https://example.com/img.png)"
+
+        with pytest.raises(ValueError, match="MarkdownTextElement cannot contain image"):
+            MarkdownTextElement.from_markdown(name="Test", markdown_content=markdown_with_image)
+
+    def test_text_element_rejects_table_and_image(self):
+        """Test that MarkdownTextElement raises ValueError for both table and image."""
+        markdown_with_both = """# Title
+
+![image](https://example.com/img.png)
+
+| A | B |
+|---|---|
+| 1 | 2 |"""
+
+        with pytest.raises(ValueError, match="MarkdownTextElement cannot contain"):
+            MarkdownTextElement.from_markdown(name="Test", markdown_content=markdown_with_both)
+
+    def test_text_element_allows_plain_text(self):
+        """Test that MarkdownTextElement allows plain text."""
+        plain_text = "This is just plain text without any special content."
+        element = MarkdownTextElement.from_markdown(name="Test", markdown_content=plain_text)
+        assert element.content == plain_text
+
+    def test_text_element_allows_formatted_text(self):
+        """Test that MarkdownTextElement allows bold, italic, links, lists."""
+        formatted_text = """# Header
+
+This is **bold** and *italic* text.
+
+- List item 1
+- List item 2
+
+Here's a [link](https://example.com).
+
+> A blockquote
+
+Some `inline code` and
+
+```python
+code_block = True
+```
+"""
+        element = MarkdownTextElement.from_markdown(name="Test", markdown_content=formatted_text)
+        assert "bold" in element.content
+
+    def test_text_element_allows_headers_and_lists(self):
+        """Test that MarkdownTextElement allows various markdown formatting."""
+        formatted = """## Heading 2
+
+1. First item
+2. Second item
+
+### Heading 3
+
+- Bullet point"""
+        element = MarkdownTextElement.from_markdown(name="Test", markdown_content=formatted)
+        assert element.content_type == ContentType.TEXT
+
+    def test_chart_element_allows_table(self):
+        """Test that MarkdownChartElement does NOT reject tables."""
+        markdown_with_table = """A chart description with embedded data:
+
+| Category | Value |
+|----------|-------|
+| A        | 100   |
+| B        | 200   |"""
+
+        # Should NOT raise an error
+        element = MarkdownChartElement.from_markdown(name="Chart", markdown_content=markdown_with_table)
+        assert element.content_type == ContentType.CHART
+        assert "Category" in element.content
+
+    def test_chart_element_allows_image(self):
+        """Test that MarkdownChartElement does NOT reject images."""
+        markdown_with_image = "Chart reference: ![chart](https://example.com/chart.png)"
+
+        # Should NOT raise an error
+        element = MarkdownChartElement.from_markdown(name="Chart", markdown_content=markdown_with_image)
+        assert element.content_type == ContentType.CHART
+
+    def test_content_element_allows_table(self):
+        """Test that MarkdownContentElement does NOT reject tables."""
+        from gslides_api.agnostic.element import MarkdownContentElement
+
+        markdown_with_table = """Some content with a table:
+
+| X | Y |
+|---|---|
+| 1 | 2 |"""
+
+        # Should NOT raise an error
+        element = MarkdownContentElement.from_markdown(name="Content", markdown_content=markdown_with_table)
+        assert element.content_type == ContentType.ANY
+
+    def test_content_element_allows_image(self):
+        """Test that MarkdownContentElement does NOT reject images."""
+        from gslides_api.agnostic.element import MarkdownContentElement
+
+        markdown_with_image = "Content with image: ![img](https://example.com/img.png)"
+
+        # Should NOT raise an error
+        element = MarkdownContentElement.from_markdown(name="Content", markdown_content=markdown_with_image)
+        assert element.content_type == ContentType.ANY
+
+    def test_direct_instantiation_also_validates(self):
+        """Test that direct instantiation (not via from_markdown) also validates."""
+        markdown_with_image = "![img](https://example.com/img.png)"
+
+        with pytest.raises(ValueError, match="MarkdownTextElement cannot contain image"):
+            MarkdownTextElement(name="Test", content=markdown_with_image)
