@@ -2,7 +2,7 @@ import logging
 import re
 from typing import Literal, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from gslides_api.agnostic.element import (
     ContentType,
@@ -22,8 +22,22 @@ MarkdownSlideElementUnion = Union[
 
 
 class MarkdownSlide(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+
     elements: list[MarkdownSlideElementUnion] = Field(default_factory=list)
     name: str | None = None
+
+    @field_validator("elements")
+    @classmethod
+    def validate_unique_element_names(
+        cls, elements: list[MarkdownSlideElementUnion]
+    ) -> list[MarkdownSlideElementUnion]:
+        """Ensure all element names are unique within the slide."""
+        names = [el.name for el in elements]
+        duplicates = [name for name in names if names.count(name) > 1]
+        if duplicates:
+            raise ValueError(f"Duplicate element names found: {set(duplicates)}")
+        return elements
 
     def to_markdown(self) -> str:
         """Convert slide back to markdown format."""
@@ -44,20 +58,32 @@ class MarkdownSlide(BaseModel):
     def _create_element(
         cls, name: str, content: str, content_type: ContentType
     ) -> MarkdownSlideElementUnion:
-        """Create the appropriate element type based on content_type."""
+        """Create the appropriate element type based on content_type.
+
+        Empty content (empty string) is converted to None.
+        """
+        # Convert empty string to None
+        content_or_none = content if content else None
+
         if content_type == ContentType.TEXT:
-            return MarkdownTextElement(name=name, content=content)
+            return MarkdownTextElement(name=name, content=content_or_none)
         elif content_type == ContentType.IMAGE:
-            # For images, use from_markdown to properly parse URL and metadata
+            if content_or_none is None:
+                # Empty image element
+                return MarkdownImageElement(name=name, content=None)
+            # For images with content, use from_markdown to properly parse URL and metadata
             return MarkdownImageElement.from_markdown(name=name, markdown_content=content)
         elif content_type == ContentType.TABLE:
+            if content_or_none is None:
+                # Empty table element
+                return MarkdownTableElement(name=name, content=None)
             # TableElement will validate and parse the content in its validator
             return MarkdownTableElement(name=name, content=content)
         elif content_type == ContentType.CHART:
-            return MarkdownChartElement(name=name, content=content)
+            return MarkdownChartElement(name=name, content=content_or_none)
         else:
             # Fallback to TextElement for unknown types
-            return MarkdownTextElement(name=name, content=content)
+            return MarkdownTextElement(name=name, content=content_or_none)
 
     @classmethod
     def from_markdown(
@@ -107,25 +133,26 @@ class MarkdownSlide(BaseModel):
                         logger.warning(f"Invalid element type '{element_type}', treating as text")
                         content_type = ContentType.TEXT
 
-                if content:
-                    try:
-                        element = cls._create_element(
-                            name=element_name,
-                            content=content,
-                            content_type=content_type,
+                # Always create elements, even with empty content
+                try:
+                    element = cls._create_element(
+                        name=element_name,
+                        content=content,  # Can be empty string, will become None
+                        content_type=content_type,
+                    )
+                    elements.append(element)
+                except ValueError as e:
+                    if on_invalid_element == "raise":
+                        raise ValueError(
+                            f"Invalid content for {content_type.value} element '{element_name}': {e}"
                         )
-                        elements.append(element)
-                    except ValueError as e:
-                        if on_invalid_element == "raise":
-                            raise ValueError(
-                                f"Invalid content for {content_type.value} element '{element_name}': {e}"
-                            )
-                        else:
-                            logger.warning(
-                                f"Invalid content for {content_type.value} element '{element_name}': {e}. Converting to text element."
-                            )
-                            # Create as text element if validation fails
-                            elements.append(MarkdownTextElement(name=element_name, content=content))
+                    else:
+                        logger.warning(
+                            f"Invalid content for {content_type.value} element '{element_name}': {e}. Converting to text element."
+                        )
+                        # Create as text element if validation fails
+                        content_or_none = content if content else None
+                        elements.append(MarkdownTextElement(name=element_name, content=content_or_none))
 
                 i += 4
             else:

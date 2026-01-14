@@ -213,6 +213,108 @@ class TestTableComprehensiveIntegration:
 
         # Success - all assertions passed!
 
+    def test_table_resize_preserves_text_styles(self):
+        """Test that resizing a table and writing to new columns preserves text styles from existing cells."""
+        # Create initial table with 2 columns
+        initial_markdown = """| Header1 | Header2 |
+|---------|---------|
+| Data1   | Data2   |"""
+
+        print("=== TABLE RESIZE TEXT STYLE PRESERVATION TEST ===")
+        print(f"Initial markdown:\n{initial_markdown}\n")
+
+        # Step 1: Create MarkdownTableElement
+        markdown_table = MarkdownTableElement.from_markdown("ResizeTest", initial_markdown)
+        print("✓ Step 1: MarkdownTableElement created")
+
+        # Step 2: Create table in Google Slides
+        requests = TableElement.create_element_from_markdown_requests(
+            markdown_table, slide_id=self.test_slide.objectId, element_id="resize_test_table"
+        )
+        api_client.batch_update(requests, self.test_presentation.presentationId)
+        print("✓ Step 2: Table created in Google Slides")
+
+        # Step 3: Read back the table
+        updated_slide = self.test_slide.__class__.from_ids(
+            self.test_presentation.presentationId,
+            self.test_slide.objectId,
+            api_client=api_client,
+        )
+        table_element = updated_slide.get_element_by_id("resize_test_table")
+        assert table_element is not None, "Table not found"
+        print("✓ Step 3: Table retrieved from Google Slides")
+
+        # Step 4: Get existing text styles from the first header cell
+        original_header_styles = None
+        if (
+            table_element.table.tableRows
+            and len(table_element.table.tableRows) > 0
+            and table_element.table.tableRows[0].tableCells
+            and table_element.table.tableRows[0].tableCells[0].text
+        ):
+            original_header_styles = table_element.table.tableRows[0].tableCells[0].text.styles()
+        print(f"✓ Step 4: Original header styles captured: {original_header_styles is not None}")
+
+        # Step 5: Resize table to add a new column (from 2 to 3 columns)
+        table_element.resize(n_rows=2, n_columns=3, api_client=api_client)
+        print("✓ Step 5: Table resized from 2 to 3 columns")
+
+        # Step 6: Write content to the new column (including header)
+        new_markdown = """| Header1 | Header2 | Header3 |
+|---------|---------|---------|
+| Data1   | Data2   | Data3   |"""
+
+        new_markdown_table = MarkdownTableElement.from_markdown("ResizeTest", new_markdown)
+
+        # Generate content update requests (this is where the fix should apply)
+        content_requests = table_element.content_update_requests(new_markdown_table, check_shape=False)
+        api_client.batch_update(content_requests, self.test_presentation.presentationId)
+        print("✓ Step 6: Content written to all cells including new column")
+
+        # Step 7: Read back the table again to verify styles
+        final_slide = self.test_slide.__class__.from_ids(
+            self.test_presentation.presentationId,
+            self.test_slide.objectId,
+            api_client=api_client,
+        )
+        final_table = final_slide.get_element_by_id("resize_test_table")
+        assert final_table is not None, "Final table not found"
+        print("✓ Step 7: Final table retrieved")
+
+        # Step 8: Verify that new column header has text styles
+        new_column_header_styles = None
+        if (
+            final_table.table.tableRows
+            and len(final_table.table.tableRows) > 0
+            and final_table.table.tableRows[0].tableCells
+            and len(final_table.table.tableRows[0].tableCells) >= 3
+            and final_table.table.tableRows[0].tableCells[2].text
+        ):
+            new_column_header_styles = final_table.table.tableRows[0].tableCells[2].text.styles()
+
+        print(f"✓ Step 8: New column header styles: {new_column_header_styles is not None}")
+
+        # Verify structure
+        assert final_table.table.columns == 3, f"Expected 3 columns, got {final_table.table.columns}"
+        assert final_table.table.rows == 2, f"Expected 2 rows, got {final_table.table.rows}"
+
+        # Verify content was written to new column
+        header_row = final_table.table.tableRows[0]
+        new_header_text = header_row.tableCells[2].read_text(as_markdown=False).strip()
+        assert "Header3" in new_header_text, f"New header text not found, got: {new_header_text}"
+
+        print("✓ Table resize with text style preservation test completed!")
+        print(f"  - Original header styles present: {original_header_styles is not None}")
+        print(f"  - New column header styles present: {new_column_header_styles is not None}")
+
+        # If original had styles, new column should also have styles (this is the key assertion)
+        if original_header_styles:
+            assert new_column_header_styles is not None, (
+                "Text styles from existing cells were not copied to new column. "
+                "Original header had styles but new column header does not."
+            )
+            print("✓ Text styles successfully copied to new column!")
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

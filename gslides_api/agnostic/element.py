@@ -78,13 +78,14 @@ class ContentType(str, Enum):
     IMAGE = "image"
     CHART = "chart"
     TABLE = "table"
+    ANY = "any"
 
 
 class MarkdownSlideElement(BaseModel, ABC):
     """Base class for all markdown slide elements."""
 
     name: str
-    content: str
+    content: str | None = None  # None means empty element
     content_type: ContentType
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -99,6 +100,48 @@ class MarkdownTextElement(MarkdownSlideElement):
 
     content_type: Literal[ContentType.TEXT] = ContentType.TEXT
 
+    @model_validator(mode="after")
+    def validate_no_tables_or_images(self) -> "MarkdownTextElement":
+        """Ensure TEXT content does not contain tables or images.
+
+        This validation only applies to content_type=TEXT. Subclasses like
+        MarkdownChartElement (CHART) and MarkdownContentElement (ANY) skip this check.
+        """
+        # Only validate for TEXT content type, not CHART, ANY, etc.
+        if self.content_type != ContentType.TEXT:
+            return self
+
+        # Skip validation for empty content
+        if self.content is None:
+            return self
+
+        md = marko.Markdown(extensions=["gfm"])
+        doc = md.parse(self.content)
+
+        def find_forbidden_elements(node) -> list[str]:
+            """Recursively find Table or Image nodes."""
+            forbidden = []
+            node_name = getattr(node, "__class__", type(None)).__name__
+
+            if node_name == "Table":
+                forbidden.append("table")
+            elif node_name == "Image":
+                forbidden.append("image")
+
+            if hasattr(node, "children") and not isinstance(node.children, str):
+                for child in node.children:
+                    forbidden.extend(find_forbidden_elements(child))
+
+            return forbidden
+
+        forbidden = find_forbidden_elements(doc)
+        if forbidden:
+            raise ValueError(
+                f"MarkdownTextElement cannot contain {', '.join(sorted(set(forbidden)))}"
+            )
+
+        return self
+
     @classmethod
     def from_markdown(cls, name: str, markdown_content: str) -> "MarkdownTextElement":
         """Create TextElement from markdown content."""
@@ -112,10 +155,42 @@ class MarkdownTextElement(MarkdownSlideElement):
         if not (self.content_type == ContentType.TEXT and self.name == "Default"):
             lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
 
-        # Add content
-        lines.append(self.content.rstrip())
+        # Add content only if not None
+        if self.content is not None:
+            lines.append(self.content.rstrip())
 
         return "\n".join(lines)
+
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownTextElement":
+        """Create a placeholder text element with default content."""
+        return cls.from_markdown(name=name, markdown_content="Placeholder text")
+
+
+class MarkdownContentElement(MarkdownTextElement):
+    """An element that could represent any of the content types"""
+
+    content_type: Literal[ContentType.ANY] = ContentType.ANY
+
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownContentElement":
+        """Create a placeholder content element with default content."""
+        return cls.from_markdown(
+            name=name, markdown_content="Placeholder table, text, chart, or image"
+        )
+
+
+class MarkdownChartElement(MarkdownTextElement):
+    """Chart element containing a JSON code block."""
+
+    content_type: Literal[ContentType.CHART] = ContentType.CHART
+
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownChartElement":
+        return cls.from_markdown(
+            name=name,
+            markdown_content="Detailed chart description, including both appearance and data aspects",
+        )
 
 
 class MarkdownImageElement(MarkdownSlideElement):
@@ -129,6 +204,10 @@ class MarkdownImageElement(MarkdownSlideElement):
         """Extract URL from markdown image and store metadata for reconstruction."""
         if isinstance(values, dict) and "content" in values:
             content = values["content"]
+            # Allow None or empty content
+            if content is None or content == "":
+                values["content"] = None
+                return values
             if isinstance(content, str) and content.startswith("!["):
                 image_match = re.search(r"!\[([^]]*)\]\(([^)]+)\)", content.strip())
                 if not image_match:
@@ -175,6 +254,10 @@ class MarkdownImageElement(MarkdownSlideElement):
         if not (self.content_type == ContentType.TEXT and self.name == "Default"):
             lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
 
+        # Handle None content - just return the comment
+        if self.content is None:
+            return "\n".join(lines)
+
         # Reconstruct the image markdown from content (URL) and metadata
         if "original_markdown" in self.metadata:
             # Use original markdown if available for perfect reconstruction
@@ -185,6 +268,14 @@ class MarkdownImageElement(MarkdownSlideElement):
             lines.append(f"![{alt_text}]({self.content})")
 
         return "\n".join(lines)
+
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownImageElement":
+        """Create a placeholder image element with a sample image URL."""
+        return cls.from_markdown(
+            name=name,
+            markdown_content="![Placeholder image](https://via.placeholder.com/400x300)",
+        )
 
 
 class RowProxy:
@@ -207,12 +298,16 @@ class MarkdownTableElement(MarkdownSlideElement):
     """Table element containing structured table data."""
 
     content_type: Literal[ContentType.TABLE] = ContentType.TABLE
-    content: TableData = Field(...)  # Override content to be TableData instead of str
+    content: TableData | None = None  # Override content to be TableData or None
 
     @field_validator("content", mode="before")
     @classmethod
-    def validate_and_parse_table(cls, v) -> TableData:
+    def validate_and_parse_table(cls, v) -> TableData | None:
         """Validate markdown table using Marko with GFM extension and convert to structured data."""
+        # Allow None content
+        if v is None:
+            return None
+
         if isinstance(v, TableData):
             return v  # Already parsed
 
@@ -225,11 +320,12 @@ class MarkdownTableElement(MarkdownSlideElement):
                 raise ValueError(f"Invalid TableData dict structure: {e}")
 
         if not isinstance(v, str):
-            raise ValueError("Table content must be a string, dict, or TableData")
+            raise ValueError("Table content must be a string, dict, TableData, or None")
 
         content_str = v.strip()
+        # Handle empty string as None
         if not content_str:
-            raise ValueError("Table element cannot be empty")
+            return None
 
         # Use Marko with GFM extension to parse the table
         try:
@@ -518,6 +614,10 @@ class MarkdownTableElement(MarkdownSlideElement):
         if not (self.content_type == ContentType.TEXT and self.name == "Default"):
             lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
 
+        # Handle None content - just return the comment
+        if self.content is None:
+            return "\n".join(lines)
+
         # Add table content using TableData's to_markdown method
         lines.append(self.content.to_markdown())
 
@@ -596,6 +696,15 @@ class MarkdownTableElement(MarkdownSlideElement):
         table_data = TableData(headers=headers, rows=rows)
 
         return cls(name=name, content=table_data, metadata=metadata or {})
+
+    @classmethod
+    def placeholder(cls, name: str) -> "MarkdownTableElement":
+        """Create a placeholder table element with sample data."""
+        table_md = """| Column A | Column B | Column C |
+|----------|----------|----------|
+| Row 1 A  | Row 1 B  | Row 1 C  |
+| Row 2 A  | Row 2 B  | Row 2 C  |"""
+        return cls.from_markdown(name=name, markdown_content=table_md)
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -783,58 +892,3 @@ class MarkdownTableElement(MarkdownSlideElement):
             raise ValueError(
                 f"Invalid table structure after setting cell [{row_idx}, {col_idx}] = '{value}': {e}"
             )
-
-
-class MarkdownChartElement(MarkdownSlideElement):
-    """Chart element containing a JSON code block."""
-
-    content_type: Literal[ContentType.CHART] = ContentType.CHART
-
-    @field_validator("content")
-    @classmethod
-    def validate_chart_content(cls, v: str) -> str:
-        """Validate that content contains only a JSON code block."""
-        content = v.strip()
-
-        # Must start with ```json and end with ```
-        if not content.startswith("```json\n") or not content.endswith("\n```"):
-            raise ValueError("Chart element must contain only a ```json code block")
-
-        # Extract JSON content
-        json_content = content[8:-4]  # Remove ```json\n and \n```
-
-        try:
-            json.loads(json_content)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Chart element must contain valid JSON: {e}")
-
-        return v
-
-    @model_validator(mode="after")
-    def extract_json_to_metadata(self) -> "MarkdownChartElement":
-        """Extract JSON content to metadata field."""
-        if self.content.strip().startswith("```json\n"):
-            json_content = self.content.strip()[8:-4]  # Remove ```json\n and \n```
-            try:
-                parsed_json = json.loads(json_content)
-                self.metadata["chart_data"] = parsed_json
-            except json.JSONDecodeError:
-                pass  # Let the field validator handle the error
-        return self
-
-    @classmethod
-    def from_markdown(cls, name: str, markdown_content: str) -> "MarkdownChartElement":
-        """Create ChartElement from markdown content containing JSON code block."""
-        return cls(name=name, content=markdown_content.strip())
-
-    def to_markdown(self) -> str:
-        """Convert element back to markdown format."""
-        lines = []
-
-        # Add HTML comment for element type and name
-        lines.append(f"<!-- {self.content_type.value}: {self.name} -->")
-
-        # Add content
-        lines.append(self.content.rstrip())
-
-        return "\n".join(lines)

@@ -29,6 +29,7 @@ from gslides_api.domain.domain import (
     Dimension,
     OptionalColor,
     RgbColor,
+    ThemeColorType,
     Unit,
 )
 from gslides_api.domain.text import (
@@ -177,6 +178,100 @@ class TestColorConversion:
         opt_color = _abstract_to_optional_color(original)
         result = _optional_color_to_abstract(opt_color)
         assert result == original
+
+    def test_optional_color_theme_color_light1(self):
+        """Theme color LIGHT1 should convert to AbstractColor with theme_color field."""
+        opt_color = OptionalColor(
+            opaqueColor=Color(themeColor=ThemeColorType.LIGHT1)
+        )
+        result = _optional_color_to_abstract(opt_color)
+        assert result is not None
+        assert result.theme_color == "LIGHT1"
+        # RGB values should be defaults (0.0) since it's a theme color
+        assert result.red == 0.0
+        assert result.green == 0.0
+        assert result.blue == 0.0
+
+    def test_optional_color_theme_color_dark1(self):
+        """Theme color DARK1 should convert to AbstractColor with theme_color field."""
+        opt_color = OptionalColor(
+            opaqueColor=Color(themeColor=ThemeColorType.DARK1)
+        )
+        result = _optional_color_to_abstract(opt_color)
+        assert result is not None
+        assert result.theme_color == "DARK1"
+
+    def test_optional_color_theme_color_accent(self):
+        """Theme color ACCENT1 should convert correctly."""
+        opt_color = OptionalColor(
+            opaqueColor=Color(themeColor=ThemeColorType.ACCENT1)
+        )
+        result = _optional_color_to_abstract(opt_color)
+        assert result is not None
+        assert result.theme_color == "ACCENT1"
+
+    def test_abstract_to_optional_color_theme_color(self):
+        """AbstractColor with theme_color should convert back to theme color."""
+        abstract = AbstractColor(theme_color="LIGHT1")
+        result = _abstract_to_optional_color(abstract)
+        assert result is not None
+        assert result.opaqueColor is not None
+        assert result.opaqueColor.themeColor == ThemeColorType.LIGHT1
+        assert result.opaqueColor.rgbColor is None
+
+    def test_abstract_to_optional_color_theme_color_accent(self):
+        """AbstractColor with ACCENT1 theme_color should convert correctly."""
+        abstract = AbstractColor(theme_color="ACCENT1")
+        result = _abstract_to_optional_color(abstract)
+        assert result is not None
+        assert result.opaqueColor.themeColor == ThemeColorType.ACCENT1
+
+    def test_abstract_to_optional_color_invalid_theme_falls_back_to_rgb(self):
+        """Invalid theme_color string should fall back to RGB."""
+        abstract = AbstractColor(theme_color="INVALID_COLOR", red=0.5, green=0.5, blue=0.5)
+        result = _abstract_to_optional_color(abstract)
+        assert result is not None
+        # Should have fallen back to RGB
+        assert result.opaqueColor.rgbColor is not None
+        assert result.opaqueColor.rgbColor.red == 0.5
+        assert result.opaqueColor.rgbColor.green == 0.5
+        assert result.opaqueColor.rgbColor.blue == 0.5
+
+    def test_theme_color_roundtrip_light1(self):
+        """Theme color LIGHT1 should roundtrip correctly."""
+        original_opt = OptionalColor(
+            opaqueColor=Color(themeColor=ThemeColorType.LIGHT1)
+        )
+        abstract = _optional_color_to_abstract(original_opt)
+        result_opt = _abstract_to_optional_color(abstract)
+
+        assert result_opt is not None
+        assert result_opt.opaqueColor is not None
+        assert result_opt.opaqueColor.themeColor == ThemeColorType.LIGHT1
+
+    def test_theme_color_roundtrip_all_types(self):
+        """All theme color types should roundtrip correctly."""
+        for theme_type in ThemeColorType:
+            if theme_type == ThemeColorType.THEME_COLOR_TYPE_UNSPECIFIED:
+                continue  # Skip unspecified
+            original_opt = OptionalColor(
+                opaqueColor=Color(themeColor=theme_type)
+            )
+            abstract = _optional_color_to_abstract(original_opt)
+            result_opt = _abstract_to_optional_color(abstract)
+
+            assert result_opt is not None, f"Failed for {theme_type}"
+            assert result_opt.opaqueColor.themeColor == theme_type, f"Failed for {theme_type}"
+
+    def test_theme_color_takes_precedence_over_rgb(self):
+        """When both theme_color and RGB are set, theme_color should take precedence."""
+        # This tests _abstract_to_optional_color when both are present
+        abstract = AbstractColor(theme_color="LIGHT1", red=1.0, green=0.0, blue=0.0)
+        result = _abstract_to_optional_color(abstract)
+        assert result is not None
+        # Should use theme color, not RGB
+        assert result.opaqueColor.themeColor == ThemeColorType.LIGHT1
+        assert result.opaqueColor.rgbColor is None
 
 
 class TestBaselineConversion:
@@ -715,3 +810,55 @@ class TestRoundTrip:
         # Result will be in PT (10 points)
         assert result.fontSize.magnitude == 10.0
         assert result.fontSize.unit == Unit.PT
+
+    def test_roundtrip_preserves_theme_color(self):
+        """Theme color should roundtrip correctly through full style conversion.
+
+        This is the key test for the fix - LIGHT1 theme color (used for white
+        text on dark backgrounds) should not be lost during roundtrip.
+        """
+        original = TextStyle(
+            bold=True,
+            fontFamily="Arial",
+            foregroundColor=OptionalColor(
+                opaqueColor=Color(themeColor=ThemeColorType.LIGHT1)
+            ),
+        )
+
+        # Convert to FullTextStyle and back
+        full = gslides_style_to_full(original)
+        result = full_style_to_gslides(full)
+
+        # Theme color should be preserved
+        assert result.foregroundColor is not None
+        assert result.foregroundColor.opaqueColor is not None
+        assert result.foregroundColor.opaqueColor.themeColor == ThemeColorType.LIGHT1
+        # Should not have RGB color when using theme color
+        assert result.foregroundColor.opaqueColor.rgbColor is None
+
+    def test_roundtrip_theme_color_with_all_properties(self):
+        """Full style with theme color should roundtrip correctly."""
+        original = TextStyle(
+            bold=True,
+            italic=True,
+            fontFamily="Arial",
+            fontSize=Dimension(magnitude=24.0, unit=Unit.PT),
+            foregroundColor=OptionalColor(
+                opaqueColor=Color(themeColor=ThemeColorType.ACCENT1)
+            ),
+            backgroundColor=OptionalColor(
+                opaqueColor=Color(themeColor=ThemeColorType.DARK1)
+            ),
+        )
+
+        full = gslides_style_to_full(original)
+        result = full_style_to_gslides(full)
+
+        # Check theme colors preserved
+        assert result.foregroundColor.opaqueColor.themeColor == ThemeColorType.ACCENT1
+        assert result.backgroundColor.opaqueColor.themeColor == ThemeColorType.DARK1
+        # Check other properties also preserved
+        assert result.bold is True
+        assert result.italic is True
+        assert result.fontFamily == "Arial"
+        assert result.fontSize.magnitude == 24.0
