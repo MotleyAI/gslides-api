@@ -7,7 +7,7 @@ from typeguard import typechecked
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
 from gslides_api.domain.domain import Dimension, OutputUnit, Size, Transform
-from gslides_api.domain.table import Table, TableColumnProperties, TableRowProperties
+from gslides_api.domain.table import Table, TableColumnProperties, TableRange, TableRowProperties
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.text import TextStyle
 from gslides_api.element.base import ElementKind, PageElementBase
@@ -20,6 +20,7 @@ from gslides_api.request.table import (
     DeleteTableRowRequest,
     InsertTableColumnsRequest,
     InsertTableRowsRequest,
+    UpdateTableCellPropertiesRequest,
     UpdateTableColumnPropertiesRequest,
     UpdateTableRowPropertiesRequest,
 )
@@ -152,20 +153,50 @@ class TableElement(PageElementBase):
 
         if cell is not None and cell.text is not None:
             size_inches = self.absolute_size(OutputUnit.IN, location)
-            requests = cell.text.write_text_requests(
-                text=text,
-                as_markdown=as_markdown,
-                styles=styles,
-                overwrite=overwrite,
-                autoscale=autoscale,
-                size_inches=size_inches,
-            )
+            if cell.text is not None:
+                requests = cell.text.write_text_requests(
+                    text=text,
+                    as_markdown=as_markdown,
+                    styles=styles,
+                    overwrite=overwrite,
+                    autoscale=autoscale,
+                    size_inches=size_inches,
+                )
+            else:
+                # Cell exists but has no text content (empty cell from API)
+                from gslides_api.element.text_content import TextContent
+
+                temp_text_content = TextContent(textElements=[])
+                requests = temp_text_content.write_text_requests(
+                    text=text,
+                    as_markdown=as_markdown,
+                    styles=styles,
+                    overwrite=overwrite,
+                    autoscale=autoscale,
+                    size_inches=size_inches,
+                )
         else:
             # Table structure not populated yet (e.g., during creation from markdown)
             # Create a temporary TextContent to generate the requests
             from gslides_api.element.text_content import TextContent
 
             temp_text_content = TextContent(textElements=[])
+
+            # Try to copy styles from existing cells in the same row
+            # This preserves text formatting (e.g., white font color) when adding new columns
+            effective_styles = styles
+            if (
+                styles is None
+                and self.table.tableRows
+                and location.rowIndex < len(self.table.tableRows)
+            ):
+                row = self.table.tableRows[location.rowIndex]
+                if row.tableCells:
+                    # Find leftmost cell with text styles in this row
+                    for cell in row.tableCells:
+                        if cell.text and cell.text.styles():
+                            effective_styles = cell.text.styles()
+                            break
 
             # Calculate size if possible, otherwise use default
             try:
@@ -176,7 +207,7 @@ class TableElement(PageElementBase):
             requests = temp_text_content.write_text_requests(
                 text=text,
                 as_markdown=as_markdown,
-                styles=styles,
+                styles=effective_styles,
                 overwrite=overwrite,
                 autoscale=autoscale,
                 size_inches=size_inches,
@@ -284,7 +315,14 @@ class TableElement(PageElementBase):
             and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
         ):
             cell = self[location.rowIndex, location.columnIndex]
-            requests = cell.text.delete_text_request(self.objectId)
+            if cell.text is not None:
+                requests = cell.text.delete_text_request(self.objectId)
+            else:
+                # Cell exists but has no text content (empty cell from API)
+                from gslides_api.element.text_content import TextContent
+
+                temp_text_content = TextContent(textElements=[])
+                requests = temp_text_content.delete_text_request(self.objectId)
         else:
             # Table structure not populated yet - create generic delete requests
             from gslides_api.element.text_content import TextContent
@@ -798,6 +836,29 @@ class TableElement(PageElementBase):
                     number=columns_to_add,
                 )
             )
+
+            # Copy header row (row 0) styling from rightmost existing cell to new columns
+            if self.table.tableRows and len(self.table.tableRows) > 0:
+                header_row = self.table.tableRows[0]
+                if header_row.tableCells and len(header_row.tableCells) >= current_columns:
+                    # Get styling from rightmost existing header cell (consistent with width inheritance)
+                    rightmost_header_cell = header_row.tableCells[current_columns - 1]
+                    if rightmost_header_cell.tableCellProperties:
+                        for new_col_idx in range(current_columns, n_columns):
+                            requests.append(
+                                UpdateTableCellPropertiesRequest(
+                                    objectId=self.objectId,
+                                    tableRange=TableRange(
+                                        location=TableCellLocation(
+                                            rowIndex=0, columnIndex=new_col_idx
+                                        ),
+                                        rowSpan=1,
+                                        columnSpan=1,
+                                    ),
+                                    tableCellProperties=rightmost_header_cell.tableCellProperties,
+                                    fields="tableCellBackgroundFill,contentAlignment",
+                                )
+                            )
 
             # Add width adjustment requests if fix_width=False
             if not fix_width:
