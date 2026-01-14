@@ -283,7 +283,7 @@ class TestTableElementResize:
             # Test with fix_width=True (fix_height uses default False)
             table_element.resize(3, 6, fix_width=True, api_client=mock_client_instance)
 
-            mock_resize_requests.assert_called_once_with(3, 6, True, False)
+            mock_resize_requests.assert_called_once_with(3, 6, True, False, target_height_emu=None)
             mock_client_instance.batch_update.assert_called_once()
 
     @patch("gslides_api.element.table.default_api_client")
@@ -590,7 +590,7 @@ class TestTableElementResize:
                 5, 6, fix_width=False, fix_height=True, api_client=mock_client_instance
             )
 
-            mock_resize_requests.assert_called_once_with(5, 6, False, True)
+            mock_resize_requests.assert_called_once_with(5, 6, False, True, target_height_emu=None)
             mock_client_instance.batch_update.assert_called_once()
 
     def test_resize_requests_height_adjustment_row_indices(self):

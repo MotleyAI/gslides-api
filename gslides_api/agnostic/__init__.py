@@ -1,6 +1,9 @@
 """Platform-agnostic representations and utilities."""
 
 from gslides_api.agnostic.converters import (
+    EMU_PER_CM,
+    EMU_PER_INCH,
+    EMU_PER_PT,
     full_style_to_gslides,
     gslides_style_to_full,
     gslides_style_to_rich,
@@ -29,6 +32,10 @@ from gslides_api.agnostic.text import (
 )
 
 __all__ = [
+    # EMU conversion constants
+    "EMU_PER_CM",
+    "EMU_PER_INCH",
+    "EMU_PER_PT",
     # Text style classes
     "AbstractColor",
     "AbstractTextRun",

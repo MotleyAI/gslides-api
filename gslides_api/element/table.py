@@ -140,7 +140,8 @@ class TableElement(PageElementBase):
                 f"is outside table bounds ({self.table.rows}, {self.table.columns})"
             )
 
-        # If table structure is populated, use the existing cell's text content
+        # If table structure is populated and cell has text, use the existing cell's text content
+        cell = None
         if (
             self.table.tableRows is not None
             and location.rowIndex < len(self.table.tableRows)
@@ -148,6 +149,8 @@ class TableElement(PageElementBase):
             and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
         ):
             cell = self[location.rowIndex, location.columnIndex]
+
+        if cell is not None and cell.text is not None:
             size_inches = self.absolute_size(OutputUnit.IN, location)
             requests = cell.text.write_text_requests(
                 text=text,
@@ -626,13 +629,15 @@ class TableElement(PageElementBase):
         return requests
 
     def _calculate_proportional_heights_after_addition(
-        self, original_rows: int, new_rows: int
+        self, original_rows: int, new_rows: int, target_height_emu: float | None = None
     ) -> List[GSlidesAPIRequest]:
-        """Generate requests to proportionally shrink all rows to maintain total table height.
+        """Generate requests to proportionally set all rows to fit within a target height.
 
         Args:
             original_rows: Number of rows before addition
             new_rows: Total number of rows after addition
+            target_height_emu: If provided, use this as target height (in EMU).
+                              If None, calculates from original row heights.
 
         Returns:
             List of UpdateTableRowPropertiesRequest to set row heights
@@ -643,20 +648,23 @@ class TableElement(PageElementBase):
         if not self.table.tableRows or len(self.table.tableRows) != original_rows:
             return requests
 
-        # Calculate total height of all original rows
-        total_original_height = 0
-        for row in self.table.tableRows:
-            if row.rowHeight:
-                total_original_height += row.rowHeight.magnitude
-            else:
-                # If we don't have height info for some rows, can't do proportional adjustment
-                return requests
+        # Calculate total height - either from parameter or from original rows
+        if target_height_emu is not None:
+            total_target_height = target_height_emu
+        else:
+            total_target_height = 0
+            for row in self.table.tableRows:
+                if row.rowHeight:
+                    total_target_height += row.rowHeight.magnitude
+                else:
+                    # If we don't have height info for some rows, can't do proportional adjustment
+                    return requests
 
-        if total_original_height == 0:
+        if total_target_height <= 0:
             return requests
 
-        # Calculate new height per row to maintain total table height
-        new_height_per_row = total_original_height / new_rows
+        # Calculate new height per row to fit within target height
+        new_height_per_row = total_target_height / new_rows
 
         # Get the unit from the first row that has height info
         height_unit = None
@@ -706,6 +714,7 @@ class TableElement(PageElementBase):
         n_columns: int,
         fix_width: bool = True,
         fix_height: bool = False,
+        target_height_emu: float | None = None,
     ) -> List[GSlidesAPIRequest]:
         """Generate requests to resize the table to the specified dimensions.
 
@@ -718,6 +727,8 @@ class TableElement(PageElementBase):
             fix_height: If True, maintain constant table height when adding/deleting rows.
                        If False (default), preserve original row heights when adding rows and allow
                        table height to change when deleting rows.
+            target_height_emu: If provided, constrain table to this height (in EMU) when adding rows.
+                              Takes precedence over fix_height=True when both specified.
 
         Returns:
             List of API requests to resize the table
@@ -745,10 +756,10 @@ class TableElement(PageElementBase):
                 )
             )
 
-            # Add height adjustment requests if fix_height=True
-            if fix_height:
+            # Add height adjustment requests if fix_height=True or target_height_emu specified
+            if target_height_emu is not None or fix_height:
                 height_requests = self._calculate_proportional_heights_after_addition(
-                    current_rows, n_rows
+                    current_rows, n_rows, target_height_emu=target_height_emu
                 )
                 requests.extend(height_requests)
 
@@ -826,6 +837,7 @@ class TableElement(PageElementBase):
         n_columns: int,
         fix_width: bool = True,
         fix_height: bool = False,
+        target_height_emu: float | None = None,
         api_client=None,
     ) -> None:
         """Resize the table to the specified dimensions.
@@ -839,12 +851,15 @@ class TableElement(PageElementBase):
             fix_height: If True, maintain constant table height when adding/deleting rows.
                        If False (default), preserve original row heights when adding rows and allow
                        table height to change when deleting rows.
+            target_height_emu: If provided, constrain table to this height (in EMU) when adding rows.
             api_client: Optional GoogleAPIClient instance. If None, uses the default client.
 
         Raises:
             ValueError: If target dimensions are less than 1 or if no API client is available
         """
-        requests = self.resize_requests(n_rows, n_columns, fix_width, fix_height)
+        requests = self.resize_requests(
+            n_rows, n_columns, fix_width, fix_height, target_height_emu=target_height_emu
+        )
 
         if not requests:
             # No changes needed

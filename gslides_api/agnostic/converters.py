@@ -36,6 +36,12 @@ from gslides_api.domain.text import (
 )
 
 
+# EMU (English Metric Unit) conversion constants
+EMU_PER_PT = 12700      # 1 point = 12,700 EMUs
+EMU_PER_INCH = 914400   # 1 inch = 914,400 EMUs
+EMU_PER_CM = 360000     # 1 cm = 360,000 EMUs
+
+
 # Monospace font families for code detection
 MONOSPACE_FONTS = {
     "courier new",
@@ -66,8 +72,7 @@ def _dimension_to_pt(dimension: Optional[Dimension]) -> Optional[float]:
     if dimension.unit == Unit.PT:
         return dimension.magnitude
     elif dimension.unit == Unit.EMU:
-        # 1 point = 12,700 EMUs
-        return dimension.magnitude / 12700.0
+        return dimension.magnitude / EMU_PER_PT
     else:
         # UNIT_UNSPECIFIED or unknown - assume points
         return dimension.magnitude
