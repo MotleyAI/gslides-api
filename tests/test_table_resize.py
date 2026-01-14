@@ -5,6 +5,7 @@ Tests for TableElement resize functionality with fix_width parameter.
 import pytest
 from unittest.mock import Mock, patch
 
+from gslides_api.agnostic.units import OutputUnit
 from gslides_api.element.table import TableElement
 from gslides_api.domain.table import (
     Table,
@@ -612,3 +613,214 @@ class TestTableElementResize:
 
         targeted_rows.sort()
         assert targeted_rows == [0, 1]  # First two rows should remain
+
+
+class TestTableBorderWeight:
+    """Tests for border weight functionality in table resize."""
+
+    def create_test_table_with_borders(self, rows: int = 3, columns: int = 4, border_weight_emu: float = 38100):
+        """Create a test table element with border information."""
+        from gslides_api.domain.table import (
+            TableBorderRow,
+            TableBorderCell,
+            TableBorderProperties,
+        )
+
+        # Create table columns with width information
+        table_columns = []
+        for i in range(columns):
+            table_columns.append(
+                TableColumnProperties(
+                    columnWidth=Dimension(magnitude=100, unit=Unit.PT)
+                )
+            )
+
+        # Create table rows with height information (in EMU for consistency)
+        table_rows = []
+        for row_idx in range(rows):
+            cells = []
+            for col_idx in range(columns):
+                cells.append(TableCell(text=TextContent(textElements=[])))
+            table_rows.append(
+                TableRow(
+                    tableCells=cells,
+                    rowHeight=Dimension(
+                        magnitude=914400,  # 1 inch in EMU
+                        unit=Unit.EMU
+                    ),
+                    tableRowProperties=TableRowProperties(
+                        minRowHeight=Dimension(magnitude=914400, unit=Unit.EMU)
+                    ),
+                )
+            )
+
+        # Create horizontal border rows (N+1 rows of borders for N data rows)
+        horizontal_border_rows = []
+        for i in range(rows + 1):
+            border_cells = []
+            for j in range(columns):
+                border_cells.append(
+                    TableBorderCell(
+                        tableBorderProperties=TableBorderProperties(
+                            weight=Dimension(magnitude=border_weight_emu, unit=Unit.EMU)
+                        )
+                    )
+                )
+            horizontal_border_rows.append(
+                TableBorderRow(tableBorderCells=border_cells)
+            )
+
+        table = Table(
+            rows=rows,
+            columns=columns,
+            tableColumns=table_columns,
+            tableRows=table_rows,
+            horizontalBorderRows=horizontal_border_rows,
+        )
+
+        return TableElement(
+            objectId="test-table-id",
+            size=Size(
+                width=Dimension(magnitude=400, unit=Unit.PT),
+                height=Dimension(magnitude=300, unit=Unit.PT),
+            ),
+            transform=Transform(
+                scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"
+            ),
+            table=table,
+            slide_id="test-slide-id",
+            presentation_id="test-presentation-id",
+        )
+
+    def test_get_horizontal_border_weight_in_emu(self):
+        """Test that get_horizontal_border_weight returns correct EMU value."""
+        border_weight_emu = 38100
+        table_element = self.create_test_table_with_borders(border_weight_emu=border_weight_emu)
+
+        weight = table_element.get_horizontal_border_weight(units=OutputUnit.EMU)
+        assert weight == border_weight_emu
+
+    def test_get_horizontal_border_weight_in_inches(self):
+        """Test that get_horizontal_border_weight converts to inches correctly."""
+        border_weight_emu = 914400  # 1 inch
+        table_element = self.create_test_table_with_borders(border_weight_emu=border_weight_emu)
+
+        weight = table_element.get_horizontal_border_weight(units=OutputUnit.IN)
+        assert weight == pytest.approx(1.0)
+
+    def test_get_horizontal_border_weight_in_points(self):
+        """Test that get_horizontal_border_weight converts to points correctly."""
+        border_weight_emu = 12700  # 1 point
+        table_element = self.create_test_table_with_borders(border_weight_emu=border_weight_emu)
+
+        weight = table_element.get_horizontal_border_weight(units=OutputUnit.PT)
+        assert weight == pytest.approx(1.0)
+
+    def test_get_horizontal_border_weight_no_borders(self):
+        """Test that get_horizontal_border_weight returns 0 when no borders exist."""
+        from gslides_api.element.table import TableElement as TE
+
+        # Create table without borders
+        table_columns = [
+            TableColumnProperties(columnWidth=Dimension(magnitude=100, unit=Unit.PT))
+            for _ in range(4)
+        ]
+        table_rows = []
+        for _ in range(3):
+            cells = [TableCell(text=TextContent(textElements=[])) for _ in range(4)]
+            table_rows.append(TableRow(
+                tableCells=cells,
+                rowHeight=Dimension(magnitude=50, unit=Unit.PT),
+            ))
+
+        table = Table(
+            rows=3, columns=4, tableColumns=table_columns, tableRows=table_rows
+        )
+        table_element = TE(
+            objectId="test", table=table, slide_id="", presentation_id="",
+            size=Size(width=Dimension(magnitude=400, unit=Unit.PT), height=Dimension(magnitude=300, unit=Unit.PT)),
+            transform=Transform(scaleX=1.0, scaleY=1.0, translateX=0.0, translateY=0.0, unit="EMU"),
+        )
+
+        weight = table_element.get_horizontal_border_weight(units=OutputUnit.IN)
+        assert weight == 0.0
+
+    def test_generate_border_weight_requests(self):
+        """Test that _generate_border_weight_requests creates correct API requests."""
+        from gslides_api.request.table import UpdateTableBorderPropertiesRequest
+
+        table_element = self.create_test_table_with_borders()
+        new_weight_emu = 19050
+
+        requests = table_element._generate_border_weight_requests(new_weight_emu)
+
+        # Should generate 3 requests: TOP, BOTTOM, INNER_HORIZONTAL
+        assert len(requests) == 3
+        positions = {req.borderPosition for req in requests}
+        assert positions == {"TOP", "BOTTOM", "INNER_HORIZONTAL"}
+
+        for req in requests:
+            assert isinstance(req, UpdateTableBorderPropertiesRequest)
+            assert req.objectId == "test-table-id"
+            assert req.tableBorderProperties.weight.magnitude == new_weight_emu
+            assert req.fields == "weight"
+
+    def test_resize_requests_with_target_total_height_scales_rows_and_borders(self):
+        """Test that resize_requests with target_height_emu scales both rows and borders."""
+        from gslides_api.request.table import UpdateTableBorderPropertiesRequest
+
+        # 3 rows x 1 inch each = 3 inches of row height
+        # 4 borders x 38100 EMU (0.0417 inches) = ~0.167 inches of borders
+        # Total expected ~3.167 inches
+        table_element = self.create_test_table_with_borders(
+            rows=3,
+            columns=4,
+            border_weight_emu=38100,  # ~0.0417 inches
+        )
+
+        # Add 3 rows (total 6 rows), but constrain to 4 inches total
+        # Expected 6 rows at 1 inch each = 6 inches row height
+        # Expected 7 borders at 38100 EMU = ~0.29 inches
+        # Total expected without constraint = ~6.29 inches
+        # With 4 inch constraint, scale factor = 4 / 6.29 = ~0.636
+        target_height_emu = 4 * 914400  # 4 inches in EMU
+
+        requests = table_element.resize_requests(
+            n_rows=6, n_columns=4, target_height_emu=target_height_emu
+        )
+
+        # Should have: insert row request, row height requests, border weight request
+        insert_requests = [r for r in requests if isinstance(r, InsertTableRowsRequest)]
+        row_height_requests = [r for r in requests if isinstance(r, UpdateTableRowPropertiesRequest)]
+        border_requests = [r for r in requests if isinstance(r, UpdateTableBorderPropertiesRequest)]
+
+        assert len(insert_requests) == 1
+        assert len(row_height_requests) == 6  # All 6 rows get height adjustments
+        assert len(border_requests) == 3  # Border weight requests (TOP, BOTTOM, INNER_HORIZONTAL)
+
+        # The border weights should all be scaled down
+        for border_req in border_requests:
+            new_border_weight = border_req.tableBorderProperties.weight.magnitude
+            # New weight should be less than original 38100 EMU
+            assert new_border_weight < 38100
+
+    def test_resize_requests_no_border_request_when_border_weight_zero(self):
+        """Test that no border request is generated when border weight is zero."""
+        from gslides_api.request.table import UpdateTableBorderPropertiesRequest
+
+        # Create table with zero border weight
+        table_element = self.create_test_table_with_borders(
+            rows=3,
+            columns=4,
+            border_weight_emu=0,  # No borders
+        )
+
+        target_height_emu = 2 * 914400  # 2 inches
+
+        requests = table_element.resize_requests(
+            n_rows=6, n_columns=4, target_height_emu=target_height_emu
+        )
+
+        # Should NOT have border request when border weight is 0
+        border_requests = [r for r in requests if isinstance(r, UpdateTableBorderPropertiesRequest)]
+        assert len(border_requests) == 0

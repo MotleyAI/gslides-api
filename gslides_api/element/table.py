@@ -6,8 +6,15 @@ from typeguard import typechecked
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
-from gslides_api.domain.domain import Dimension, OutputUnit, Size, Transform
-from gslides_api.domain.table import Table, TableColumnProperties, TableRange, TableRowProperties
+from gslides_api.agnostic.units import OutputUnit, from_emu
+from gslides_api.domain.domain import Dimension, Size, Transform
+from gslides_api.domain.table import (
+    Table,
+    TableBorderProperties,
+    TableColumnProperties,
+    TableRange,
+    TableRowProperties,
+)
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.text import TextStyle
 from gslides_api.element.base import ElementKind, PageElementBase
@@ -20,6 +27,7 @@ from gslides_api.request.table import (
     DeleteTableRowRequest,
     InsertTableColumnsRequest,
     InsertTableRowsRequest,
+    UpdateTableBorderPropertiesRequest,
     UpdateTableCellPropertiesRequest,
     UpdateTableColumnPropertiesRequest,
     UpdateTableRowPropertiesRequest,
@@ -746,6 +754,61 @@ class TableElement(PageElementBase):
 
         return requests
 
+    def get_horizontal_border_weight(self, units: OutputUnit = OutputUnit.IN) -> float:
+        """Get weight of horizontal borders in specified units.
+
+        Args:
+            units: Output unit (OutputUnit.IN, OutputUnit.CM, OutputUnit.PT, OutputUnit.EMU)
+
+        Returns:
+            Weight of horizontal borders. Returns 0.0 if no border data available.
+        """
+        if not self.table.horizontalBorderRows:
+            return 0.0
+
+        # Get weight from first border cell (they're typically uniform)
+        first_row = self.table.horizontalBorderRows[0]
+        if first_row.tableBorderCells:
+            first_cell = first_row.tableBorderCells[0]
+            if (
+                first_cell.tableBorderProperties
+                and first_cell.tableBorderProperties.weight
+            ):
+                weight_emu = first_cell.tableBorderProperties.weight.magnitude
+                return from_emu(weight_emu, units)
+        return 0.0
+
+    def _generate_border_weight_requests(
+        self, weight_emu: float
+    ) -> List[GSlidesAPIRequest]:
+        """Generate requests to set all horizontal border weights.
+
+        Args:
+            weight_emu: New border weight in EMU
+
+        Returns:
+            List of requests to update border weights (TOP, BOTTOM, INNER_HORIZONTAL)
+        """
+        # Need 3 requests to cover all horizontal borders: TOP, BOTTOM, INNER_HORIZONTAL
+        # (There's no single "ALL_HORIZONTAL" option in the API)
+        border_positions = ["TOP", "BOTTOM", "INNER_HORIZONTAL"]
+        return [
+            UpdateTableBorderPropertiesRequest(
+                objectId=self.objectId,
+                tableRange=TableRange(
+                    location=TableCellLocation(rowIndex=0, columnIndex=0),
+                    rowSpan=self.table.rows,
+                    columnSpan=self.table.columns,
+                ),
+                borderPosition=position,
+                tableBorderProperties=TableBorderProperties(
+                    weight=Dimension(magnitude=weight_emu, unit="EMU")
+                ),
+                fields="weight",
+            )
+            for position in border_positions
+        ]
+
     def resize_requests(
         self,
         n_rows: int,
@@ -765,8 +828,9 @@ class TableElement(PageElementBase):
             fix_height: If True, maintain constant table height when adding/deleting rows.
                        If False (default), preserve original row heights when adding rows and allow
                        table height to change when deleting rows.
-            target_height_emu: If provided, constrain table to this height (in EMU) when adding rows.
-                              Takes precedence over fix_height=True when both specified.
+            target_height_emu: If provided, constrain total table height (rows + borders)
+                                     to this value (in EMU). Scales both row heights and border
+                                     weights proportionally. Takes precedence over fix_height.
 
         Returns:
             List of API requests to resize the table
@@ -794,10 +858,44 @@ class TableElement(PageElementBase):
                 )
             )
 
-            # Add height adjustment requests if fix_height=True or target_height_emu specified
-            if target_height_emu is not None or fix_height:
+            # Add height adjustment requests
+            if target_height_emu is not None:
+                # Calculate current row heights total
+                current_row_heights = sum(
+                    r.rowHeight.magnitude
+                    for r in self.table.tableRows
+                    if r.rowHeight
+                )
+                current_border_weight = self.get_horizontal_border_weight(units=OutputUnit.EMU)
+                current_border_count = current_rows + 1
+                new_border_count = n_rows + 1
+
+                # Expected heights if we just added rows (no scaling)
+                # Row heights scale proportionally with row count
+                expected_row_heights = current_row_heights * (n_rows / current_rows)
+                expected_border_height = current_border_weight * new_border_count
+                expected_total = expected_row_heights + expected_border_height
+
+                # Scale factor to fit in target
+                scale_factor = target_height_emu / expected_total
+
+                # New row height values
+                target_row_height_total = expected_row_heights * scale_factor
+                target_row_height_emu = target_row_height_total
+
+                # Add row height requests
                 height_requests = self._calculate_proportional_heights_after_addition(
-                    current_rows, n_rows, target_height_emu=target_height_emu
+                    current_rows, n_rows, target_height_emu=target_row_height_emu
+                )
+                requests.extend(height_requests)
+
+                # Scale borders proportionally (skip if no borders)
+                if current_border_weight > 0:
+                    new_border_weight = current_border_weight * scale_factor
+                    requests.extend(self._generate_border_weight_requests(new_border_weight))
+            elif fix_height:
+                height_requests = self._calculate_proportional_heights_after_addition(
+                    current_rows, n_rows, target_height_emu=None
                 )
                 requests.extend(height_requests)
 
@@ -912,7 +1010,9 @@ class TableElement(PageElementBase):
             fix_height: If True, maintain constant table height when adding/deleting rows.
                        If False (default), preserve original row heights when adding rows and allow
                        table height to change when deleting rows.
-            target_height_emu: If provided, constrain table to this height (in EMU) when adding rows.
+            target_height_emu: If provided, constrain total table height (rows + borders)
+                                     to this value (in EMU). Scales both row heights and border
+                                     weights proportionally. Takes precedence over fix_height.
             api_client: Optional GoogleAPIClient instance. If None, uses the default client.
 
         Raises:

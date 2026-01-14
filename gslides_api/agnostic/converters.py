@@ -20,6 +20,7 @@ from gslides_api.agnostic.text import (
     MarkdownRenderableStyle,
     RichStyle,
 )
+from gslides_api.agnostic.units import EMU_PER_PT
 from gslides_api.domain.domain import (
     Color,
     Dimension,
@@ -35,12 +36,6 @@ from gslides_api.domain.text import (
     TextStyle,
     WeightedFontFamily,
 )
-
-
-# EMU (English Metric Unit) conversion constants
-EMU_PER_PT = 12700      # 1 point = 12,700 EMUs
-EMU_PER_INCH = 914400   # 1 inch = 914,400 EMUs
-EMU_PER_CM = 360000     # 1 cm = 360,000 EMUs
 
 
 # Monospace font families for code detection
