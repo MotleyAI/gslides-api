@@ -145,7 +145,7 @@ class MarkdownSlide(BaseModel):
                     if on_invalid_element == "raise":
                         raise ValueError(
                             f"Invalid content for {content_type.value} element '{element_name}': {e}"
-                        )
+                        ) from e
                     else:
                         logger.warning(
                             f"Invalid content for {content_type.value} element '{element_name}': {e}. Converting to text element."
