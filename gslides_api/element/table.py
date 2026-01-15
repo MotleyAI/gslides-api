@@ -914,10 +914,7 @@ class TableElement(PageElementBase):
         current_rows = self.table.rows
         current_columns = self.table.columns
 
-        # Calculate font scale factor for when rows are rescaled
-        font_scale_factor = 1.0
-        if (fix_height or target_height_emu is not None) and n_rows > current_rows:
-            font_scale_factor = current_rows / n_rows
+        font_scale_factor = 1.0  # Default: no scaling
 
         # Handle row changes
         if n_rows > current_rows:
@@ -932,9 +929,9 @@ class TableElement(PageElementBase):
                 )
             )
 
-            # Add height adjustment requests
-            if target_height_emu is not None:
-                # Calculate current row heights total
+            # Calculate scale factor if height scaling is needed (only if row info available)
+            if (fix_height or target_height_emu is not None) and self.table.tableRows:
+                # Common calculations for both cases
                 current_row_heights = sum(
                     r.rowHeight.magnitude
                     for r in self.table.tableRows
@@ -944,34 +941,43 @@ class TableElement(PageElementBase):
                 current_border_count = current_rows + 1
                 new_border_count = n_rows + 1
 
-                # Expected heights if we just added rows (no scaling)
-                # Row heights scale proportionally with row count
+                # What the height WOULD be if we just added rows without scaling
                 expected_row_heights = current_row_heights * (n_rows / current_rows)
                 expected_border_height = current_border_weight * new_border_count
                 expected_total = expected_row_heights + expected_border_height
 
-                # Scale factor to fit in target
-                scale_factor = target_height_emu / expected_total
+                # Determine target height
+                if target_height_emu is not None:
+                    target_total = target_height_emu
+                else:
+                    # fix_height=True: target is current table height
+                    target_total = current_row_heights + (current_border_weight * current_border_count)
 
-                # New row height values
-                target_row_height_total = expected_row_heights * scale_factor
-                target_row_height_emu = target_row_height_total
+                # Scale factor applies to both row heights AND fonts
+                scale_factor = target_total / expected_total
 
-                # Add row height requests
-                height_requests = self._calculate_proportional_heights_after_addition(
-                    current_rows, n_rows, target_height_emu=target_row_height_emu
+                # Determine if we should apply scaling:
+                # - fix_height: always scale (to maintain current height)
+                # - target_height_emu: only scale if scale_factor < 1.0 (i.e., we need to shrink)
+                should_scale = (
+                    (target_height_emu is None and fix_height)  # fix_height case: always scale
+                    or (target_height_emu is not None and scale_factor < 1.0)  # target_height case: only if shrinking
                 )
-                requests.extend(height_requests)
 
-                # Scale borders proportionally (skip if no borders)
-                if current_border_weight > 0:
-                    new_border_weight = current_border_weight * scale_factor
-                    requests.extend(self._generate_border_weight_requests(new_border_weight))
-            elif fix_height:
-                height_requests = self._calculate_proportional_heights_after_addition(
-                    current_rows, n_rows, target_height_emu=None
-                )
-                requests.extend(height_requests)
+                if should_scale:
+                    font_scale_factor = scale_factor
+
+                    # Apply row height scaling
+                    target_row_height_total = expected_row_heights * scale_factor
+                    height_requests = self._calculate_proportional_heights_after_addition(
+                        current_rows, n_rows, target_height_emu=target_row_height_total
+                    )
+                    requests.extend(height_requests)
+
+                    # Scale borders proportionally (skip if no borders)
+                    if current_border_weight > 0:
+                        new_border_weight = current_border_weight * scale_factor
+                        requests.extend(self._generate_border_weight_requests(new_border_weight))
 
             # Copy cell styling from last existing row to new rows
             if self.table.tableRows and len(self.table.tableRows) >= current_rows:

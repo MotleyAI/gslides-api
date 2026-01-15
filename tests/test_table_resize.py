@@ -811,8 +811,18 @@ class TestTableBorderWeight:
             # New weight should be less than original 38100 EMU
             assert new_border_weight < 38100
 
-        # Scale factor should be calculated
-        assert scale_factor == pytest.approx(3 / 6, rel=1e-6)
+        # Scale factor should be target_height / expected_total (including borders)
+        # Expected: 6 rows at 914400 EMU = 5486400 EMU row height
+        # Expected: 7 borders at 38100 EMU = 266700 EMU
+        # Expected total = 5486400 + 266700 = 5753100 EMU
+        # Target = 4 * 914400 = 3657600 EMU
+        # Scale = 3657600 / 5753100 ≈ 0.6357
+        expected_row_heights = 3 * 914400 * (6 / 3)  # 5486400
+        expected_border_height = 38100 * 7  # 266700
+        expected_total = expected_row_heights + expected_border_height  # 5753100
+        target_total = 4 * 914400  # 3657600
+        expected_scale = target_total / expected_total
+        assert scale_factor == pytest.approx(expected_scale, rel=1e-6)
 
     def test_resize_requests_no_border_request_when_border_weight_zero(self):
         """Test that no border request is generated when border weight is zero."""
