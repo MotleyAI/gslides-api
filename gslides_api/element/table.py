@@ -869,7 +869,7 @@ class TableElement(PageElementBase):
                 ),
                 borderPosition=position,
                 tableBorderProperties=TableBorderProperties(
-                    weight=Dimension(magnitude=weight_emu, unit="EMU")
+                    weight=Dimension(magnitude=weight_emu, unit=Unit.EMU)
                 ),
                 fields="weight",
             )
