@@ -954,15 +954,20 @@ class TableElement(PageElementBase):
                     target_total = current_row_heights + (current_border_weight * current_border_count)
 
                 # Scale factor applies to both row heights AND fonts
-                scale_factor = target_total / expected_total
+                # Guard against division by zero - if expected_total is 0, skip scaling
+                if expected_total > 0:
+                    scale_factor = target_total / expected_total
 
-                # Determine if we should apply scaling:
-                # - fix_height: always scale (to maintain current height)
-                # - target_height_emu: only scale if scale_factor < 1.0 (i.e., we need to shrink)
-                should_scale = (
-                    (target_height_emu is None and fix_height)  # fix_height case: always scale
-                    or (target_height_emu is not None and scale_factor < 1.0)  # target_height case: only if shrinking
-                )
+                    # Determine if we should apply scaling:
+                    # - fix_height: always scale (to maintain current height)
+                    # - target_height_emu: only scale if scale_factor < 1.0 (i.e., we need to shrink)
+                    should_scale = (
+                        (target_height_emu is None and fix_height)  # fix_height case: always scale
+                        or (target_height_emu is not None and scale_factor < 1.0)  # target_height case: only if shrinking
+                    )
+                else:
+                    scale_factor = 1.0
+                    should_scale = False
 
                 if should_scale:
                     font_scale_factor = scale_factor
