@@ -9,7 +9,7 @@ from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
 from gslides_api.agnostic.text import RichStyle
 from gslides_api.agnostic.units import OutputUnit, from_emu
-from gslides_api.domain.domain import Dimension, Size, Transform
+from gslides_api.domain.domain import Dimension, Size, Transform, Unit
 from gslides_api.domain.table import (
     Table,
     TableBorderProperties,
