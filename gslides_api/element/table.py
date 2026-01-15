@@ -1,4 +1,5 @@
 import uuid
+from copy import deepcopy
 from typing import Any, List, Optional, Sequence, Tuple
 
 from pydantic import Field, field_validator
@@ -6,8 +7,16 @@ from typeguard import typechecked
 
 from gslides_api.client import GoogleAPIClient
 from gslides_api.client import api_client as default_api_client
-from gslides_api.domain.domain import Dimension, OutputUnit, Size, Transform
-from gslides_api.domain.table import Table, TableColumnProperties, TableRange, TableRowProperties
+from gslides_api.agnostic.text import RichStyle
+from gslides_api.agnostic.units import OutputUnit, from_emu
+from gslides_api.domain.domain import Dimension, Size, Transform, Unit
+from gslides_api.domain.table import (
+    Table,
+    TableBorderProperties,
+    TableColumnProperties,
+    TableRange,
+    TableRowProperties,
+)
 from gslides_api.domain.table_cell import TableCellLocation
 from gslides_api.domain.text import TextStyle
 from gslides_api.element.base import ElementKind, PageElementBase
@@ -20,6 +29,7 @@ from gslides_api.request.table import (
     DeleteTableRowRequest,
     InsertTableColumnsRequest,
     InsertTableRowsRequest,
+    UpdateTableBorderPropertiesRequest,
     UpdateTableCellPropertiesRequest,
     UpdateTableColumnPropertiesRequest,
     UpdateTableRowPropertiesRequest,
@@ -125,6 +135,8 @@ class TableElement(PageElementBase):
         overwrite: bool = True,
         autoscale: bool = False,
         check_shape: bool = True,
+        font_scale_factor: float = 1.0,
+        template_styles: List[RichStyle] | None = None,
     ) -> List[GSlidesAPIRequest]:
         if isinstance(location, Sequence):
             location = TableCellLocation(rowIndex=location[0], columnIndex=location[1])
@@ -141,7 +153,8 @@ class TableElement(PageElementBase):
                 f"is outside table bounds ({self.table.rows}, {self.table.columns})"
             )
 
-        # If table structure is populated, use the existing cell's text content
+        # If table structure is populated and cell has text, use the existing cell's text content
+        cell = None
         if (
             self.table.tableRows is not None
             and location.rowIndex < len(self.table.tableRows)
@@ -149,12 +162,35 @@ class TableElement(PageElementBase):
             and location.columnIndex < len(self.table.tableRows[location.rowIndex].tableCells)
         ):
             cell = self[location.rowIndex, location.columnIndex]
+
+        if cell is not None and cell.text is not None:
             size_inches = self.absolute_size(OutputUnit.IN, location)
+
+            # Get effective styles (from parameter or from existing cell)
+            effective_styles = styles
+            if styles is None and cell.text.styles():
+                effective_styles = cell.text.styles()
+            # Fallback to template_styles for empty cells (e.g., newly added rows)
+            if effective_styles is None and template_styles is not None:
+                effective_styles = template_styles
+
+            # Apply font scaling if provided (deepcopy to avoid modifying originals)
+            if effective_styles and font_scale_factor != 1.0:
+                scaled_styles = []
+                for style in effective_styles:
+                    scaled_style = deepcopy(style)
+                    if scaled_style.font_size_pt is not None:
+                        scaled_style.font_size_pt = round(
+                            scaled_style.font_size_pt * font_scale_factor
+                        )
+                    scaled_styles.append(scaled_style)
+                effective_styles = scaled_styles
+
             if cell.text is not None:
                 requests = cell.text.write_text_requests(
                     text=text,
                     as_markdown=as_markdown,
-                    styles=styles,
+                    styles=effective_styles,
                     overwrite=overwrite,
                     autoscale=autoscale,
                     size_inches=size_inches,
@@ -167,7 +203,7 @@ class TableElement(PageElementBase):
                 requests = temp_text_content.write_text_requests(
                     text=text,
                     as_markdown=as_markdown,
-                    styles=styles,
+                    styles=effective_styles,
                     overwrite=overwrite,
                     autoscale=autoscale,
                     size_inches=size_inches,
@@ -194,6 +230,21 @@ class TableElement(PageElementBase):
                         if cell.text and cell.text.styles():
                             effective_styles = cell.text.styles()
                             break
+            # Fallback to template_styles for empty rows (e.g., newly added rows)
+            if effective_styles is None and template_styles is not None:
+                effective_styles = template_styles
+
+            # Apply font scaling if provided (deepcopy to avoid modifying originals)
+            if effective_styles and font_scale_factor != 1.0:
+                scaled_styles = []
+                for style in effective_styles:
+                    scaled_style = deepcopy(style)
+                    if scaled_style.font_size_pt is not None:
+                        scaled_style.font_size_pt = round(
+                            scaled_style.font_size_pt * font_scale_factor
+                        )
+                    scaled_styles.append(scaled_style)
+                effective_styles = scaled_styles
 
             # Calculate size if possible, otherwise use default
             try:
@@ -245,17 +296,40 @@ class TableElement(PageElementBase):
         return requests
 
     def content_update_requests(
-        self, markdown_elem: MarkdownTableElement | str, check_shape: bool = True
+        self,
+        markdown_elem: MarkdownTableElement | str,
+        check_shape: bool = True,
+        font_scale_factor: float = 1.0,
     ) -> List[GSlidesAPIRequest]:
         """
         Update the table's content with the provided markdown table.
-        :param markdown_elem: if a str, must contain only a valid markdown table
-        :return: Request to update the table's content
+
+        Args:
+            markdown_elem: if a str, must contain only a valid markdown table
+            check_shape: if True, validate the markdown shape matches the table shape
+            font_scale_factor: Scale factor for font sizes. Use value returned by
+                resize() when rows were rescaled with fix_height=True.
+
+        Returns:
+            List of API requests to update the table's content
         """
         requests = []
 
         if isinstance(markdown_elem, str):
             markdown_elem = MarkdownTableElement.from_markdown("temp", markdown_elem)
+
+        # Extract template styles from existing rows as fallback for empty cells
+        # Iterate from last row upward until we find styles (in case last rows are empty)
+        template_styles = None
+        if self.table.tableRows:
+            for row in reversed(self.table.tableRows):
+                if row.tableCells:
+                    for cell in row.tableCells:
+                        if cell.text and cell.text.styles():
+                            template_styles = cell.text.styles()
+                            break
+                if template_styles:
+                    break
 
         for row in range(markdown_elem.shape[0]):
             for col in range(markdown_elem.shape[1]):
@@ -263,7 +337,11 @@ class TableElement(PageElementBase):
                 cell_location = TableCellLocation(rowIndex=row, columnIndex=col)
                 requests.extend(
                     self.write_text_to_cell_requests(
-                        cell_content.strip(), cell_location, check_shape=check_shape
+                        cell_content.strip(),
+                        cell_location,
+                        check_shape=check_shape,
+                        font_scale_factor=font_scale_factor,
+                        template_styles=template_styles,
                     )
                 )
 
@@ -664,13 +742,15 @@ class TableElement(PageElementBase):
         return requests
 
     def _calculate_proportional_heights_after_addition(
-        self, original_rows: int, new_rows: int
+        self, original_rows: int, new_rows: int, target_height_emu: float | None = None
     ) -> List[GSlidesAPIRequest]:
-        """Generate requests to proportionally shrink all rows to maintain total table height.
+        """Generate requests to proportionally set all rows to fit within a target height.
 
         Args:
             original_rows: Number of rows before addition
             new_rows: Total number of rows after addition
+            target_height_emu: If provided, use this as target height (in EMU).
+                              If None, calculates from original row heights.
 
         Returns:
             List of UpdateTableRowPropertiesRequest to set row heights
@@ -681,20 +761,23 @@ class TableElement(PageElementBase):
         if not self.table.tableRows or len(self.table.tableRows) != original_rows:
             return requests
 
-        # Calculate total height of all original rows
-        total_original_height = 0
-        for row in self.table.tableRows:
-            if row.rowHeight:
-                total_original_height += row.rowHeight.magnitude
-            else:
-                # If we don't have height info for some rows, can't do proportional adjustment
-                return requests
+        # Calculate total height - either from parameter or from original rows
+        if target_height_emu is not None:
+            total_target_height = target_height_emu
+        else:
+            total_target_height = 0
+            for row in self.table.tableRows:
+                if row.rowHeight:
+                    total_target_height += row.rowHeight.magnitude
+                else:
+                    # If we don't have height info for some rows, can't do proportional adjustment
+                    return requests
 
-        if total_original_height == 0:
+        if total_target_height <= 0:
             return requests
 
-        # Calculate new height per row to maintain total table height
-        new_height_per_row = total_original_height / new_rows
+        # Calculate new height per row to fit within target height
+        new_height_per_row = total_target_height / new_rows
 
         # Get the unit from the first row that has height info
         height_unit = None
@@ -738,13 +821,69 @@ class TableElement(PageElementBase):
 
         return requests
 
+    def get_horizontal_border_weight(self, units: OutputUnit = OutputUnit.IN) -> float:
+        """Get weight of horizontal borders in specified units.
+
+        Args:
+            units: Output unit (OutputUnit.IN, OutputUnit.CM, OutputUnit.PT, OutputUnit.EMU)
+
+        Returns:
+            Weight of horizontal borders. Returns 0.0 if no border data available.
+        """
+        if not self.table.horizontalBorderRows:
+            return 0.0
+
+        # Get weight from first border cell (they're typically uniform)
+        first_row = self.table.horizontalBorderRows[0]
+        if first_row.tableBorderCells:
+            first_cell = first_row.tableBorderCells[0]
+            if (
+                first_cell.tableBorderProperties
+                and first_cell.tableBorderProperties.weight
+            ):
+                weight_emu = first_cell.tableBorderProperties.weight.magnitude
+                return from_emu(weight_emu, units)
+        return 0.0
+
+    def _generate_border_weight_requests(
+        self, weight_emu: float
+    ) -> List[GSlidesAPIRequest]:
+        """Generate requests to set all horizontal border weights.
+
+        Args:
+            weight_emu: New border weight in EMU
+
+        Returns:
+            List of requests to update border weights (TOP, BOTTOM, INNER_HORIZONTAL)
+        """
+        # Need 3 requests to cover all horizontal borders: TOP, BOTTOM, INNER_HORIZONTAL
+        # (There's no single "ALL_HORIZONTAL" option in the API)
+        border_positions = ["TOP", "BOTTOM", "INNER_HORIZONTAL"]
+        return [
+            UpdateTableBorderPropertiesRequest(
+                objectId=self.objectId,
+                tableRange=TableRange(
+                    location=TableCellLocation(rowIndex=0, columnIndex=0),
+                    rowSpan=self.table.rows,
+                    columnSpan=self.table.columns,
+                ),
+                borderPosition=position,
+                tableBorderProperties=TableBorderProperties(
+                    weight=Dimension(magnitude=weight_emu, unit=Unit.EMU)
+                ),
+                fields="weight",
+            )
+            for position in border_positions
+        ]
+
     def resize_requests(
         self,
         n_rows: int,
         n_columns: int,
         fix_width: bool = True,
         fix_height: bool = False,
-    ) -> List[GSlidesAPIRequest]:
+        target_height_emu: float | None = None,
+    ) -> Tuple[List[GSlidesAPIRequest], float]:
         """Generate requests to resize the table to the specified dimensions.
 
         Args:
@@ -756,9 +895,14 @@ class TableElement(PageElementBase):
             fix_height: If True, maintain constant table height when adding/deleting rows.
                        If False (default), preserve original row heights when adding rows and allow
                        table height to change when deleting rows.
+            target_height_emu: If provided, constrain total table height (rows + borders)
+                                     to this value (in EMU). Scales both row heights and border
+                                     weights proportionally. Takes precedence over fix_height.
 
         Returns:
-            List of API requests to resize the table
+            Tuple of (list of API requests to resize the table, font scale factor).
+            Font scale factor is < 1.0 when rows are added with fix_height=True or target_height_emu,
+            1.0 otherwise.
 
         Raises:
             ValueError: If target dimensions are less than 1
@@ -769,6 +913,8 @@ class TableElement(PageElementBase):
         requests = []
         current_rows = self.table.rows
         current_columns = self.table.columns
+
+        font_scale_factor = 1.0  # Default: no scaling
 
         # Handle row changes
         if n_rows > current_rows:
@@ -783,12 +929,82 @@ class TableElement(PageElementBase):
                 )
             )
 
-            # Add height adjustment requests if fix_height=True
-            if fix_height:
-                height_requests = self._calculate_proportional_heights_after_addition(
-                    current_rows, n_rows
+            # Calculate scale factor if height scaling is needed (only if row info available)
+            if (fix_height or target_height_emu is not None) and self.table.tableRows:
+                # Common calculations for both cases
+                current_row_heights = sum(
+                    r.rowHeight.magnitude
+                    for r in self.table.tableRows
+                    if r.rowHeight
                 )
-                requests.extend(height_requests)
+                current_border_weight = self.get_horizontal_border_weight(units=OutputUnit.EMU)
+                current_border_count = current_rows + 1
+                new_border_count = n_rows + 1
+
+                # What the height WOULD be if we just added rows without scaling
+                expected_row_heights = current_row_heights * (n_rows / current_rows)
+                expected_border_height = current_border_weight * new_border_count
+                expected_total = expected_row_heights + expected_border_height
+
+                # Determine target height
+                if target_height_emu is not None:
+                    target_total = target_height_emu
+                else:
+                    # fix_height=True: target is current table height
+                    target_total = current_row_heights + (current_border_weight * current_border_count)
+
+                # Scale factor applies to both row heights AND fonts
+                # Guard against division by zero - if expected_total is 0, skip scaling
+                if expected_total > 0:
+                    scale_factor = target_total / expected_total
+
+                    # Determine if we should apply scaling:
+                    # - fix_height: always scale (to maintain current height)
+                    # - target_height_emu: only scale if scale_factor < 1.0 (i.e., we need to shrink)
+                    should_scale = (
+                        (target_height_emu is None and fix_height)  # fix_height case: always scale
+                        or (target_height_emu is not None and scale_factor < 1.0)  # target_height case: only if shrinking
+                    )
+                else:
+                    scale_factor = 1.0
+                    should_scale = False
+
+                if should_scale:
+                    font_scale_factor = scale_factor
+
+                    # Apply row height scaling
+                    target_row_height_total = expected_row_heights * scale_factor
+                    height_requests = self._calculate_proportional_heights_after_addition(
+                        current_rows, n_rows, target_height_emu=target_row_height_total
+                    )
+                    requests.extend(height_requests)
+
+                    # Scale borders proportionally (skip if no borders)
+                    if current_border_weight > 0:
+                        new_border_weight = current_border_weight * scale_factor
+                        requests.extend(self._generate_border_weight_requests(new_border_weight))
+
+            # Copy cell styling from last existing row to new rows
+            if self.table.tableRows and len(self.table.tableRows) >= current_rows:
+                template_row = self.table.tableRows[current_rows - 1]  # Last existing row
+                if template_row.tableCells:
+                    for col_idx, template_cell in enumerate(template_row.tableCells):
+                        if template_cell.tableCellProperties:
+                            for new_row_idx in range(current_rows, n_rows):
+                                requests.append(
+                                    UpdateTableCellPropertiesRequest(
+                                        objectId=self.objectId,
+                                        tableRange=TableRange(
+                                            location=TableCellLocation(
+                                                rowIndex=new_row_idx, columnIndex=col_idx
+                                            ),
+                                            rowSpan=1,
+                                            columnSpan=1,
+                                        ),
+                                        tableCellProperties=template_cell.tableCellProperties,
+                                        fields="tableCellBackgroundFill,contentAlignment",
+                                    )
+                                )
 
         elif n_rows < current_rows:
             # Deleting rows
@@ -879,7 +1095,7 @@ class TableElement(PageElementBase):
                 )
                 requests.extend(width_requests)
 
-        return requests
+        return requests, font_scale_factor
 
     def resize(
         self,
@@ -887,8 +1103,9 @@ class TableElement(PageElementBase):
         n_columns: int,
         fix_width: bool = True,
         fix_height: bool = False,
+        target_height_emu: float | None = None,
         api_client=None,
-    ) -> None:
+    ) -> float:
         """Resize the table to the specified dimensions.
 
         Args:
@@ -900,16 +1117,26 @@ class TableElement(PageElementBase):
             fix_height: If True, maintain constant table height when adding/deleting rows.
                        If False (default), preserve original row heights when adding rows and allow
                        table height to change when deleting rows.
+            target_height_emu: If provided, constrain total table height (rows + borders)
+                                     to this value (in EMU). Scales both row heights and border
+                                     weights proportionally. Takes precedence over fix_height.
             api_client: Optional GoogleAPIClient instance. If None, uses the default client.
+
+        Returns:
+            Font scale factor. < 1.0 when rows are added with fix_height=True or target_height_emu,
+            1.0 otherwise. Use this value when calling content_update_requests() to scale fonts
+            proportionally.
 
         Raises:
             ValueError: If target dimensions are less than 1 or if no API client is available
         """
-        requests = self.resize_requests(n_rows, n_columns, fix_width, fix_height)
+        requests, font_scale_factor = self.resize_requests(
+            n_rows, n_columns, fix_width, fix_height, target_height_emu=target_height_emu
+        )
 
         if not requests:
             # No changes needed
-            return
+            return 1.0
 
         if api_client is None:
 
@@ -925,3 +1152,5 @@ class TableElement(PageElementBase):
         # Update local table dimensions
         self.table.rows = n_rows
         self.table.columns = n_columns
+
+        return font_scale_factor
