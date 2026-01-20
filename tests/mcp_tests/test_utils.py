@@ -11,7 +11,7 @@ from gslides_api.mcp.utils import (
 )
 
 
-class TestParsePresenatationId:
+class TestParsePresentationId:
     """Tests for parse_presentation_id function."""
 
     def test_parse_simple_id(self):
