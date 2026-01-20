@@ -26,7 +26,11 @@ class GoogleAPIClient:
     """The credentials object to build the connections to the APIs"""
 
     def __init__(
-        self, auto_flush: bool = True, initial_wait_s: int = 60, n_backoffs: int = 4
+        self,
+        auto_flush: bool = True,
+        initial_wait_s: int = 60,
+        n_backoffs: int = 4,
+        _shared_services: Optional["GoogleAPIClient"] = None,
     ) -> None:
         """Constructor method
 
@@ -34,11 +38,21 @@ class GoogleAPIClient:
             auto_flush: Whether to automatically flush batch requests
             initial_wait_s: Initial wait time in seconds for exponential backoff
             n_backoffs: Number of backoff attempts before giving up
+            _shared_services: Optional parent client to share services from (internal use)
         """
-        self.crdtls: Optional[Credentials] = None
-        self.sht_srvc: Optional[Resource] = None
-        self.sld_srvc: Optional[Resource] = None
-        self.drive_srvc: Optional[Resource] = None
+        if _shared_services is not None:
+            # Reuse shared, read-only state from another client
+            self.crdtls = _shared_services.crdtls
+            self.sht_srvc = _shared_services.sht_srvc
+            self.sld_srvc = _shared_services.sld_srvc
+            self.drive_srvc = _shared_services.drive_srvc
+        else:
+            self.crdtls: Optional[Credentials] = None
+            self.sht_srvc: Optional[Resource] = None
+            self.sld_srvc: Optional[Resource] = None
+            self.drive_srvc: Optional[Resource] = None
+
+        # Per-instance mutable batch state (never shared)
         self.pending_batch_requests: list[GSlidesAPIRequest] = []
         self.pending_presentation_id: Optional[str] = None
         self.auto_flush = auto_flush
@@ -186,6 +200,31 @@ class GoogleAPIClient:
             and self.sht_srvc is not None
             and self.sld_srvc is not None
             and self.drive_srvc is not None
+        )
+
+    def create_child_client(self, auto_flush: bool = False) -> "GoogleAPIClient":
+        """Create a new client that shares this client's services but has its own batch state.
+
+        This is useful for concurrent operations where each operation needs isolated
+        batch state while reusing the same authenticated Google API service connections.
+
+        Args:
+            auto_flush: Whether the child client should automatically flush batch requests.
+                       Defaults to False.
+
+        Returns:
+            A new GoogleAPIClient instance that shares this client's services.
+
+        Raises:
+            RuntimeError: If this client has not been initialized with credentials.
+        """
+        if not self.is_initialized:
+            raise RuntimeError("Cannot create child client from uninitialized parent client")
+        return GoogleAPIClient(
+            auto_flush=auto_flush,
+            initial_wait_s=self.initial_wait_s,
+            n_backoffs=self.n_backoffs,
+            _shared_services=self,
         )
 
     def flush_batch_update(self) -> Dict[str, Any]:

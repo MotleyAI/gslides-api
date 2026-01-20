@@ -12,6 +12,7 @@ import re
 import sys
 import tempfile
 import traceback
+import uuid
 from typing import Any, Dict, Optional
 
 from mcp.server import FastMCP
@@ -61,18 +62,24 @@ from .utils import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global API client - initialized with auto_flush=False as per requirements
-api_client: Optional[GoogleAPIClient] = None
+# Global API client factory - initialized with auto_flush=True for the factory itself
+# Child clients created for each request will have auto_flush=False
+_api_client_factory: Optional[GoogleAPIClient] = None
 
 # Default output format - can be overridden via CLI arg
 DEFAULT_OUTPUT_FORMAT: OutputFormat = OutputFormat.RAW
 
 
 def get_api_client() -> GoogleAPIClient:
-    """Get the initialized API client."""
-    if api_client is None:
+    """Get a new API client for the current request.
+
+    Creates a child client with isolated batch state that shares the
+    initialized Google API services from the factory client. This allows
+    concurrent tool invocations without corrupting shared batch state.
+    """
+    if _api_client_factory is None:
         raise RuntimeError("API client not initialized. Call initialize_server() first.")
-    return api_client
+    return _api_client_factory.create_child_client(auto_flush=False)
 
 
 def initialize_server(credential_path: str, default_format: OutputFormat = OutputFormat.RAW):
@@ -82,18 +89,18 @@ def initialize_server(credential_path: str, default_format: OutputFormat = Outpu
         credential_path: Path to the Google API credentials directory
         default_format: Default output format for tools
     """
-    global api_client, DEFAULT_OUTPUT_FORMAT
+    global _api_client_factory, DEFAULT_OUTPUT_FORMAT
 
-    # Create client with auto_flush=False
-    api_client = GoogleAPIClient(auto_flush=False)
+    # Create factory client with auto_flush=True (default behavior for non-MCP use)
+    _api_client_factory = GoogleAPIClient(auto_flush=True)
 
-    # Initialize credentials on the api_client instance directly
-    api_client.initialize_credentials(credential_path)
+    # Initialize credentials on the factory client
+    _api_client_factory.initialize_credentials(credential_path)
 
-    # Set the global api_client in the gslides_api.client module
+    # Set the global api_client in the gslides_api.client module for backward compatibility
     import gslides_api.client
 
-    gslides_api.client.api_client = api_client
+    gslides_api.client.api_client = _api_client_factory
 
     DEFAULT_OUTPUT_FORMAT = default_format
     logger.info(f"MCP server initialized with credentials from {credential_path}")
@@ -373,12 +380,13 @@ def get_slide_thumbnail(
             thumbnail = slide.thumbnail(size=thumbnail_size, api_client=client)
             client.flush_batch_update()
 
-        # Save thumbnail to temp file
+        # Save thumbnail to temp file with unique name to avoid concurrent collisions
         image_data = thumbnail.payload
 
         # Sanitize slide_name for filename (replace unsafe chars with underscore)
         safe_slide_name = re.sub(r'[^\w\-]', '_', slide_name)
-        filename = f"{pres_id}_{safe_slide_name}_thumbnail.png"
+        unique_suffix = uuid.uuid4().hex[:8]
+        filename = f"{pres_id}_{safe_slide_name}_{unique_suffix}_thumbnail.png"
         file_path = os.path.join(tempfile.gettempdir(), filename)
 
         with open(file_path, 'wb') as f:
