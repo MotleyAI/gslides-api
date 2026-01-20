@@ -28,11 +28,8 @@ class Unit(Enum):
     """A point, 1/72 of an inch."""
 
 
-class OutputUnit(Enum):
-    """Used in PageElementBase.absolute_* methods"""
-
-    IN = "in"
-    CM = "cm"
+# Import OutputUnit from agnostic - extends the old IN/CM with EMU/PT
+from gslides_api.agnostic.units import OutputUnit, from_emu
 
 
 class Dimension(GSlidesBaseModel):
@@ -700,13 +697,14 @@ class PageElementProperties(GSlidesBaseModel):
 
         Args:
             value_emu: The value in EMUs to convert.
-            units: The target units (OutputUnit.CM or OutputUnit.IN).
+            units: The target units (OutputUnit enum value).
 
         Returns:
             The converted value in the specified units.
 
         Raises:
             TypeError: If units is not an OutputUnit enum value.
+            ValueError: If units is not a valid OutputUnit.
         """
         try:
             units = OutputUnit(units)
@@ -716,12 +714,7 @@ class PageElementProperties(GSlidesBaseModel):
         if not isinstance(units, OutputUnit):
             raise TypeError(f"units must be an OutputUnit enum value, got {type(units)}")
 
-        if units == OutputUnit.CM:
-            return value_emu / self._EMU_PER_CM
-        elif units == OutputUnit.IN:
-            return value_emu / self._EMU_PER_INCH
-        else:
-            raise ValueError(f"Unsupported OutputUnit: {units}")
+        return from_emu(value_emu, units)
 
     def absolute_size(self, units: OutputUnit) -> Tuple[float, float]:
         """Calculate the absolute size of the element in the specified units.

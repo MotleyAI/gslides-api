@@ -20,6 +20,7 @@ from gslides_api.agnostic.text import (
     MarkdownRenderableStyle,
     RichStyle,
 )
+from gslides_api.agnostic.units import EMU_PER_PT
 from gslides_api.domain.domain import (
     Color,
     Dimension,
@@ -67,8 +68,7 @@ def _dimension_to_pt(dimension: Optional[Dimension]) -> Optional[float]:
     if dimension.unit == Unit.PT:
         return dimension.magnitude
     elif dimension.unit == Unit.EMU:
-        # 1 point = 12,700 EMUs
-        return dimension.magnitude / 12700.0
+        return dimension.magnitude / EMU_PER_PT
     else:
         # UNIT_UNSPECIFIED or unknown - assume points
         return dimension.magnitude
