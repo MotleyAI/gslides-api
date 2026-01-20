@@ -103,6 +103,38 @@ class GoogleAPIClient:
         self.drive_srvc = build("drive", "v3", credentials=credentials)
         logger.info("Built drive connection")
 
+    def initialize_credentials(self, credential_location: str) -> None:
+        """Initialize credentials from a directory containing token.json/credentials.json.
+
+        Args:
+            credential_location: Path to directory containing Google API credentials
+        """
+        SCOPES = [
+            "https://www.googleapis.com/auth/presentations",
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+
+        _creds = None
+        if os.path.exists(os.path.join(credential_location, "token.json")):
+            _creds = Credentials.from_authorized_user_file(
+                os.path.join(credential_location, "token.json"), SCOPES
+            )
+        if not _creds or not _creds.valid:
+            if _creds and _creds.expired and _creds.refresh_token:
+                _creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    os.path.join(credential_location, "credentials.json"), SCOPES
+                )
+                _creds = flow.run_local_server(
+                    prompt="consent",
+                    access_type="offline",
+                )
+            with open(os.path.join(credential_location, "token.json"), "w") as token:
+                token.write(_creds.to_json())
+        self.set_credentials(_creds)
+
     @property
     def sheet_service(self) -> Resource:
         """Returns the connects to the sheets API
@@ -474,39 +506,12 @@ logger = logging.getLogger(__name__)
 
 
 def initialize_credentials(credential_location: str):
+    """Initialize credentials on the module-level api_client.
+
+    This is a convenience function that calls api_client.initialize_credentials().
+    For initializing credentials on a specific GoogleAPIClient instance, call the
+    initialize_credentials() method directly on that instance.
+
+    :param credential_location: Path to directory containing Google API credentials
     """
-
-    :param credential_location:
-    :return:
-    """
-
-    SCOPES = [
-        "https://www.googleapis.com/auth/presentations",
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ]
-
-    _creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists(os.path.join(credential_location, "token.json")):
-        _creds = Credentials.from_authorized_user_file(
-            os.path.join(credential_location, "token.json"), SCOPES
-        )
-    # If there are no (valid) credentials available, let the user log in.
-    if not _creds or not _creds.valid:
-        if _creds and _creds.expired and _creds.refresh_token:
-            _creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                os.path.join(credential_location, "credentials.json"), SCOPES
-            )
-            _creds = flow.run_local_server(
-                prompt="consent",
-                access_type="offline",
-            )
-        # Save the credentials for the next run
-        with open(os.path.join(credential_location, "token.json"), "w") as token:
-            token.write(_creds.to_json())
-    api_client.set_credentials(_creds)
+    api_client.initialize_credentials(credential_location)
