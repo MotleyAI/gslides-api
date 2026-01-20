@@ -8,8 +8,9 @@ This file tests both currently supported features and new features we want to ad
 
 import pytest
 
-from gslides_api.markdown.from_markdown import markdown_to_text_elements
+from gslides_api.agnostic.markdown_parser import UnsupportedMarkdownError
 from gslides_api.domain.text import TextStyle
+from gslides_api.markdown.from_markdown import markdown_to_text_elements
 
 
 class TestMarkdownFeatureSupport:
@@ -181,4 +182,101 @@ class TestMarkdownEdgeCases:
                 assert result is not None
             except Exception as e:
                 print(f"Malformed markdown '{markdown}' caused: {e}")
+
+
+class TestUnsupportedMarkdownElements:
+    """Test that unsupported markdown elements raise exceptions by default."""
+
+    def test_fenced_code_block_raises_by_default(self):
+        """Test that fenced code blocks raise UnsupportedMarkdownError by default."""
+        markdown = """```
+code block
+```"""
+        with pytest.raises(UnsupportedMarkdownError) as exc_info:
+            markdown_to_text_elements(markdown)
+        assert "FencedCode" in str(exc_info.value)
+        assert "strict=False" in str(exc_info.value)
+
+    def test_fenced_code_block_skipped_in_lenient_mode(self):
+        """Test that fenced code blocks are skipped with strict=False."""
+        markdown = """```
+code block
+```"""
+        # Should not raise, but returns empty
+        result = markdown_to_text_elements(markdown, strict=False)
+        assert result is not None
+        # Empty because fenced code block is skipped
+        assert len(result) == 0
+
+    def test_unsupported_block_elements(self):
+        """Test all unsupported block element types raise exceptions."""
+        unsupported_blocks = [
+            # Fenced code block
+            ("```\ncode\n```", "FencedCode"),
+            # Block quote
+            ("> This is a quote", "Quote"),
+            # Horizontal rule
+            ("---", "ThematicBreak"),
+            # Indented code block
+            ("    indented code", "CodeBlock"),
+        ]
+
+        for markdown, expected_type in unsupported_blocks:
+            with pytest.raises(UnsupportedMarkdownError) as exc_info:
+                markdown_to_text_elements(markdown)
+            assert expected_type in str(exc_info.value), f"Expected {expected_type} in error message for: {markdown}"
+
+    def test_unsupported_inline_elements(self):
+        """Test unsupported inline element types raise exceptions."""
+        unsupported_inlines = [
+            # Image
+            ("![alt text](image.png)", "Image"),
+            # AutoLink
+            ("<https://example.com>", "AutoLink"),
+        ]
+
+        for markdown, expected_type in unsupported_inlines:
+            with pytest.raises(UnsupportedMarkdownError) as exc_info:
+                markdown_to_text_elements(markdown)
+            assert expected_type in str(exc_info.value), f"Expected {expected_type} in error message for: {markdown}"
+
+    def test_mixed_supported_and_unsupported_strict(self):
+        """Test that text with both supported and unsupported elements raises in strict mode."""
+        markdown = """Some text
+```
+code block
+```
+More text"""
+        with pytest.raises(UnsupportedMarkdownError):
+            markdown_to_text_elements(markdown)
+
+    def test_mixed_supported_and_unsupported_lenient(self):
+        """Test that supported elements are processed when unsupported ones are skipped."""
+        markdown = """Some text
+```
+code block
+```
+More text"""
+        result = markdown_to_text_elements(markdown, strict=False)
+        assert result is not None
+        # Should have requests for "Some text" and "More text" paragraphs
+        assert len(result) > 0
+
+    def test_strict_parameter_propagates(self):
+        """Test that strict=False allows all unsupported elements to be skipped."""
+        # Mix of multiple unsupported elements
+        markdown = """> Quote
+---
+```
+code
+```
+Normal text"""
+        # Should not raise in lenient mode
+        result = markdown_to_text_elements(markdown, strict=False)
+        assert result is not None
+
+    def test_exception_is_exported(self):
+        """Test that UnsupportedMarkdownError can be imported from the package."""
+        from gslides_api import UnsupportedMarkdownError as ImportedError
+        assert ImportedError is UnsupportedMarkdownError
                 # Some malformed markdown might legitimately fail
