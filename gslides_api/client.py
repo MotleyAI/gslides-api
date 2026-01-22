@@ -26,7 +26,11 @@ class GoogleAPIClient:
     """The credentials object to build the connections to the APIs"""
 
     def __init__(
-        self, auto_flush: bool = True, initial_wait_s: int = 60, n_backoffs: int = 4
+        self,
+        auto_flush: bool = True,
+        initial_wait_s: int = 60,
+        n_backoffs: int = 4,
+        _shared_services: Optional["GoogleAPIClient"] = None,
     ) -> None:
         """Constructor method
 
@@ -34,11 +38,21 @@ class GoogleAPIClient:
             auto_flush: Whether to automatically flush batch requests
             initial_wait_s: Initial wait time in seconds for exponential backoff
             n_backoffs: Number of backoff attempts before giving up
+            _shared_services: Optional parent client to share services from (internal use)
         """
-        self.crdtls: Optional[Credentials] = None
-        self.sht_srvc: Optional[Resource] = None
-        self.sld_srvc: Optional[Resource] = None
-        self.drive_srvc: Optional[Resource] = None
+        if _shared_services is not None:
+            # Reuse shared, read-only state from another client
+            self.crdtls = _shared_services.crdtls
+            self.sht_srvc = _shared_services.sht_srvc
+            self.sld_srvc = _shared_services.sld_srvc
+            self.drive_srvc = _shared_services.drive_srvc
+        else:
+            self.crdtls: Optional[Credentials] = None
+            self.sht_srvc: Optional[Resource] = None
+            self.sld_srvc: Optional[Resource] = None
+            self.drive_srvc: Optional[Resource] = None
+
+        # Per-instance mutable batch state (never shared)
         self.pending_batch_requests: list[GSlidesAPIRequest] = []
         self.pending_presentation_id: Optional[str] = None
         self.auto_flush = auto_flush
@@ -103,6 +117,38 @@ class GoogleAPIClient:
         self.drive_srvc = build("drive", "v3", credentials=credentials)
         logger.info("Built drive connection")
 
+    def initialize_credentials(self, credential_location: str) -> None:
+        """Initialize credentials from a directory containing token.json/credentials.json.
+
+        Args:
+            credential_location: Path to directory containing Google API credentials
+        """
+        SCOPES = [
+            "https://www.googleapis.com/auth/presentations",
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+
+        _creds = None
+        if os.path.exists(os.path.join(credential_location, "token.json")):
+            _creds = Credentials.from_authorized_user_file(
+                os.path.join(credential_location, "token.json"), SCOPES
+            )
+        if not _creds or not _creds.valid:
+            if _creds and _creds.expired and _creds.refresh_token:
+                _creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    os.path.join(credential_location, "credentials.json"), SCOPES
+                )
+                _creds = flow.run_local_server(
+                    prompt="consent",
+                    access_type="offline",
+                )
+            with open(os.path.join(credential_location, "token.json"), "w") as token:
+                token.write(_creds.to_json())
+        self.set_credentials(_creds)
+
     @property
     def sheet_service(self) -> Resource:
         """Returns the connects to the sheets API
@@ -154,6 +200,31 @@ class GoogleAPIClient:
             and self.sht_srvc is not None
             and self.sld_srvc is not None
             and self.drive_srvc is not None
+        )
+
+    def create_child_client(self, auto_flush: bool = False) -> "GoogleAPIClient":
+        """Create a new client that shares this client's services but has its own batch state.
+
+        This is useful for concurrent operations where each operation needs isolated
+        batch state while reusing the same authenticated Google API service connections.
+
+        Args:
+            auto_flush: Whether the child client should automatically flush batch requests.
+                       Defaults to False.
+
+        Returns:
+            A new GoogleAPIClient instance that shares this client's services.
+
+        Raises:
+            RuntimeError: If this client has not been initialized with credentials.
+        """
+        if not self.is_initialized:
+            raise RuntimeError("Cannot create child client from uninitialized parent client")
+        return GoogleAPIClient(
+            auto_flush=auto_flush,
+            initial_wait_s=self.initial_wait_s,
+            n_backoffs=self.n_backoffs,
+            _shared_services=self,
         )
 
     def flush_batch_update(self) -> Dict[str, Any]:
@@ -474,39 +545,12 @@ logger = logging.getLogger(__name__)
 
 
 def initialize_credentials(credential_location: str):
+    """Initialize credentials on the module-level api_client.
+
+    This is a convenience function that calls api_client.initialize_credentials().
+    For initializing credentials on a specific GoogleAPIClient instance, call the
+    initialize_credentials() method directly on that instance.
+
+    :param credential_location: Path to directory containing Google API credentials
     """
-
-    :param credential_location:
-    :return:
-    """
-
-    SCOPES = [
-        "https://www.googleapis.com/auth/presentations",
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ]
-
-    _creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists(os.path.join(credential_location, "token.json")):
-        _creds = Credentials.from_authorized_user_file(
-            os.path.join(credential_location, "token.json"), SCOPES
-        )
-    # If there are no (valid) credentials available, let the user log in.
-    if not _creds or not _creds.valid:
-        if _creds and _creds.expired and _creds.refresh_token:
-            _creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                os.path.join(credential_location, "credentials.json"), SCOPES
-            )
-            _creds = flow.run_local_server(
-                prompt="consent",
-                access_type="offline",
-            )
-        # Save the credentials for the next run
-        with open(os.path.join(credential_location, "token.json"), "w") as token:
-            token.write(_creds.to_json())
-    api_client.set_credentials(_creds)
+    api_client.initialize_credentials(credential_location)
