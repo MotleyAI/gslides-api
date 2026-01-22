@@ -21,7 +21,7 @@ pip install gslides-api
 
 ### Authentication
 
-First, set up your Google API credentials. See [CREDENTIALS.md](CREDENTIALS.md) for detailed instructions.
+First, set up your Google API credentials. See [CREDENTIALS.md](docs/CREDENTIALS.md) for detailed instructions.
 
 ```python
 from gslides_api import initialize_credentials
@@ -60,6 +60,60 @@ new_slide = presentation.add_slide()
 - **Layouts**: Access and use slide layouts and masters
 - **Requests**: Type-safe request builders for batch operations
 - **Markdown Support**: Convert between Markdown and Google Slides content
+- **MCP Server**: Expose Google Slides operations as tools for AI assistants
+
+## MCP Server
+
+gslides-api includes an MCP (Model Context Protocol) server that exposes Google Slides operations as tools for AI assistants like Claude.
+
+### Installation
+
+```bash
+pip install gslides-api[mcp]
+```
+
+### Quick Start
+
+```bash
+# Set credentials path
+export GSLIDES_CREDENTIALS_PATH=/path/to/credentials
+
+# Run the MCP server
+python -m gslides_api.mcp.server
+```
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `get_presentation` | Get full presentation by URL or ID |
+| `get_slide` | Get slide by name (speaker notes) |
+| `get_element` | Get element by slide and element name |
+| `get_slide_thumbnail` | Get slide thumbnail image |
+| `read_element_markdown` | Read text element as markdown |
+| `write_element_markdown` | Write markdown to text element |
+| `replace_element_image` | Replace image from URL |
+| `copy_slide` | Duplicate a slide |
+| `move_slide` | Reorder slide position |
+| `delete_slide` | Remove a slide |
+
+### MCP Configuration
+
+Add to your `.mcp.json`:
+
+```json
+{
+  "gslides": {
+    "type": "stdio",
+    "command": "python",
+    "args": ["-m", "gslides_api.mcp.server"]
+  }
+}
+```
+
+The server reads credentials from `GSLIDES_CREDENTIALS_PATH` environment variable. Use `--credential-path` to override.
+
+See [docs/MCP_SERVER.md](docs/MCP_SERVER.md) for detailed documentation.
 
 ## API Coverage
 
