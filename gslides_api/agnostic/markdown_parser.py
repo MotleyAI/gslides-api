@@ -9,12 +9,45 @@ import logging
 from typing import Any, Optional
 
 import marko
+import marko.ext.gfm
 
 
 class UnsupportedMarkdownError(ValueError):
     """Raised when markdown contains elements that cannot be converted to the target format."""
 
     pass
+
+
+def markdown_contains_table(content: str) -> bool:
+    """Check if markdown content contains a table.
+
+    Uses marko with GFM (GitHub Flavored Markdown) extension to parse
+    the content and detect Table nodes.
+
+    Args:
+        content: Markdown string to check
+
+    Returns:
+        True if content contains a table, False otherwise
+    """
+    if not content:
+        return False
+
+    md = marko.Markdown(extensions=["gfm"])
+    doc = md.parse(content)
+
+    def find_table(node: Any) -> bool:
+        # Check for GFM Table node
+        if getattr(node, "__class__", type(None)).__name__ == "Table":
+            return True
+        # Recursively check children
+        if hasattr(node, "children") and not isinstance(node.children, str):
+            for child in node.children:
+                if find_table(child):
+                    return True
+        return False
+
+    return find_table(doc)
 
 from gslides_api.agnostic.ir import (
     FormattedDocument,

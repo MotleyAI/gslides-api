@@ -37,6 +37,7 @@ More content...
 A bar chart showing data trends with values 1, 2, and 3
 
 <!-- table: Table_1 -->
+
 | Header 1 | Header 2 |
 |----------|----------|
 | Cell 1   | Cell 2   |
@@ -760,6 +761,7 @@ Welcome to the presentation
 # Slide 2
 
 <!-- table: Data -->
+
 | Name | Value |
 |------|-------|
 | A    | 1     |

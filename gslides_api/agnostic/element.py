@@ -618,7 +618,9 @@ class MarkdownTableElement(MarkdownSlideElement):
         if self.content is None:
             return "\n".join(lines)
 
-        # Add table content using TableData's to_markdown method
+        # Add blank line before table content to ensure it's parsed as a block-level element
+        # (GFM tables need a blank line before them when following other content like list items)
+        lines.append("")
         lines.append(self.content.to_markdown())
 
         return "\n".join(lines)
