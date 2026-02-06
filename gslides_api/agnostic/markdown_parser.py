@@ -9,6 +9,45 @@ import logging
 from typing import Any, Optional
 
 import marko
+import marko.ext.gfm
+
+
+class UnsupportedMarkdownError(ValueError):
+    """Raised when markdown contains elements that cannot be converted to the target format."""
+
+    pass
+
+
+def markdown_contains_table(content: str) -> bool:
+    """Check if markdown content contains a table.
+
+    Uses marko with GFM (GitHub Flavored Markdown) extension to parse
+    the content and detect Table nodes.
+
+    Args:
+        content: Markdown string to check
+
+    Returns:
+        True if content contains a table, False otherwise
+    """
+    if not content:
+        return False
+
+    md = marko.Markdown(extensions=["gfm"])
+    doc = md.parse(content)
+
+    def find_table(node: Any) -> bool:
+        # Check for GFM Table node
+        if getattr(node, "__class__", type(None)).__name__ == "Table":
+            return True
+        # Recursively check children
+        if hasattr(node, "children") and not isinstance(node.children, str):
+            for child in node.children:
+                if find_table(child):
+                    return True
+        return False
+
+    return find_table(doc)
 
 from gslides_api.agnostic.ir import (
     FormattedDocument,
@@ -26,6 +65,7 @@ def parse_markdown_to_ir(
     markdown_text: str,
     base_style: Optional[FullTextStyle] = None,
     heading_style: Optional[FullTextStyle] = None,
+    strict: bool = True,
 ) -> FormattedDocument:
     """Parse markdown string into platform-agnostic intermediate representation.
 
@@ -33,9 +73,15 @@ def parse_markdown_to_ir(
         markdown_text: The markdown text to parse
         base_style: Optional base style to apply to all text
         heading_style: Optional style to apply to headings
+        strict: If True (default), raises UnsupportedMarkdownError for unsupported
+            elements. If False, logs an error and skips unsupported elements.
 
     Returns:
         FormattedDocument containing the parsed and styled content
+
+    Raises:
+        UnsupportedMarkdownError: When strict=True and unsupported markdown
+            elements are encountered (e.g., fenced code blocks, block quotes).
     """
     base_style = base_style or FullTextStyle()
 
@@ -47,7 +93,7 @@ def parse_markdown_to_ir(
     doc = marko.Markdown().parse(markdown_text)
 
     # Convert AST to IR
-    return _markdown_ast_to_ir(doc, base_style=base_style, heading_style=heading_style)
+    return _markdown_ast_to_ir(doc, base_style=base_style, heading_style=heading_style, strict=strict)
 
 
 def _markdown_ast_to_ir(
@@ -55,6 +101,7 @@ def _markdown_ast_to_ir(
     base_style: Optional[FullTextStyle] = None,
     heading_style: Optional[FullTextStyle] = None,
     list_depth: int = 0,
+    strict: bool = True,
 ) -> FormattedDocument:
     """Convert marko AST to platform-agnostic IR.
 
@@ -63,6 +110,8 @@ def _markdown_ast_to_ir(
         base_style: Base text style
         heading_style: Heading text style
         list_depth: Current nesting level for lists
+        strict: If True, raises UnsupportedMarkdownError for unsupported elements.
+            If False, logs an error and skips them.
 
     Returns:
         FormattedDocument with parsed content
@@ -83,7 +132,7 @@ def _markdown_ast_to_ir(
 
     # Process each child of the document
     for child in markdown_ast.children:
-        elements = _process_ast_node(child, base_style, heading_style, list_depth)
+        elements = _process_ast_node(child, base_style, heading_style, list_depth, strict)
         document.elements.extend(elements)
 
     return document
@@ -94,6 +143,7 @@ def _process_ast_node(
     base_style: FullTextStyle,
     heading_style: FullTextStyle,
     list_depth: int = 0,
+    strict: bool = True,
 ) -> list[FormattedParagraph | FormattedList]:
     """Process a single AST node and return IR elements.
 
@@ -102,26 +152,34 @@ def _process_ast_node(
         base_style: Base text style
         heading_style: Heading text style
         list_depth: Current list nesting depth
+        strict: If True, raises UnsupportedMarkdownError for unsupported elements.
+            If False, logs an error and skips them.
 
     Returns:
         List of IR elements (paragraphs or lists)
     """
     if isinstance(node, marko.block.Paragraph):
-        return [_process_paragraph(node, base_style, heading_style, list_depth)]
+        return [_process_paragraph(node, base_style, heading_style, list_depth, strict)]
 
     elif isinstance(node, marko.block.Heading):
-        return [_process_heading(node, heading_style, list_depth)]
+        return [_process_heading(node, heading_style, list_depth, strict)]
 
     elif isinstance(node, marko.block.List):
-        return [_process_list(node, base_style, heading_style, list_depth)]
+        return [_process_list(node, base_style, heading_style, list_depth, strict)]
 
     elif isinstance(node, marko.block.BlankLine):
         # Blank lines create empty paragraphs
         return [FormattedParagraph(runs=[])]
 
     else:
-        logger.warning(f"Unsupported block element: {type(node)}")
-        return []
+        if strict:
+            raise UnsupportedMarkdownError(
+                f"Unsupported block element: {type(node).__name__}. "
+                f"Use strict=False to skip unsupported elements."
+            )
+        else:
+            logger.error(f"Unsupported block element: {type(node)}, skipping")
+            return []
 
 
 def _process_paragraph(
@@ -129,6 +187,7 @@ def _process_paragraph(
     base_style: FullTextStyle,
     heading_style: FullTextStyle,
     list_depth: int = 0,
+    strict: bool = True,
 ) -> FormattedParagraph:
     """Process a paragraph node into a FormattedParagraph.
 
@@ -137,13 +196,14 @@ def _process_paragraph(
         base_style: Base text style
         heading_style: Heading style
         list_depth: Current list depth
+        strict: If True, raises UnsupportedMarkdownError for unsupported elements.
 
     Returns:
         FormattedParagraph with styled text runs
     """
     runs = []
     for child in para.children:
-        runs.extend(_process_inline_node(child, base_style, heading_style, list_depth))
+        runs.extend(_process_inline_node(child, base_style, heading_style, list_depth, strict))
 
     return FormattedParagraph(runs=runs, is_heading=False)
 
@@ -152,6 +212,7 @@ def _process_heading(
     heading: marko.block.Heading,
     heading_style: FullTextStyle,
     list_depth: int = 0,
+    strict: bool = True,
 ) -> FormattedParagraph:
     """Process a heading node into a FormattedParagraph with heading flag.
 
@@ -159,13 +220,14 @@ def _process_heading(
         heading: Marko heading node
         heading_style: Heading text style
         list_depth: Current list depth
+        strict: If True, raises UnsupportedMarkdownError for unsupported elements.
 
     Returns:
         FormattedParagraph marked as heading
     """
     runs = []
     for child in heading.children:
-        runs.extend(_process_inline_node(child, heading_style, heading_style, list_depth))
+        runs.extend(_process_inline_node(child, heading_style, heading_style, list_depth, strict))
 
     return FormattedParagraph(
         runs=runs,
@@ -179,6 +241,7 @@ def _process_list(
     base_style: FullTextStyle,
     heading_style: FullTextStyle,
     list_depth: int = 0,
+    strict: bool = True,
 ) -> FormattedList:
     """Process a list node into a FormattedList.
 
@@ -187,6 +250,7 @@ def _process_list(
         base_style: Base text style
         heading_style: Heading style
         list_depth: Current list depth
+        strict: If True, raises UnsupportedMarkdownError for unsupported elements.
 
     Returns:
         FormattedList with list items
@@ -195,7 +259,7 @@ def _process_list(
     for child in list_node.children:
         if isinstance(child, marko.block.ListItem):
             # _process_list_item returns a list (main item + nested items)
-            items.extend(_process_list_item(child, base_style, heading_style, list_depth))
+            items.extend(_process_list_item(child, base_style, heading_style, list_depth, strict))
 
     return FormattedList(
         items=items,
@@ -209,6 +273,7 @@ def _process_list_item(
     base_style: FullTextStyle,
     heading_style: FullTextStyle,
     list_depth: int = 0,
+    strict: bool = True,
 ) -> list[FormattedListItem]:
     """Process a list item node into FormattedListItems.
 
@@ -217,6 +282,7 @@ def _process_list_item(
         base_style: Base text style
         heading_style: Heading style
         list_depth: Current list depth
+        strict: If True, raises UnsupportedMarkdownError for unsupported elements.
 
     Returns:
         List of FormattedListItem objects - the main item plus any nested items
@@ -226,13 +292,19 @@ def _process_list_item(
 
     for child in list_item.children:
         if isinstance(child, marko.block.Paragraph):
-            paragraphs.append(_process_paragraph(child, base_style, heading_style, list_depth + 1))
+            paragraphs.append(_process_paragraph(child, base_style, heading_style, list_depth + 1, strict))
         elif isinstance(child, marko.block.List):
             # Nested list - process and keep items with their correct nesting levels
-            nested_list = _process_list(child, base_style, heading_style, list_depth + 1)
+            nested_list = _process_list(child, base_style, heading_style, list_depth + 1, strict)
             nested_items.extend(nested_list.items)
         else:
-            logger.warning(f"Unsupported list item child: {type(child)}")
+            if strict:
+                raise UnsupportedMarkdownError(
+                    f"Unsupported list item child: {type(child).__name__}. "
+                    f"Use strict=False to skip unsupported elements."
+                )
+            else:
+                logger.error(f"Unsupported list item child: {type(child)}, skipping")
 
     # Return the main item followed by any nested items
     result = [FormattedListItem(
@@ -248,6 +320,7 @@ def _process_inline_node(
     base_style: FullTextStyle,
     heading_style: FullTextStyle,
     list_depth: int = 0,
+    strict: bool = True,
 ) -> list[FormattedTextRun]:
     """Process an inline node into text runs.
 
@@ -256,6 +329,8 @@ def _process_inline_node(
         base_style: Base text style
         heading_style: Heading style
         list_depth: Current list depth
+        strict: If True, raises UnsupportedMarkdownError for unsupported elements.
+            If False, logs an error and skips them.
 
     Returns:
         List of FormattedTextRun objects
@@ -277,7 +352,7 @@ def _process_inline_node(
         italic_style.markdown.italic = not italic_style.markdown.italic
         runs = []
         for child in node.children:
-            runs.extend(_process_inline_node(child, italic_style, heading_style, list_depth))
+            runs.extend(_process_inline_node(child, italic_style, heading_style, list_depth, strict))
         return runs
 
     elif isinstance(node, marko.inline.StrongEmphasis):
@@ -285,7 +360,7 @@ def _process_inline_node(
         bold_style.markdown.bold = True
         runs = []
         for child in node.children:
-            runs.extend(_process_inline_node(child, bold_style, heading_style, list_depth))
+            runs.extend(_process_inline_node(child, bold_style, heading_style, list_depth, strict))
         return runs
 
     elif isinstance(node, marko.inline.Link):
@@ -294,9 +369,15 @@ def _process_inline_node(
         link_style.rich.underline = True
         runs = []
         for child in node.children:
-            runs.extend(_process_inline_node(child, link_style, heading_style, list_depth))
+            runs.extend(_process_inline_node(child, link_style, heading_style, list_depth, strict))
         return runs
 
     else:
-        logger.warning(f"Unsupported inline element: {type(node)}")
-        return []
+        if strict:
+            raise UnsupportedMarkdownError(
+                f"Unsupported inline element: {type(node).__name__}. "
+                f"Use strict=False to skip unsupported elements."
+            )
+        else:
+            logger.error(f"Unsupported inline element: {type(node)}, skipping")
+            return []

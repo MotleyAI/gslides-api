@@ -121,6 +121,7 @@ class TextContent(GSlidesBaseModel):
         overwrite: bool = True,
         autoscale: bool = False,
         size_inches: Tuple[float, float] | None = None,
+        strict: bool = True,
     ):
         """Convert the text content to a list of requests to update the text in the element.
 
@@ -133,6 +134,9 @@ class TextContent(GSlidesBaseModel):
             overwrite: If True, delete existing text before writing
             autoscale: If True, scale font size to fit text in the element
             size_inches: Required if autoscale=True, the size of the element in inches
+            strict: If True (default), raises UnsupportedMarkdownError for unsupported
+                elements (e.g., fenced code blocks, block quotes). If False, logs an
+                error and skips unsupported elements.
 
         IMPORTANT: This does not set the objectId on the requests as the container doesn't know it,
         so the caller must set it before sending the requests, ditto for CellLocation if needed.
@@ -159,7 +163,7 @@ class TextContent(GSlidesBaseModel):
                 style_args["heading_style"] = rich_style_to_gslides(styles[0])
                 style_args["base_style"] = rich_style_to_gslides(styles[1])
 
-        requests += markdown_to_text_elements(text, **style_args)
+        requests += markdown_to_text_elements(text, strict=strict, **style_args)
 
         # TODO: this is broken, we should use different logic to just dump raw text, asterisks, hashes and all
         if not as_markdown:

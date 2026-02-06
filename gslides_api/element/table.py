@@ -135,6 +135,7 @@ class TableElement(PageElementBase):
         overwrite: bool = True,
         autoscale: bool = False,
         check_shape: bool = True,
+        strict: bool = True,
         font_scale_factor: float = 1.0,
         template_styles: List[RichStyle] | None = None,
     ) -> List[GSlidesAPIRequest]:
@@ -194,6 +195,7 @@ class TableElement(PageElementBase):
                     overwrite=overwrite,
                     autoscale=autoscale,
                     size_inches=size_inches,
+                    strict=strict,
                 )
             else:
                 # Cell exists but has no text content (empty cell from API)
@@ -207,6 +209,7 @@ class TableElement(PageElementBase):
                     overwrite=overwrite,
                     autoscale=autoscale,
                     size_inches=size_inches,
+                    strict=strict,
                 )
         else:
             # Table structure not populated yet (e.g., during creation from markdown)
@@ -259,6 +262,7 @@ class TableElement(PageElementBase):
                 overwrite=overwrite,
                 autoscale=autoscale,
                 size_inches=size_inches,
+                strict=strict,
             )
 
         # Set objectId and cellLocation on all requests
@@ -356,6 +360,7 @@ class TableElement(PageElementBase):
         overwrite: bool = True,
         autoscale: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
+        strict: bool = True,
     ) -> dict[str, Any] | None:
         requests = self.write_text_to_cell_requests(
             text=text,
@@ -364,6 +369,7 @@ class TableElement(PageElementBase):
             styles=styles,
             overwrite=overwrite,
             autoscale=autoscale,
+            strict=strict,
         )
         if requests:
             client = api_client or default_api_client

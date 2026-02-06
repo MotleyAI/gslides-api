@@ -181,8 +181,28 @@ def markdown_to_text_elements(
     numbered_glyph_preset: Optional[
         BulletGlyphPreset
     ] = BulletGlyphPreset.NUMBERED_DIGIT_ALPHA_ROMAN,
+    strict: bool = True,
 ) -> list[GSlidesAPIRequest]:
+    """Convert markdown text to Google Slides API requests.
 
+    Args:
+        markdown_text: The markdown text to convert
+        base_style: Base text style for normal text
+        heading_style: Style for headings
+        start_index: Starting index for text insertion
+        bullet_glyph_preset: Glyph preset for bullet lists
+        numbered_glyph_preset: Glyph preset for numbered lists
+        strict: If True (default), raises UnsupportedMarkdownError for unsupported
+            elements (e.g., fenced code blocks, block quotes). If False, logs an
+            error and skips unsupported elements.
+
+    Returns:
+        List of Google Slides API requests
+
+    Raises:
+        UnsupportedMarkdownError: When strict=True and unsupported markdown
+            elements are encountered.
+    """
     heading_style = heading_style or copy.deepcopy(base_style)
     heading_style = heading_style or TextStyle()
     heading_style.bold = True
@@ -193,7 +213,7 @@ def markdown_to_text_elements(
     agnostic_heading_style = gslides_style_to_full(heading_style)
 
     # Use platform-agnostic markdown parser
-    ir_doc = parse_markdown_to_ir(markdown_text, agnostic_base_style, agnostic_heading_style)
+    ir_doc = parse_markdown_to_ir(markdown_text, agnostic_base_style, agnostic_heading_style, strict)
 
     # Convert IR to GSlides TextElements (GSlides-specific logic)
     elements_and_bullets = _ir_to_text_elements(ir_doc, base_style)

@@ -155,6 +155,7 @@ class ShapeElement(PageElementBase):
         overwrite: bool = True,
         autoscale: bool = False,
         api_client: Optional[GoogleAPIClient] = None,
+        strict: bool = True,
     ):
         """Write text to the shape, optionally parsing as markdown.
 
@@ -167,6 +168,9 @@ class ShapeElement(PageElementBase):
             overwrite: If True, delete existing text before writing
             autoscale: If True, scale font size to fit text in the element
             api_client: Optional client to use for the API call
+            strict: If True (default), raises UnsupportedMarkdownError for unsupported
+                elements (e.g., fenced code blocks, block quotes). If False, logs an
+                error and skips unsupported elements.
         """
         size_inches = self.absolute_size(OutputUnit.IN)
         if not self.shape.text:
@@ -181,6 +185,7 @@ class ShapeElement(PageElementBase):
             overwrite=overwrite,
             autoscale=autoscale,
             size_inches=size_inches,
+            strict=strict,
         )
 
         for r in requests:
