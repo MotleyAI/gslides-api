@@ -544,6 +544,7 @@ api_client = GoogleAPIClient()
 logger = logging.getLogger(__name__)
 
 
+# TODO: initialize_global_client() function instead of this
 def initialize_credentials(credential_location: str):
     """Initialize credentials on the module-level api_client.
 
