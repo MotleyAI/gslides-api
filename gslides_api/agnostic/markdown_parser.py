@@ -338,6 +338,10 @@ def _process_inline_node(
     if isinstance(node, marko.inline.RawText):
         return [FormattedTextRun(content=node.children, style=base_style)]
 
+    elif isinstance(node, marko.inline.Literal):
+        # Literal elements contain escaped characters (e.g., \` -> `)
+        return [FormattedTextRun(content=node.children, style=base_style)]
+
     elif isinstance(node, marko.inline.LineBreak):
         return [FormattedTextRun(content="\n", style=base_style)]
 
