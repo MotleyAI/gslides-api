@@ -41,6 +41,8 @@ class TextContent(GSlidesBaseModel):
 
         Args:
             skip_whitespace: If True, skip text runs that contain only whitespace.
+                           If no non-whitespace styles are found, falls back to
+                           including whitespace runs.
                            If False, include styles from whitespace-only text runs.
         """
         if not self.textElements:
@@ -54,6 +56,11 @@ class TextContent(GSlidesBaseModel):
             rich_style = gslides_style_to_rich(te.textRun.style)
             if rich_style not in styles:
                 styles.append(rich_style)
+
+        # If skipping whitespace yielded no styles, retry including whitespace
+        if not styles and skip_whitespace:
+            return self.styles(skip_whitespace=False)
+
         return styles
 
     def to_requests(
