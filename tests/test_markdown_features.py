@@ -279,4 +279,54 @@ Normal text"""
         """Test that UnsupportedMarkdownError can be imported from the package."""
         from gslides_api import UnsupportedMarkdownError as ImportedError
         assert ImportedError is UnsupportedMarkdownError
-                # Some malformed markdown might legitimately fail
+
+
+class TestEscapedCharacters:
+    """Test that escaped characters (Literal elements) are handled correctly."""
+
+    def test_escaped_backtick(self):
+        """Test that escaped backticks are handled as Literal elements."""
+        markdown = r"Total SaaS Spend Managed \`25"
+        result = markdown_to_text_elements(markdown)
+        assert result is not None
+        assert len(result) > 0
+        # Verify the escaped backtick was processed correctly
+        text_content = "".join(
+            elem.text if hasattr(elem, "text") else "" for elem in result
+        )
+        assert "`25" in text_content or "25" in text_content
+
+    def test_escaped_asterisk(self):
+        """Test that escaped asterisks are handled as Literal elements."""
+        markdown = r"5 \* 10 = 50"
+        result = markdown_to_text_elements(markdown)
+        assert result is not None
+        assert len(result) > 0
+
+    def test_escaped_underscore(self):
+        """Test that escaped underscores are handled as Literal elements."""
+        markdown = r"snake\_case\_variable"
+        result = markdown_to_text_elements(markdown)
+        assert result is not None
+        assert len(result) > 0
+
+    def test_escaped_bracket(self):
+        """Test that escaped brackets are handled as Literal elements."""
+        markdown = r"\[not a link\]"
+        result = markdown_to_text_elements(markdown)
+        assert result is not None
+        assert len(result) > 0
+
+    def test_multiple_escaped_characters(self):
+        """Test multiple escaped characters in one string."""
+        markdown = r"Use \` for code, \* for bold, and \_ for italic"
+        result = markdown_to_text_elements(markdown)
+        assert result is not None
+        assert len(result) > 0
+
+    def test_escaped_characters_in_list(self):
+        """Test escaped characters within list items."""
+        markdown = r"* Item with \`escaped\` backticks"
+        result = markdown_to_text_elements(markdown)
+        assert result is not None
+        assert len(result) > 0
