@@ -1,6 +1,10 @@
+import logging
 from typing import List, Optional
 
 from pydantic import Field, field_validator
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Enable DEBUG for shape.py to trace write_text
 
 from gslides_api.agnostic.element import MarkdownTextElement as MarkdownTextElement
 from gslides_api.agnostic.text import RichStyle
@@ -172,6 +176,11 @@ class ShapeElement(PageElementBase):
                 elements (e.g., fenced code blocks, block quotes). If False, logs an
                 error and skips unsupported elements.
         """
+        logger.debug(
+            f"ShapeElement.write_text: objectId={self.objectId}, "
+            f"text={repr(text[:100] if text else None)}, autoscale={autoscale}, "
+            f"presentation_id={self.presentation_id}"
+        )
         size_inches = self.absolute_size(OutputUnit.IN)
         if not self.shape.text:
             self.shape.text = TextContent(textElements=[])
@@ -187,13 +196,22 @@ class ShapeElement(PageElementBase):
             size_inches=size_inches,
             strict=strict,
         )
+        logger.debug(f"ShapeElement.write_text: generated {len(requests)} requests")
 
         for r in requests:
             r.objectId = self.objectId
 
         if requests:
             client = api_client or default_api_client
-            return client.batch_update(requests, self.presentation_id)
+            logger.debug(
+                f"ShapeElement.write_text: calling batch_update with {len(requests)} requests, "
+                f"client={type(client).__name__}"
+            )
+            result = client.batch_update(requests, self.presentation_id)
+            logger.debug(f"ShapeElement.write_text: batch_update returned, replies={len(result.get('replies', []))}")
+            return result
+        else:
+            logger.debug("ShapeElement.write_text: no requests generated, skipping batch_update")
 
     def read_text(self, as_markdown: bool = True):
         if not self.has_text:
