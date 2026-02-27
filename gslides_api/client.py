@@ -4,8 +4,8 @@ import time
 from functools import wraps
 from typing import Any, Callable, Dict, Optional
 
-from google.auth.transport.requests import Request
 from google.auth.credentials import Credentials as BaseCredentials
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
@@ -76,7 +76,9 @@ class GoogleAPIClient:
                         # Check if it's a rate limit error (429) or server error (5xx)
                         if e.resp.status in [429, 500, 502, 503, 504]:
                             last_exception = e
-                            if attempt < self.n_backoffs:  # Don't wait after the last attempt
+                            if (
+                                attempt < self.n_backoffs
+                            ):  # Don't wait after the last attempt
                                 wait_time = self.initial_wait_s * (2**attempt)
                                 logger.warning(
                                     f"Rate limit/server error encountered (status {e.resp.status}), "
@@ -219,7 +221,9 @@ class GoogleAPIClient:
             RuntimeError: If this client has not been initialized with credentials.
         """
         if not self.is_initialized:
-            raise RuntimeError("Cannot create child client from uninitialized parent client")
+            raise RuntimeError(
+                "Cannot create child client from uninitialized parent client"
+            )
         return GoogleAPIClient(
             auto_flush=auto_flush,
             initial_wait_s=self.initial_wait_s,
@@ -254,7 +258,10 @@ class GoogleAPIClient:
             raise e
 
     def batch_update(
-        self, requests: list[GSlidesAPIRequest], presentation_id: str, flush: bool = False
+        self,
+        requests: list[GSlidesAPIRequest],
+        presentation_id: str,
+        flush: bool = False,
     ) -> Dict[str, Any]:
         if len(requests) == 0:
             return {}
@@ -350,7 +357,11 @@ class GoogleAPIClient:
 
         @self._with_exponential_backoff
         def _get():
-            return self.slide_service.presentations().get(presentationId=presentation_id).execute()
+            return (
+                self.slide_service.presentations()
+                .get(presentationId=presentation_id)
+                .execute()
+            )
 
         return _get()
 
@@ -376,7 +387,11 @@ class GoogleAPIClient:
 
         @self._with_exponential_backoff
         def _copy():
-            return self.drive_service.files().copy(fileId=presentation_id, body=body).execute()
+            return (
+                self.drive_service.files()
+                .copy(fileId=presentation_id, body=body, supportsAllDrives=True)
+                .execute()
+            )
 
         return _copy()
 
@@ -401,7 +416,16 @@ class GoogleAPIClient:
 
             @self._with_exponential_backoff
             def _list_folders():
-                return self.drive_service.files().list(q=query, fields="files(id,name)").execute()
+                return (
+                    self.drive_service.files()
+                    .list(
+                        q=query,
+                        fields="files(id,name)",
+                        supportsAllDrives=True,
+                        includeItemsFromAllDrives=True,
+                    )
+                    .execute()
+                )
 
             existing_folders = _list_folders()
 
@@ -415,7 +439,11 @@ class GoogleAPIClient:
 
         @self._with_exponential_backoff
         def _create_folder():
-            return self.drive_service.files().create(body=body, fields="id,name").execute()
+            return (
+                self.drive_service.files()
+                .create(body=body, fields="id,name", supportsAllDrives=True)
+                .execute()
+            )
 
         return _create_folder()
 
@@ -434,11 +462,15 @@ class GoogleAPIClient:
 
         @self._with_exponential_backoff
         def _delete():
-            return self.drive_service.files().delete(fileId=file_id).execute()
+            return (
+                self.drive_service.files()
+                .delete(fileId=file_id, supportsAllDrives=True)
+                .execute()
+            )
 
         return _delete()
 
-    def upload_image_to_drive(self, image_path) -> str:
+    def upload_image_to_drive(self, image_path, folder_id: str | None = None) -> str:
         """
         Uploads an image to Google Drive and returns the public URL.
 
@@ -446,6 +478,7 @@ class GoogleAPIClient:
         detected from the file extension.
 
         :param image_path: Path to the image file
+        :param folder_id: Optional folder/drive ID to upload into (e.g. a Shared Drive ID)
         :return: Public URL of the uploaded image
         :raises ValueError: If the image format is not supported (not PNG, JPEG, or GIF)
         """
@@ -473,13 +506,20 @@ class GoogleAPIClient:
         mime_type = supported_formats[file_extension]
 
         file_metadata = {"name": os.path.basename(image_path), "mimeType": mime_type}
+        if folder_id:
+            file_metadata["parents"] = [folder_id]
         media = MediaFileUpload(image_path, mimetype=mime_type)
 
         @self._with_exponential_backoff
         def _upload():
             return (
                 self.drive_service.files()
-                .create(body=file_metadata, media_body=media, fields="id")
+                .create(
+                    body=file_metadata,
+                    media_body=media,
+                    fields="id",
+                    supportsAllDrives=True,
+                )
                 .execute()
             )
 
@@ -491,8 +531,8 @@ class GoogleAPIClient:
                 self.drive_service.permissions()
                 .create(
                     fileId=uploaded["id"],
-                    # TODO: do we need "anyone"?
                     body={"type": "anyone", "role": "reader"},
+                    supportsAllDrives=True,
                 )
                 .execute()
             )
@@ -529,7 +569,9 @@ class GoogleAPIClient:
                         properties.mimeType.value if properties.mimeType else None
                     ),
                     thumbnailProperties_thumbnailSize=(
-                        properties.thumbnailSize.value if properties.thumbnailSize else None
+                        properties.thumbnailSize.value
+                        if properties.thumbnailSize
+                        else None
                     ),
                 )
                 .execute()
