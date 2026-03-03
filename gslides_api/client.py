@@ -449,10 +449,11 @@ class GoogleAPIClient:
 
     def delete_file(self, file_id):
         """
-        Deletes a file from Google Drive.
+        Permanently deletes a file from Google Drive (bypasses trash).
 
-        This method can delete any type of file including presentations, folders, images, etc.
-        The file is moved to the trash and can be restored from there unless permanently deleted.
+        Note: on Shared Drives, permanent deletion requires the ``canDelete``
+        capability (Manager role).  Content Managers only have ``canTrash``.
+        Use :meth:`trash_file` when the caller only needs to discard the file.
 
         :param file_id: The ID of the file to delete
         :return: Empty response if successful
@@ -469,6 +470,33 @@ class GoogleAPIClient:
             )
 
         return _delete()
+
+    def trash_file(self, file_id):
+        """
+        Moves a file to the trash in Google Drive.
+
+        Unlike :meth:`delete_file`, this only requires the ``canTrash``
+        capability, which Content Managers on Shared Drives have.
+
+        :param file_id: The ID of the file to trash
+        :return: The updated file metadata
+        :raises: Exception if the file doesn't exist or user doesn't have permission
+        """
+        self.flush_batch_update()
+
+        @self._with_exponential_backoff
+        def _trash():
+            return (
+                self.drive_service.files()
+                .update(
+                    fileId=file_id,
+                    body={"trashed": True},
+                    supportsAllDrives=True,
+                )
+                .execute()
+            )
+
+        return _trash()
 
     def upload_image_to_drive(self, image_path, folder_id: str | None = None) -> str:
         """
