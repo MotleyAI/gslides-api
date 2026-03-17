@@ -290,7 +290,7 @@ class PageElementBase(GSlidesBaseModel):
         """
         raise NotImplementedError("Subclasses must implement to_markdown method")
 
-    def absolute_size(self, units: OutputUnit) -> Tuple[float, float]:
+    def absolute_size(self, units: OutputUnit) -> Optional[Tuple[float, float]]:
         """Calculate the absolute size of the element in the specified units.
 
         This method calculates the actual rendered size of the element, taking into
@@ -302,16 +302,15 @@ class PageElementBase(GSlidesBaseModel):
 
         Returns:
             A tuple of (width, height) representing the element's dimensions
-            in the specified units.
+            in the specified units, or None if size/transform is not available.
 
         Raises:
             ValueError: If units is not "cm" or "in".
-            ValueError: If element size is not available.
         """
         element_props = self.element_properties()
         return element_props.absolute_size(units)
 
-    def absolute_position(self, units: OutputUnit = OutputUnit.CM) -> Tuple[float, float]:
+    def absolute_position(self, units: OutputUnit = OutputUnit.CM) -> Optional[Tuple[float, float]]:
         """Calculate the absolute position of the element on the page in the specified units.
 
         Position represents the distance of the top-left corner of the element
@@ -323,7 +322,8 @@ class PageElementBase(GSlidesBaseModel):
         Returns:
             A tuple of (x, y) representing the position in the specified units,
             where x is the horizontal distance from the left edge and y is the
-            vertical distance from the top edge of the slide.
+            vertical distance from the top edge of the slide, or None if
+            transform is not available.
         """
         element_props = self.element_properties()
         return element_props.absolute_position(units)

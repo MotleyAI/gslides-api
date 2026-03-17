@@ -28,9 +28,11 @@ from gslides_api.domain.domain import (
     ThumbnailSize,
     Weight,
 )
+from gslides_api.agnostic.element import MarkdownTableElement
 from gslides_api.element.base import ElementKind
 from gslides_api.element.element import ImageElement
 from gslides_api.element.shape import ShapeElement
+from gslides_api.element.table import TableElement
 from gslides_api.presentation import Presentation
 from gslides_api.request.request import UpdateShapePropertiesRequest
 
@@ -546,25 +548,20 @@ def write_element_markdown(
         return _format_response(None, presentation_error(pres_id, e))
 
 
-# =============================================================================
-# IMAGE TOOLS
-# =============================================================================
-
-
 @mcp.tool()
-def replace_element_image(
+def write_table_markdown(
     presentation_id_or_url: str,
     slide_name: str,
     element_name: str,
-    image_url: str,
+    markdown_table: str,
 ) -> str:
-    """Replace an image element with a new image from URL.
+    """Write a markdown-formatted table to a table element, resizing if needed.
 
     Args:
         presentation_id_or_url: Google Slides URL or presentation ID
         slide_name: Slide name (first line of speaker notes)
-        element_name: Element name (image alt-title)
-        image_url: URL of new image
+        element_name: Element name (table alt-title)
+        markdown_table: Markdown table string (with | delimiters and --- separator)
     """
     try:
         pres_id = parse_presentation_id(presentation_id_or_url)
@@ -589,6 +586,257 @@ def replace_element_image(
             client.flush_batch_update()
             return _format_response(None, element_not_found_error(pres_id, slide_name, element_name, available))
 
+        # Check if it's a table element
+        if not isinstance(element, TableElement):
+            client.flush_batch_update()
+            return _format_response(
+                None,
+                validation_error(
+                    "element_name",
+                    f"Element '{element_name}' is not a table element (type: {element.type.value})",
+                    element_name,
+                ),
+            )
+
+        # Parse the markdown table
+        markdown_elem = MarkdownTableElement.from_markdown(element_name, markdown_table)
+
+        # Compare shapes and resize if needed
+        current_shape = (element.table.rows, element.table.columns)
+        target_shape = markdown_elem.shape
+        font_scale_factor = 1.0
+
+        if current_shape != target_shape:
+            font_scale_factor = element.resize(
+                target_shape[0], target_shape[1], api_client=client
+            )
+            client.flush_batch_update()
+
+            # Re-fetch presentation to get updated table structure after resize
+            presentation = Presentation.from_id(pres_id, api_client=client)
+            slide = find_slide_by_name(presentation, slide_name)
+            element = find_element_by_name(slide, element_name)
+
+        # Generate and execute content update requests
+        requests = element.content_update_requests(
+            markdown_elem, check_shape=False, font_scale_factor=font_scale_factor
+        )
+        client.batch_update(requests, pres_id)
+        client.flush_batch_update()
+
+        result = SuccessResponse(
+            message=f"Successfully wrote table to element '{element_name}'",
+            details={
+                "element_id": element.objectId,
+                "slide_name": slide_name,
+                "table_shape": list(target_shape),
+                "resized": current_shape != target_shape,
+            },
+        )
+        return _format_response(result)
+
+    except Exception as e:
+        logger.error(f"Error writing table markdown: {e}\n{traceback.format_exc()}")
+        return _format_response(None, presentation_error(pres_id, e))
+
+
+@mcp.tool()
+def bulk_write_element_markdown(
+    presentation_id_or_url: str,
+    writes: str,
+) -> str:
+    """Write markdown content to multiple shape elements in a single batch operation.
+
+    Args:
+        presentation_id_or_url: Google Slides URL or presentation ID
+        writes: JSON string containing a list of write operations.
+                Each entry: {"slide_name": str, "element_name": str, "markdown": str}
+    """
+    try:
+        pres_id = parse_presentation_id(presentation_id_or_url)
+    except ValueError as e:
+        return _format_response(None, validation_error("presentation_id_or_url", str(e), presentation_id_or_url))
+
+    # Parse writes JSON
+    try:
+        write_list = json.loads(writes)
+    except json.JSONDecodeError as e:
+        return _format_response(
+            None,
+            validation_error("writes", f"Invalid JSON: {e}", writes[:200]),
+        )
+
+    if not isinstance(write_list, list):
+        return _format_response(
+            None,
+            validation_error("writes", "Expected a JSON array of write operations", type(write_list).__name__),
+        )
+
+    # Validate each entry has required keys
+    required_keys = {"slide_name", "element_name", "markdown"}
+    for i, entry in enumerate(write_list):
+        if not isinstance(entry, dict):
+            return _format_response(
+                None,
+                validation_error("writes", f"Entry {i} is not an object", str(entry)[:200]),
+            )
+        missing = required_keys - set(entry.keys())
+        if missing:
+            return _format_response(
+                None,
+                validation_error("writes", f"Entry {i} missing keys: {missing}", str(entry)[:200]),
+            )
+
+    client = get_api_client()
+
+    try:
+        presentation = Presentation.from_id(pres_id, api_client=client)
+
+        # Cache slides by name for efficient lookup
+        slides_by_name = {}
+        for slide in presentation.slides:
+            name = get_slide_name(slide)
+            if name:
+                slides_by_name[name] = slide
+
+        successes = []
+        failures = []
+
+        for entry in write_list:
+            slide_name = entry["slide_name"]
+            element_name = entry["element_name"]
+            markdown = entry["markdown"]
+
+            try:
+                slide = slides_by_name.get(slide_name)
+                if slide is None:
+                    failures.append({
+                        "slide_name": slide_name,
+                        "element_name": element_name,
+                        "error": f"Slide '{slide_name}' not found",
+                    })
+                    continue
+
+                element = find_element_by_name(slide, element_name)
+                if element is None:
+                    failures.append({
+                        "slide_name": slide_name,
+                        "element_name": element_name,
+                        "error": f"Element '{element_name}' not found",
+                    })
+                    continue
+
+                if not isinstance(element, ShapeElement):
+                    failures.append({
+                        "slide_name": slide_name,
+                        "element_name": element_name,
+                        "error": f"Element '{element_name}' is not a text element (type: {element.type.value})",
+                    })
+                    continue
+
+                element.write_text(markdown, as_markdown=True, api_client=client)
+                successes.append({
+                    "slide_name": slide_name,
+                    "element_name": element_name,
+                    "element_id": element.objectId,
+                })
+            except Exception as entry_error:
+                failures.append({
+                    "slide_name": slide_name,
+                    "element_name": element_name,
+                    "error": str(entry_error),
+                })
+
+        client.flush_batch_update()
+
+        result = SuccessResponse(
+            message=f"Bulk write completed: {len(successes)} succeeded, {len(failures)} failed",
+            details={
+                "total": len(write_list),
+                "succeeded": len(successes),
+                "failed": len(failures),
+                "successes": successes,
+                "failures": failures,
+            },
+        )
+        return _format_response(result)
+
+    except Exception as e:
+        logger.error(f"Error in bulk write: {e}\n{traceback.format_exc()}")
+        return _format_response(None, presentation_error(pres_id, e))
+
+
+# =============================================================================
+# IMAGE TOOLS
+# =============================================================================
+
+
+@mcp.tool()
+def replace_element_image(
+    presentation_id_or_url: str,
+    slide_name: str,
+    element_name: str = None,
+    image_source: str = "",
+    element_id: str = None,
+) -> str:
+    """Replace an image element with a new image from a URL or local file path.
+
+    Args:
+        presentation_id_or_url: Google Slides URL or presentation ID
+        slide_name: Slide name (first line of speaker notes)
+        element_name: Element name (image alt-title). Either this or element_id must be provided.
+        image_source: URL (http/https) or local file path of the new image
+        element_id: Element object ID (alternative to element_name, for unnamed elements)
+    """
+    if element_name is None and element_id is None:
+        return _format_response(
+            None,
+            validation_error("element_name", "Either element_name or element_id must be provided", None),
+        )
+
+    try:
+        pres_id = parse_presentation_id(presentation_id_or_url)
+    except ValueError as e:
+        return _format_response(None, validation_error("presentation_id_or_url", str(e), presentation_id_or_url))
+
+    client = get_api_client()
+
+    try:
+        presentation = Presentation.from_id(pres_id, api_client=client)
+        slide = find_slide_by_name(presentation, slide_name)
+
+        if slide is None:
+            available = get_available_slide_names(presentation)
+            client.flush_batch_update()
+            return _format_response(None, slide_not_found_error(pres_id, slide_name, available))
+
+        # Find element by name or by ID
+        element = None
+        if element_id is not None:
+            for el in slide.page_elements_flat:
+                if el.objectId == element_id:
+                    element = el
+                    break
+            if element is None:
+                available = get_available_element_names(slide)
+                client.flush_batch_update()
+                return _format_response(
+                    None,
+                    validation_error(
+                        "element_id",
+                        f"No element found with ID '{element_id}' on slide '{slide_name}'",
+                        element_id,
+                    ),
+                )
+        else:
+            element = find_element_by_name(slide, element_name)
+            if element is None:
+                available = get_available_element_names(slide)
+                client.flush_batch_update()
+                return _format_response(None, element_not_found_error(pres_id, slide_name, element_name, available))
+
+        display_name = element_name or element_id
+
         # Check if it's an image element
         if not isinstance(element, ImageElement):
             client.flush_batch_update()
@@ -596,21 +844,24 @@ def replace_element_image(
                 None,
                 validation_error(
                     "element_name",
-                    f"Element '{element_name}' is not an image element (type: {element.type.value})",
-                    element_name,
+                    f"Element '{display_name}' is not an image element (type: {element.type.value})",
+                    display_name,
                 ),
             )
 
-        # Replace the image
-        element.replace_image(url=image_url, api_client=client)
+        # Replace the image - route to url= or file= based on source
+        if image_source.startswith(("http://", "https://")):
+            element.replace_image(url=image_source, api_client=client)
+        else:
+            element.replace_image(file=image_source, api_client=client)
         client.flush_batch_update()
 
         result = SuccessResponse(
-            message=f"Successfully replaced image in element '{element_name}'",
+            message=f"Successfully replaced image in element '{display_name}'",
             details={
                 "element_id": element.objectId,
                 "slide_name": slide_name,
-                "new_image_url": image_url,
+                "image_source": image_source,
             },
         )
         return _format_response(result)
@@ -776,6 +1027,59 @@ def delete_slide(
 
     except Exception as e:
         logger.error(f"Error deleting slide: {e}\n{traceback.format_exc()}")
+        return _format_response(None, presentation_error(pres_id, e))
+
+
+# =============================================================================
+# PRESENTATION MANIPULATION TOOLS
+# =============================================================================
+
+
+@mcp.tool()
+def copy_presentation(
+    presentation_id_or_url: str,
+    copy_title: str = None,
+    folder_id: str = None,
+) -> str:
+    """Copy an entire presentation to create a new one.
+
+    Args:
+        presentation_id_or_url: Google Slides URL or presentation ID
+        copy_title: Title for the copy (defaults to "Copy of {original title}")
+        folder_id: Google Drive folder ID to place the copy in (optional)
+    """
+    try:
+        pres_id = parse_presentation_id(presentation_id_or_url)
+    except ValueError as e:
+        return _format_response(None, validation_error("presentation_id_or_url", str(e), presentation_id_or_url))
+
+    client = get_api_client()
+
+    try:
+        # Load presentation to get its title for the default copy name
+        presentation = Presentation.from_id(pres_id, api_client=client)
+        original_title = presentation.title or "Untitled"
+
+        if copy_title is None:
+            copy_title = f"Copy of {original_title}"
+
+        # Copy the presentation
+        copy_result = client.copy_presentation(pres_id, copy_title, folder_id)
+        new_pres_id = copy_result["id"]
+
+        result = SuccessResponse(
+            message=f"Successfully copied presentation '{original_title}'",
+            details={
+                "original_presentation_id": pres_id,
+                "new_presentation_id": new_pres_id,
+                "new_presentation_url": f"https://docs.google.com/presentation/d/{new_pres_id}/edit",
+                "new_title": copy_title,
+            },
+        )
+        return _format_response(result)
+
+    except Exception as e:
+        logger.error(f"Error copying presentation: {e}\n{traceback.format_exc()}")
         return _format_response(None, presentation_error(pres_id, e))
 
 
