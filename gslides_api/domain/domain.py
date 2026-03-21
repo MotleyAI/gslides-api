@@ -716,7 +716,7 @@ class PageElementProperties(GSlidesBaseModel):
 
         return from_emu(value_emu, units)
 
-    def absolute_size(self, units: OutputUnit) -> Tuple[float, float]:
+    def absolute_size(self, units: OutputUnit) -> Optional[Tuple[float, float]]:
         """Calculate the absolute size of the element in the specified units.
 
         This method calculates the actual rendered size of the element, taking into
@@ -728,18 +728,18 @@ class PageElementProperties(GSlidesBaseModel):
 
         Returns:
             A tuple of (width, height) representing the element's dimensions
-            in the specified units.
+            in the specified units, or None if size or transform is not available
+            (e.g. for group container elements).
 
         Raises:
             ValueError: If units is not "cm" or "in".
-            ValueError: If element size is not available.
         """
 
         if self.size is None:
-            raise ValueError("Element size is not available")
+            return None
 
         if self.transform is None:
-            raise ValueError("Element transform is not available")
+            return None
 
         # Extract width and height from size
         # Size can have width/height as either float or Dimension objects
@@ -763,7 +763,7 @@ class PageElementProperties(GSlidesBaseModel):
 
         return width_result, height_result
 
-    def absolute_position(self, units: OutputUnit = OutputUnit.CM) -> Tuple[float, float]:
+    def absolute_position(self, units: OutputUnit = OutputUnit.CM) -> Optional[Tuple[float, float]]:
         """Calculate the absolute position of the element on the page in the specified units.
 
         Position represents the distance of the top-left corner of the element
@@ -775,11 +775,12 @@ class PageElementProperties(GSlidesBaseModel):
         Returns:
             A tuple of (x, y) representing the position in the specified units,
             where x is the horizontal distance from the left edge and y is the
-            vertical distance from the top edge of the slide.
+            vertical distance from the top edge of the slide, or None if
+            transform is not available (e.g. for group container elements).
         """
 
         if self.transform is None:
-            raise ValueError("Element transform is not available")
+            return None
 
         # Extract position from transform (translateX, translateY are in EMUs)
         x_emu = self.transform.translateX

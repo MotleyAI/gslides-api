@@ -1,14 +1,15 @@
 """Utility functions for the gslides-api MCP server."""
 
 import re
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
+from gslides_api.adapters.abstract_slides import AbstractPresentation, AbstractSlide
 from gslides_api.element.base import ElementKind, PageElementBase
 from gslides_api.element.element import PageElement
 from gslides_api.page.slide import Slide
 from gslides_api.presentation import Presentation
 
-from .models import ElementOutline, ErrorResponse, PresentationOutline, SlideOutline
+from .models import ErrorResponse
 
 # Pattern to match Google Slides URLs and extract the presentation ID
 # Matches: https://docs.google.com/presentation/d/{ID}/edit
@@ -87,20 +88,6 @@ def get_element_name(element: PageElementBase) -> Optional[str]:
     """
     if hasattr(element, "title") and element.title:
         return element.title.strip() or None
-    return None
-
-
-def get_element_alt_description(element: PageElementBase) -> Optional[str]:
-    """Get the alt-text description of an element.
-
-    Args:
-        element: The element to get the description from
-
-    Returns:
-        The alt-text description, or None if not present
-    """
-    if hasattr(element, "description") and element.description:
-        return element.description.strip() or None
     return None
 
 
@@ -191,77 +178,6 @@ def get_element_type_string(element: PageElement) -> str:
     if hasattr(element, "type") and isinstance(element.type, ElementKind):
         return element.type.value
     return "unknown"
-
-
-def get_element_markdown_content(element: PageElement) -> Optional[str]:
-    """Get the markdown content of a shape element.
-
-    Args:
-        element: The element to get content from
-
-    Returns:
-        Markdown content if it's a text element, None otherwise
-    """
-    if hasattr(element, "type") and element.type == ElementKind.SHAPE:
-        try:
-            # Try to read text as markdown
-            if hasattr(element, "read_text"):
-                return element.read_text(as_markdown=True)
-        except Exception:
-            pass
-    return None
-
-
-def build_element_outline(element: PageElement) -> ElementOutline:
-    """Build an outline representation of an element.
-
-    Args:
-        element: The element to build outline from
-
-    Returns:
-        ElementOutline representation
-    """
-    return ElementOutline(
-        element_name=get_element_name(element),
-        element_id=element.objectId,
-        type=get_element_type_string(element),
-        alt_description=get_element_alt_description(element),
-        content_markdown=get_element_markdown_content(element),
-    )
-
-
-def build_slide_outline(slide: Slide) -> SlideOutline:
-    """Build an outline representation of a slide.
-
-    Args:
-        slide: The slide to build outline from
-
-    Returns:
-        SlideOutline representation
-    """
-    elements = [build_element_outline(e) for e in slide.page_elements_flat]
-    return SlideOutline(
-        slide_name=get_slide_name(slide),
-        slide_id=slide.objectId,
-        elements=elements,
-    )
-
-
-def build_presentation_outline(presentation: Presentation) -> PresentationOutline:
-    """Build an outline representation of a presentation.
-
-    Args:
-        presentation: The presentation to build outline from
-
-    Returns:
-        PresentationOutline representation
-    """
-    slides = [build_slide_outline(s) for s in presentation.slides]
-    return PresentationOutline(
-        presentation_id=presentation.presentationId,
-        title=presentation.title or "Untitled",
-        slides=slides,
-    )
 
 
 def create_error_response(
@@ -374,3 +290,45 @@ def validation_error(field: str, message: str, value: str = None) -> ErrorRespon
         message=message,
         **details,
     )
+
+
+def find_abstract_slide_by_name(
+    presentation: AbstractPresentation, slide_name: str
+) -> Optional[AbstractSlide]:
+    """Find an AbstractSlide by speaker notes name.
+
+    Args:
+        presentation: The abstract presentation to search in
+        slide_name: The slide name to find (first line of speaker notes)
+
+    Returns:
+        The abstract slide if found, None otherwise
+    """
+    for slide in presentation.slides:
+        if slide.speaker_notes:
+            text = slide.speaker_notes.read_text()
+            if text:
+                first_line = text.strip().split("\n")[0].strip()
+                if first_line == slide_name:
+                    return slide
+    return None
+
+
+def get_abstract_slide_names(presentation: AbstractPresentation) -> List[str]:
+    """Get slide names from an AbstractPresentation for error messages.
+
+    Args:
+        presentation: The abstract presentation to get slide names from
+
+    Returns:
+        List of slide names (or placeholder for unnamed slides)
+    """
+    names = []
+    for i, slide in enumerate(presentation.slides):
+        name = None
+        if slide.speaker_notes:
+            text = slide.speaker_notes.read_text()
+            if text:
+                name = text.strip().split("\n")[0].strip() or None
+        names.append(name or f"(unnamed slide at index {i})")
+    return names

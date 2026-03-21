@@ -280,7 +280,7 @@ def test_absolute_size_invalid_units():
 
 
 def test_absolute_size_no_size():
-    """Test absolute_size method when size is None."""
+    """Test absolute_size method when size is None returns None."""
     element = ShapeElement(
         objectId="test_id",
         size=None,
@@ -288,8 +288,7 @@ def test_absolute_size_no_size():
         shape=Shape(shapeType=Type.RECTANGLE, shapeProperties=ShapeProperties()),
     )
 
-    with pytest.raises(ValueError, match="Element size is not available"):
-        element.absolute_size(OutputUnit.CM)
+    assert element.absolute_size(OutputUnit.CM) is None
 
 
 def test_alt_text_property():

@@ -17,6 +17,7 @@ from gslides_api.request.request import (
     CreateImageRequest,
     ReplaceImageRequest,
     UpdateImagePropertiesRequest,
+    UpdatePageElementAltTextRequest,
 )
 from gslides_api.utils import dict_to_dot_separated_field_list
 
@@ -142,6 +143,8 @@ class ImageElement(PageElementBase):
             file=file,
             method=method,
             api_client=api_client,
+            title=image.title,
+            description=image.description,
         )
 
         """
@@ -169,6 +172,8 @@ class ImageElement(PageElementBase):
         file: str | None = None,
         method: ImageReplaceMethod | None = None,
         api_client: Optional[GoogleAPIClient] = None,
+        title: str | None = None,
+        description: str | None = None,
     ):
         if url is None and file is None:
             raise ValueError("Must specify either url or file")
@@ -180,6 +185,18 @@ class ImageElement(PageElementBase):
             url = client.upload_image_to_drive(file)
 
         requests = ImageElement._replace_image_requests(image_id, url, method)
+
+        # Google Slides API replaceImage clears the alt-text title/description,
+        # so we restore them after the replacement.
+        if title is not None or description is not None:
+            requests.append(
+                UpdatePageElementAltTextRequest(
+                    objectId=image_id,
+                    title=title,
+                    description=description,
+                )
+            )
+
         return client.batch_update(requests, presentation_id)
 
     def get_image_data(self) -> ImageData:

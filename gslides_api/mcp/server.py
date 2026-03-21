@@ -4,7 +4,6 @@ This module provides an MCP server that exposes Google Slides operations as tool
 """
 
 import argparse
-import base64
 import json
 import logging
 import os
@@ -13,10 +12,18 @@ import sys
 import tempfile
 import traceback
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from mcp.server import FastMCP
+from mcp.server.fastmcp.utilities.types import Image
 
+from gslides_api.adapters.abstract_slides import (
+    AbstractPresentation,
+    AbstractThumbnailSize,
+)
+from gslides_api.adapters.add_names import name_slides
+from gslides_api.adapters.gslides_adapter import GSlidesAPIClient
+from gslides_api.agnostic.element import MarkdownTableElement
 from gslides_api.client import GoogleAPIClient
 from gslides_api.domain.domain import (
     Color,
@@ -31,24 +38,22 @@ from gslides_api.domain.domain import (
 from gslides_api.element.base import ElementKind
 from gslides_api.element.element import ImageElement
 from gslides_api.element.shape import ShapeElement
+from gslides_api.element.table import TableElement
 from gslides_api.presentation import Presentation
 from gslides_api.request.request import UpdateShapePropertiesRequest
 
 from .models import (
     ErrorResponse,
     OutputFormat,
-    PresentationOutline,
-    SlideOutline,
     SuccessResponse,
     ThumbnailSizeOption,
 )
 from .utils import (
-    build_element_outline,
-    build_presentation_outline,
-    build_slide_outline,
     element_not_found_error,
+    find_abstract_slide_by_name,
     find_element_by_name,
     find_slide_by_name,
+    get_abstract_slide_names,
     get_available_element_names,
     get_available_slide_names,
     get_slide_name,
@@ -144,7 +149,7 @@ def get_presentation(
 
     Args:
         presentation_id_or_url: Google Slides URL or presentation ID
-        how: Output format - 'raw' (Google API JSON), 'domain' (model_dump), or 'outline' (condensed)
+        how: Output format - 'raw' (Google API JSON), 'domain' (model_dump), or 'markdown' (slide layout markdown)
     """
     try:
         pres_id = parse_presentation_id(presentation_id_or_url)
@@ -161,17 +166,21 @@ def get_presentation(
             client.flush_batch_update()
             return _format_response(result)
 
-        elif format_type == OutputFormat.DOMAIN:
-            # Get domain object and dump
+        elif format_type == OutputFormat.MARKDOWN:
+            gslides_client = GSlidesAPIClient(gslides_client=client)
+            abs_pres = AbstractPresentation.from_id(
+                api_client=gslides_client, presentation_id=pres_id
+            )
+            parts = []
+            for i, slide in enumerate(abs_pres.slides):
+                parts.append(f"## Slide {i}\n\n{slide.markdown()}")
+            client.flush_batch_update()
+            return "\n\n---\n\n".join(parts)
+
+        else:  # DOMAIN
             presentation = Presentation.from_id(pres_id, api_client=client)
             client.flush_batch_update()
             return _format_response(presentation.model_dump())
-
-        else:  # OUTLINE
-            presentation = Presentation.from_id(pres_id, api_client=client)
-            client.flush_batch_update()
-            outline = build_presentation_outline(presentation)
-            return _format_response(outline)
 
     except Exception as e:
         logger.error(f"Error getting presentation: {e}\n{traceback.format_exc()}")
@@ -181,16 +190,40 @@ def get_presentation(
 @mcp.tool()
 def get_slide(
     presentation_id_or_url: str,
-    slide_name: str,
+    slide_name: str = None,
+    slide_index: int = None,
     how: str = None,
-) -> str:
-    """Get a single slide by name (first line of speaker notes).
+    include_thumbnail: bool = True,
+) -> Union[str, List]:
+    """Get a single slide by name or index.
 
     Args:
         presentation_id_or_url: Google Slides URL or presentation ID
-        slide_name: Slide name (first line of speaker notes, stripped)
-        how: Output format - 'raw' (Google API JSON), 'domain' (model_dump), or 'outline' (condensed)
+        slide_name: Slide name (first line of speaker notes). Mutually exclusive with slide_index.
+        slide_index: Zero-based slide index. Mutually exclusive with slide_name.
+        how: Output format - 'markdown' (default), 'raw' (Google API JSON), or 'domain' (model_dump).
+        include_thumbnail: Include slide thumbnail as image payload. Default True.
     """
+    # Validate slide_name/slide_index
+    if slide_name is not None and slide_index is not None:
+        return _format_response(
+            None,
+            validation_error(
+                "slide_name/slide_index",
+                "slide_name and slide_index are mutually exclusive",
+                f"slide_name={slide_name}, slide_index={slide_index}",
+            ),
+        )
+    if slide_name is None and slide_index is None:
+        return _format_response(
+            None,
+            validation_error(
+                "slide_name/slide_index",
+                "Either slide_name or slide_index must be provided",
+                "both are None",
+            ),
+        )
+
     try:
         pres_id = parse_presentation_id(presentation_id_or_url)
     except ValueError as e:
@@ -200,27 +233,54 @@ def get_slide(
     client = get_api_client()
 
     try:
-        presentation = Presentation.from_id(pres_id, api_client=client)
-        slide = find_slide_by_name(presentation, slide_name)
+        # Always load via AbstractPresentation for unified slide lookup
+        gslides_client = GSlidesAPIClient(gslides_client=client)
+        abs_pres = AbstractPresentation.from_id(
+            api_client=gslides_client, presentation_id=pres_id
+        )
 
-        if slide is None:
-            available = get_available_slide_names(presentation)
-            client.flush_batch_update()
-            return _format_response(None, slide_not_found_error(pres_id, slide_name, available))
+        # Find slide
+        if slide_name is not None:
+            abs_slide = find_abstract_slide_by_name(abs_pres, slide_name)
+            if abs_slide is None:
+                names = get_abstract_slide_names(abs_pres)
+                client.flush_batch_update()
+                return _format_response(None, slide_not_found_error(pres_id, slide_name, names))
+        else:
+            if slide_index < 0 or slide_index >= len(abs_pres.slides):
+                client.flush_batch_update()
+                return _format_response(
+                    None,
+                    validation_error(
+                        "slide_index",
+                        f"Slide index {slide_index} out of range (0-{len(abs_pres.slides) - 1})",
+                        str(slide_index),
+                    ),
+                )
+            abs_slide = abs_pres.slides[slide_index]
 
-        if format_type == OutputFormat.RAW:
-            result = client.get_slide_json(pres_id, slide.objectId)
-            client.flush_batch_update()
-            return _format_response(result)
+        # Format output based on `how`
+        if format_type == OutputFormat.MARKDOWN:
+            result = abs_slide.markdown()
+        elif format_type == OutputFormat.RAW:
+            result = _format_response(
+                client.get_slide_json(pres_id, abs_slide.objectId)
+            )
+        else:  # DOMAIN
+            result = _format_response(abs_slide._gslides_slide.model_dump())
 
-        elif format_type == OutputFormat.DOMAIN:
-            client.flush_batch_update()
-            return _format_response(slide.model_dump())
+        client.flush_batch_update()
 
-        else:  # OUTLINE
-            client.flush_batch_update()
-            outline = build_slide_outline(slide)
-            return _format_response(outline)
+        # Optionally attach thumbnail
+        if include_thumbnail:
+            thumb = abs_slide.thumbnail(
+                api_client=gslides_client,
+                size=AbstractThumbnailSize.MEDIUM,
+                include_data=True,
+            )
+            return [result, Image(data=thumb.content, format="png")]
+        else:
+            return result
 
     except Exception as e:
         logger.error(f"Error getting slide: {e}\n{traceback.format_exc()}")
@@ -240,7 +300,7 @@ def get_element(
         presentation_id_or_url: Google Slides URL or presentation ID
         slide_name: Slide name (first line of speaker notes)
         element_name: Element name (from alt-text title, stripped)
-        how: Output format - 'raw' (Google API JSON), 'domain' (model_dump), or 'outline' (condensed)
+        how: Output format - 'raw' (Google API JSON) or 'domain' (model_dump)
     """
     try:
         pres_id = parse_presentation_id(presentation_id_or_url)
@@ -272,12 +332,8 @@ def get_element(
             # For raw, we return the element's API format
             return _format_response(element.to_api_format() if hasattr(element, "to_api_format") else element.model_dump())
 
-        elif format_type == OutputFormat.DOMAIN:
+        else:  # DOMAIN (also handles MARKDOWN since element-level markdown is not distinct)
             return _format_response(element.model_dump())
-
-        else:  # OUTLINE
-            outline = build_element_outline(element)
-            return _format_response(outline)
 
     except Exception as e:
         logger.error(f"Error getting element: {e}\n{traceback.format_exc()}")
@@ -546,25 +602,20 @@ def write_element_markdown(
         return _format_response(None, presentation_error(pres_id, e))
 
 
-# =============================================================================
-# IMAGE TOOLS
-# =============================================================================
-
-
 @mcp.tool()
-def replace_element_image(
+def write_table_markdown(
     presentation_id_or_url: str,
     slide_name: str,
     element_name: str,
-    image_url: str,
+    markdown_table: str,
 ) -> str:
-    """Replace an image element with a new image from URL.
+    """Write a markdown-formatted table to a table element, resizing if needed.
 
     Args:
         presentation_id_or_url: Google Slides URL or presentation ID
         slide_name: Slide name (first line of speaker notes)
-        element_name: Element name (image alt-title)
-        image_url: URL of new image
+        element_name: Element name (table alt-title)
+        markdown_table: Markdown table string (with | delimiters and --- separator)
     """
     try:
         pres_id = parse_presentation_id(presentation_id_or_url)
@@ -589,6 +640,257 @@ def replace_element_image(
             client.flush_batch_update()
             return _format_response(None, element_not_found_error(pres_id, slide_name, element_name, available))
 
+        # Check if it's a table element
+        if not isinstance(element, TableElement):
+            client.flush_batch_update()
+            return _format_response(
+                None,
+                validation_error(
+                    "element_name",
+                    f"Element '{element_name}' is not a table element (type: {element.type.value})",
+                    element_name,
+                ),
+            )
+
+        # Parse the markdown table
+        markdown_elem = MarkdownTableElement.from_markdown(element_name, markdown_table)
+
+        # Compare shapes and resize if needed
+        current_shape = (element.table.rows, element.table.columns)
+        target_shape = markdown_elem.shape
+        font_scale_factor = 1.0
+
+        if current_shape != target_shape:
+            font_scale_factor = element.resize(
+                target_shape[0], target_shape[1], api_client=client
+            )
+            client.flush_batch_update()
+
+            # Re-fetch presentation to get updated table structure after resize
+            presentation = Presentation.from_id(pres_id, api_client=client)
+            slide = find_slide_by_name(presentation, slide_name)
+            element = find_element_by_name(slide, element_name)
+
+        # Generate and execute content update requests
+        requests = element.content_update_requests(
+            markdown_elem, check_shape=False, font_scale_factor=font_scale_factor
+        )
+        client.batch_update(requests, pres_id)
+        client.flush_batch_update()
+
+        result = SuccessResponse(
+            message=f"Successfully wrote table to element '{element_name}'",
+            details={
+                "element_id": element.objectId,
+                "slide_name": slide_name,
+                "table_shape": list(target_shape),
+                "resized": current_shape != target_shape,
+            },
+        )
+        return _format_response(result)
+
+    except Exception as e:
+        logger.error(f"Error writing table markdown: {e}\n{traceback.format_exc()}")
+        return _format_response(None, presentation_error(pres_id, e))
+
+
+@mcp.tool()
+def bulk_write_element_markdown(
+    presentation_id_or_url: str,
+    writes: str,
+) -> str:
+    """Write markdown content to multiple shape elements in a single batch operation.
+
+    Args:
+        presentation_id_or_url: Google Slides URL or presentation ID
+        writes: JSON string containing a list of write operations.
+                Each entry: {"slide_name": str, "element_name": str, "markdown": str}
+    """
+    try:
+        pres_id = parse_presentation_id(presentation_id_or_url)
+    except ValueError as e:
+        return _format_response(None, validation_error("presentation_id_or_url", str(e), presentation_id_or_url))
+
+    # Parse writes JSON
+    try:
+        write_list = json.loads(writes)
+    except json.JSONDecodeError as e:
+        return _format_response(
+            None,
+            validation_error("writes", f"Invalid JSON: {e}", writes[:200]),
+        )
+
+    if not isinstance(write_list, list):
+        return _format_response(
+            None,
+            validation_error("writes", "Expected a JSON array of write operations", type(write_list).__name__),
+        )
+
+    # Validate each entry has required keys
+    required_keys = {"slide_name", "element_name", "markdown"}
+    for i, entry in enumerate(write_list):
+        if not isinstance(entry, dict):
+            return _format_response(
+                None,
+                validation_error("writes", f"Entry {i} is not an object", str(entry)[:200]),
+            )
+        missing = required_keys - set(entry.keys())
+        if missing:
+            return _format_response(
+                None,
+                validation_error("writes", f"Entry {i} missing keys: {missing}", str(entry)[:200]),
+            )
+
+    client = get_api_client()
+
+    try:
+        presentation = Presentation.from_id(pres_id, api_client=client)
+
+        # Cache slides by name for efficient lookup
+        slides_by_name = {}
+        for slide in presentation.slides:
+            name = get_slide_name(slide)
+            if name:
+                slides_by_name[name] = slide
+
+        successes = []
+        failures = []
+
+        for entry in write_list:
+            slide_name = entry["slide_name"]
+            element_name = entry["element_name"]
+            markdown = entry["markdown"]
+
+            try:
+                slide = slides_by_name.get(slide_name)
+                if slide is None:
+                    failures.append({
+                        "slide_name": slide_name,
+                        "element_name": element_name,
+                        "error": f"Slide '{slide_name}' not found",
+                    })
+                    continue
+
+                element = find_element_by_name(slide, element_name)
+                if element is None:
+                    failures.append({
+                        "slide_name": slide_name,
+                        "element_name": element_name,
+                        "error": f"Element '{element_name}' not found",
+                    })
+                    continue
+
+                if not isinstance(element, ShapeElement):
+                    failures.append({
+                        "slide_name": slide_name,
+                        "element_name": element_name,
+                        "error": f"Element '{element_name}' is not a text element (type: {element.type.value})",
+                    })
+                    continue
+
+                element.write_text(markdown, as_markdown=True, api_client=client)
+                successes.append({
+                    "slide_name": slide_name,
+                    "element_name": element_name,
+                    "element_id": element.objectId,
+                })
+            except Exception as entry_error:
+                failures.append({
+                    "slide_name": slide_name,
+                    "element_name": element_name,
+                    "error": str(entry_error),
+                })
+
+        client.flush_batch_update()
+
+        result = SuccessResponse(
+            message=f"Bulk write completed: {len(successes)} succeeded, {len(failures)} failed",
+            details={
+                "total": len(write_list),
+                "succeeded": len(successes),
+                "failed": len(failures),
+                "successes": successes,
+                "failures": failures,
+            },
+        )
+        return _format_response(result)
+
+    except Exception as e:
+        logger.error(f"Error in bulk write: {e}\n{traceback.format_exc()}")
+        return _format_response(None, presentation_error(pres_id, e))
+
+
+# =============================================================================
+# IMAGE TOOLS
+# =============================================================================
+
+
+@mcp.tool()
+def replace_element_image(
+    presentation_id_or_url: str,
+    slide_name: str,
+    element_name: str = None,
+    image_source: str = "",
+    element_id: str = None,
+) -> str:
+    """Replace an image element with a new image from a URL or local file path.
+
+    Args:
+        presentation_id_or_url: Google Slides URL or presentation ID
+        slide_name: Slide name (first line of speaker notes)
+        element_name: Element name (image alt-title). Either this or element_id must be provided.
+        image_source: URL (http/https) or local file path of the new image
+        element_id: Element object ID (alternative to element_name, for unnamed elements)
+    """
+    if element_name is None and element_id is None:
+        return _format_response(
+            None,
+            validation_error("element_name", "Either element_name or element_id must be provided", None),
+        )
+
+    try:
+        pres_id = parse_presentation_id(presentation_id_or_url)
+    except ValueError as e:
+        return _format_response(None, validation_error("presentation_id_or_url", str(e), presentation_id_or_url))
+
+    client = get_api_client()
+
+    try:
+        presentation = Presentation.from_id(pres_id, api_client=client)
+        slide = find_slide_by_name(presentation, slide_name)
+
+        if slide is None:
+            available = get_available_slide_names(presentation)
+            client.flush_batch_update()
+            return _format_response(None, slide_not_found_error(pres_id, slide_name, available))
+
+        # Find element by name or by ID
+        element = None
+        if element_id is not None:
+            for el in slide.page_elements_flat:
+                if el.objectId == element_id:
+                    element = el
+                    break
+            if element is None:
+                available = get_available_element_names(slide)
+                client.flush_batch_update()
+                return _format_response(
+                    None,
+                    validation_error(
+                        "element_id",
+                        f"No element found with ID '{element_id}' on slide '{slide_name}'",
+                        element_id,
+                    ),
+                )
+        else:
+            element = find_element_by_name(slide, element_name)
+            if element is None:
+                available = get_available_element_names(slide)
+                client.flush_batch_update()
+                return _format_response(None, element_not_found_error(pres_id, slide_name, element_name, available))
+
+        display_name = element_name or element_id
+
         # Check if it's an image element
         if not isinstance(element, ImageElement):
             client.flush_batch_update()
@@ -596,21 +898,24 @@ def replace_element_image(
                 None,
                 validation_error(
                     "element_name",
-                    f"Element '{element_name}' is not an image element (type: {element.type.value})",
-                    element_name,
+                    f"Element '{display_name}' is not an image element (type: {element.type.value})",
+                    display_name,
                 ),
             )
 
-        # Replace the image
-        element.replace_image(url=image_url, api_client=client)
+        # Replace the image - route to url= or file= based on source
+        if image_source.startswith(("http://", "https://")):
+            element.replace_image(url=image_source, api_client=client)
+        else:
+            element.replace_image(file=image_source, api_client=client)
         client.flush_batch_update()
 
         result = SuccessResponse(
-            message=f"Successfully replaced image in element '{element_name}'",
+            message=f"Successfully replaced image in element '{display_name}'",
             details={
                 "element_id": element.objectId,
                 "slide_name": slide_name,
-                "new_image_url": image_url,
+                "image_source": image_source,
             },
         )
         return _format_response(result)
@@ -780,6 +1085,116 @@ def delete_slide(
 
 
 # =============================================================================
+# PRESENTATION MANIPULATION TOOLS
+# =============================================================================
+
+
+@mcp.tool()
+def copy_presentation(
+    presentation_id_or_url: str,
+    copy_title: str = None,
+    folder_id: str = None,
+) -> str:
+    """Copy an entire presentation to create a new one.
+
+    Args:
+        presentation_id_or_url: Google Slides URL or presentation ID
+        copy_title: Title for the copy (defaults to "Copy of {original title}")
+        folder_id: Google Drive folder ID to place the copy in (optional)
+    """
+    try:
+        pres_id = parse_presentation_id(presentation_id_or_url)
+    except ValueError as e:
+        return _format_response(None, validation_error("presentation_id_or_url", str(e), presentation_id_or_url))
+
+    client = get_api_client()
+
+    try:
+        # Load presentation to get its title for the default copy name
+        presentation = Presentation.from_id(pres_id, api_client=client)
+        original_title = presentation.title or "Untitled"
+
+        if copy_title is None:
+            copy_title = f"Copy of {original_title}"
+
+        # Copy the presentation
+        copy_result = client.copy_presentation(pres_id, copy_title, folder_id)
+        new_pres_id = copy_result["id"]
+
+        result = SuccessResponse(
+            message=f"Successfully copied presentation '{original_title}'",
+            details={
+                "original_presentation_id": pres_id,
+                "new_presentation_id": new_pres_id,
+                "new_presentation_url": f"https://docs.google.com/presentation/d/{new_pres_id}/edit",
+                "new_title": copy_title,
+            },
+        )
+        return _format_response(result)
+
+    except Exception as e:
+        logger.error(f"Error copying presentation: {e}\n{traceback.format_exc()}")
+        return _format_response(None, presentation_error(pres_id, e))
+
+
+@mcp.tool()
+def add_element_names(
+    presentation_id_or_url: str,
+    skip_empty_text_boxes: bool = False,
+    min_image_size_cm: float = 4.0,
+) -> str:
+    """Name all slides and elements in a presentation.
+
+    Names slides based on their speaker notes (first line).
+    Names elements (text boxes, images, charts, tables) with descriptive alt-text titles.
+    The topmost text box becomes "Title", others become "Text_1", "Text_2", etc.
+    Images and charts are named "Image_1", "Chart_1", etc.
+
+    Args:
+        presentation_id_or_url: Google Slides URL or presentation ID
+        skip_empty_text_boxes: Skip text boxes that contain only whitespace
+        min_image_size_cm: Minimum image dimension (cm) to include (smaller images are skipped)
+    """
+    try:
+        pres_id = parse_presentation_id(presentation_id_or_url)
+    except ValueError as e:
+        return _format_response(None, validation_error("presentation_id_or_url", str(e), presentation_id_or_url))
+
+    client = get_api_client()
+
+    try:
+        gslides_client = GSlidesAPIClient(gslides_client=client)
+        slide_names = name_slides(
+            pres_id,
+            name_elements=True,
+            api_client=gslides_client,
+            skip_empty_text_boxes=skip_empty_text_boxes,
+            min_image_size_cm=min_image_size_cm,
+        )
+        client.flush_batch_update()
+
+        # Convert SlideElementNames dataclass to serializable dict
+        names_dict = {}
+        for slide_name, element_names in slide_names.items():
+            names_dict[slide_name] = {
+                "text_names": element_names.text_names,
+                "image_names": element_names.image_names,
+                "chart_names": element_names.chart_names,
+                "table_names": element_names.table_names,
+            }
+
+        result = SuccessResponse(
+            message=f"Successfully named {len(slide_names)} slides and their elements",
+            details={"slide_element_names": names_dict},
+        )
+        return _format_response(result)
+
+    except Exception as e:
+        logger.error(f"Error naming elements: {e}\n{traceback.format_exc()}")
+        return _format_response(None, presentation_error(pres_id, e))
+
+
+# =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
 
@@ -796,9 +1211,9 @@ def main():
     parser.add_argument(
         "--default-format",
         type=str,
-        choices=["raw", "domain", "outline"],
-        default="raw",
-        help="Default output format for tools (default: raw)",
+        choices=["raw", "domain", "markdown"],
+        default="markdown",
+        help="Default output format for tools (default: markdown)",
     )
 
     args = parser.parse_args()
