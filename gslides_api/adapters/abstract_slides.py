@@ -446,9 +446,16 @@ class AbstractSlide(BaseModel, ABC):
         """
         parts = []
         for element in self.page_elements_flat:
-            name = element.alt_text.title or element.objectId
+            name = element.alt_text.title
+            if not name:
+                continue
+
             x, y = element.absolute_position()
             w, h = element.absolute_size()
+
+            desc_str = ""
+            if element.alt_text.description:
+                desc_str = f' | desc="{element.alt_text.description}"'
 
             if isinstance(element, AbstractShapeElement) and element.has_text:
                 text = element.read_text(as_markdown=True)
@@ -460,8 +467,8 @@ class AbstractSlide(BaseModel, ABC):
                     box_width_inches=w, box_height_inches=h, font_size_pt=font_pt,
                 )
                 parts.append(
-                    f"<!-- text: {name} | pos=({x:.1f},{y:.1f}) size=({w:.1f},{h:.1f}) "
-                    f"| ~{meta.approx_char_capacity} chars -->\n{text}"
+                    f"<!-- text: {name} | pos=({x:.1f},{y:.1f}) size=({w:.1f},{h:.1f})"
+                    f"{desc_str} | ~{meta.approx_char_capacity} chars -->\n{text}"
                 )
             elif isinstance(element, AbstractTableElement):
                 md_elem = element.to_markdown_element(name=name)
@@ -476,15 +483,17 @@ class AbstractSlide(BaseModel, ABC):
                     col_chars_str = f" | ~{chars_per_col} chars/col"
                 parts.append(
                     f"<!-- table: {name} | pos=({x:.1f},{y:.1f}) size=({w:.1f},{h:.1f})"
-                    f"{col_chars_str} -->\n{table_md}"
+                    f"{desc_str}{col_chars_str} -->\n{table_md}"
                 )
             elif isinstance(element, AbstractImageElement):
                 parts.append(
-                    f"<!-- image: {name} | pos=({x:.1f},{y:.1f}) size=({w:.1f},{h:.1f}) -->"
+                    f"<!-- image: {name} | pos=({x:.1f},{y:.1f}) size=({w:.1f},{h:.1f})"
+                    f"{desc_str} -->"
                 )
             else:
                 parts.append(
-                    f"<!-- {element.type}: {name} | pos=({x:.1f},{y:.1f}) size=({w:.1f},{h:.1f}) -->"
+                    f"<!-- {element.type}: {name} | pos=({x:.1f},{y:.1f}) size=({w:.1f},{h:.1f})"
+                    f"{desc_str} -->"
                 )
 
         return "\n\n".join(parts)

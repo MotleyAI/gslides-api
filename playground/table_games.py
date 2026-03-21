@@ -14,7 +14,8 @@ from storyline.config import LoggingParams
 from storyline.domain.chart_image_to_config import image_to_config
 from storyline.domain.content.chart_block import ChartBlock
 
-from storyline.slides.ingest_presentation import name_slides, delete_alt_titles, ingest_presentation
+from storyline.slides.ingest_presentation import ingest_presentation
+from gslides_api.adapters.add_names import delete_alt_titles, name_slides
 from storyline.slides.slide_deck import SlideDeck
 
 logger = logging.getLogger(__name__)

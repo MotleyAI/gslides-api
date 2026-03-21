@@ -10,11 +10,8 @@ Or set the GSLIDES_CREDENTIALS_PATH environment variable.
 """
 
 from .models import (
-    ElementOutline,
     ErrorResponse,
     OutputFormat,
-    PresentationOutline,
-    SlideOutline,
     SuccessResponse,
     ThumbnailSizeOption,
 )
@@ -37,9 +34,6 @@ __all__ = [
     "ThumbnailSizeOption",
     "ErrorResponse",
     "SuccessResponse",
-    "ElementOutline",
-    "SlideOutline",
-    "PresentationOutline",
     # Utils
     "parse_presentation_id",
     "get_slide_name",

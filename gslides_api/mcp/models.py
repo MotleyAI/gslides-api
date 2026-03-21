@@ -1,7 +1,7 @@
 """Models for the gslides-api MCP server."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +11,7 @@ class OutputFormat(str, Enum):
 
     RAW = "raw"  # Raw Google Slides API JSON response
     DOMAIN = "domain"  # gslides-api domain object model_dump()
-    OUTLINE = "outline"  # Bare-bones structure with names and markdown content
+    MARKDOWN = "markdown"  # Slide markdown layout representation
 
 
 class ThumbnailSizeOption(str, Enum):
@@ -31,34 +31,6 @@ class ErrorResponse(BaseModel):
     details: Dict[str, Any] = Field(
         default_factory=dict, description="Additional context about the error"
     )
-
-
-class ElementOutline(BaseModel):
-    """Outline representation of a page element."""
-
-    element_name: Optional[str] = Field(None, description="Element name from alt-text title")
-    element_id: str = Field(description="Element object ID")
-    type: str = Field(description="Element type (shape, image, table, etc.)")
-    alt_description: Optional[str] = Field(None, description="Alt-text description if present")
-    content_markdown: Optional[str] = Field(
-        None, description="Markdown content for text elements"
-    )
-
-
-class SlideOutline(BaseModel):
-    """Outline representation of a slide."""
-
-    slide_name: Optional[str] = Field(None, description="Slide name from speaker notes")
-    slide_id: str = Field(description="Slide object ID")
-    elements: List[ElementOutline] = Field(default_factory=list)
-
-
-class PresentationOutline(BaseModel):
-    """Outline representation of a presentation."""
-
-    presentation_id: str = Field(description="Presentation ID")
-    title: str = Field(description="Presentation title")
-    slides: List[SlideOutline] = Field(default_factory=list)
 
 
 class SuccessResponse(BaseModel):

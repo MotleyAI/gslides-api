@@ -21,6 +21,7 @@ from gslides_api.adapters.abstract_slides import (
 def _make_shape_element(
     object_id="shape1",
     title=None,
+    description=None,
     text="Hello World",
     x=0.5,
     y=0.3,
@@ -31,7 +32,7 @@ def _make_shape_element(
     """Create a mock AbstractShapeElement."""
     elem = MagicMock(spec=AbstractShapeElement)
     elem.objectId = object_id
-    elem.alt_text = AbstractAltText(title=title)
+    elem.alt_text = AbstractAltText(title=title, description=description)
     elem.type = "SHAPE"
     type(elem).has_text = PropertyMock(return_value=True)
     elem.read_text.return_value = text
@@ -49,6 +50,7 @@ def _make_shape_element(
 def _make_image_element(
     object_id="img1",
     title="Chart",
+    description=None,
     x=1.0,
     y=3.0,
     w=8.0,
@@ -57,7 +59,7 @@ def _make_image_element(
     """Create a mock AbstractImageElement."""
     elem = MagicMock(spec=AbstractImageElement)
     elem.objectId = object_id
-    elem.alt_text = AbstractAltText(title=title)
+    elem.alt_text = AbstractAltText(title=title, description=description)
     elem.type = "IMAGE"
     elem.absolute_position.return_value = (x, y)
     elem.absolute_size.return_value = (w, h)
@@ -67,6 +69,7 @@ def _make_image_element(
 def _make_table_element(
     object_id="table1",
     title="Data",
+    description=None,
     x=0.5,
     y=7.5,
     w=9.0,
@@ -85,7 +88,7 @@ def _make_table_element(
 
     elem = MagicMock(spec=AbstractTableElement)
     elem.objectId = object_id
-    elem.alt_text = AbstractAltText(title=title)
+    elem.alt_text = AbstractAltText(title=title, description=description)
     elem.type = "TABLE"
     elem.absolute_position.return_value = (x, y)
     elem.absolute_size.return_value = (w, h)
@@ -232,12 +235,12 @@ class TestSlideMarkdown:
         assert "image: Chart" in parts[1]
         assert "table: Data" in parts[2]
 
-    def test_element_uses_object_id_when_no_title(self):
+    def test_unnamed_element_is_skipped(self):
         shape = _make_shape_element(object_id="abc123", title=None)
         slide = _make_slide([shape])
         md = slide.markdown()
 
-        assert "text: abc123 |" in md
+        assert md == ""
 
     def test_empty_slide(self):
         slide = _make_slide([])
@@ -315,3 +318,48 @@ class TestSlideMarkdown:
         # Should fall through to the generic case since has_text is False
         assert "<!-- SHAPE: EmptyBox |" in md
         assert "text:" not in md
+
+    def test_unnamed_elements_skipped_named_kept(self):
+        """Unnamed elements should be skipped, named ones kept."""
+        named = _make_shape_element(title="Title", text="Hello")
+        unnamed = _make_shape_element(object_id="no_name", title=None, text="Hidden")
+        slide = _make_slide([named, unnamed])
+        md = slide.markdown()
+
+        assert "text: Title" in md
+        assert "no_name" not in md
+        assert "Hidden" not in md
+
+    def test_alt_description_in_text_comment(self):
+        """Alt description should appear in text element comment."""
+        shape = _make_shape_element(
+            title="Title", description="Main heading", text="Hello"
+        )
+        slide = _make_slide([shape])
+        md = slide.markdown()
+
+        assert 'desc="Main heading"' in md
+
+    def test_alt_description_in_image_comment(self):
+        """Alt description should appear in image element comment."""
+        img = _make_image_element(title="Chart", description="Revenue chart")
+        slide = _make_slide([img])
+        md = slide.markdown()
+
+        assert 'desc="Revenue chart"' in md
+
+    def test_alt_description_in_table_comment(self):
+        """Alt description should appear in table element comment."""
+        table = _make_table_element(title="Data", description="Quarterly data")
+        slide = _make_slide([table])
+        md = slide.markdown()
+
+        assert 'desc="Quarterly data"' in md
+
+    def test_no_description_no_desc_field(self):
+        """When no description, desc field should not appear."""
+        shape = _make_shape_element(title="Title", description=None, text="Hello")
+        slide = _make_slide([shape])
+        md = slide.markdown()
+
+        assert "desc=" not in md
