@@ -1,8 +1,9 @@
+import html
 import json
 import re
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Literal
+from typing import Any, List, Literal, Optional
 
 import marko
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -52,6 +53,32 @@ class TableData(BaseModel):
             lines.append(row_line)
 
         return "\n".join(lines)
+
+    def to_html(self, css_class: Optional[str] = None) -> str:
+        """Convert table data to an HTML <table> element.
+
+        Args:
+            css_class: Optional CSS class to apply to the <table> element.
+
+        Returns:
+            HTML string with <table>, <thead>, and <tbody> elements.
+        """
+        if not self.headers:
+            return ""
+
+        cls_attr = f' class="{html.escape(css_class)}"' if css_class else ""
+        parts = [f"<table{cls_attr}>", "<thead><tr>"]
+        for header in self.headers:
+            parts.append(f"<th>{html.escape(str(header))}</th>")
+        parts.append("</tr></thead><tbody>")
+        for row in self.rows:
+            parts.append("<tr>")
+            for i in range(len(self.headers)):
+                cell = str(row[i]) if i < len(row) else ""
+                parts.append(f"<td>{html.escape(cell)}</td>")
+            parts.append("</tr>")
+        parts.append("</tbody></table>")
+        return "".join(parts)
 
     def to_dataframe(self):
         """Convert table data to pandas DataFrame.
